@@ -1,5 +1,5 @@
 # optolink-splitter
-Splitter for Viessmann Optolink connection
+Splitter for Viessmann Optolink connection planned
 
 experimental development status!!
 
