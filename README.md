@@ -12,7 +12,7 @@ serlog.py usage:
 1.    serielle Anschlüsse herstellen (* siehe unten)
 2.    serlog.py starten
 3.    Vitoconnect mit Spannung versorgen
-4.    mir den Log schicken ;-) (vorher natürlich ein Weilchen laufen lassen)
+4.    mir den Log schicken ;-) (vorher natürlich ein Weilchen laufen lassen und auch ViCare benutzen)
 
 beim Herstellen der seriellen Verbindungen beachten:
 - beim Vitoconnect vorher die Spannungsversorgung trennen (damit es erst anfängt wenn wir schon lauschen)
