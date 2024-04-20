@@ -4,7 +4,7 @@ import time
 
 
 tcp_client = socket.socket()  #None  # None, bis der Client-Socket erstellt wird
-data = bytes()
+recdata = bytes()
 exit_flag = False
 
 fverbose = True
@@ -32,20 +32,28 @@ def run_tcpip(host, port) -> socket:
 def listen_tcpip(client:socket):
     global exit_flag
     global fverbose
-    global data
+    global recdata
 
     if(fverbose): print("enter listen loop")
     while(not exit_flag):
         try:
             data = client.recv(1024)
             if data:
-                #timestamp_ms = int(time.time() * 1000)
                 if(fverbose): print("TCP recd:", data)  #bbbstr(data)
+                msg = data.decode('utf-8').replace('','').replace('\0','').replace('\n','').replace('\r','')
+                if(msg):
+                    if(msg=="exit"):
+                        break
+                    recdata = msg
+                #timestamp_ms = int(time.time() * 1000)
+                #if(fverbose): print("TCP recd:", data)  #bbbstr(data)
                 # if(data == b'xexit'):
                 #     exit_flag = True
         except ConnectionError:
             if(fverbose): print("Connection lost")
             break
+        except Exception as e:
+            print(e)
 
 
 def tcpip4ever(port:int, verbose = True):
@@ -56,6 +64,7 @@ def tcpip4ever(port:int, verbose = True):
     fverbose = verbose
     # loop buiding connection (if lost) and receiving
     while(not exit_flag):
+        tcp_client.close()
         tcp_client = run_tcpip('0.0.0.0', port)
         listen_tcpip(tcp_client) 
     # Schließe den Client-Socket, wenn der Hauptthread beendet wird
@@ -63,11 +72,11 @@ def tcpip4ever(port:int, verbose = True):
         tcp_client.close()
 
 
-def get_tcpdata() -> bytes:
-    global data
-    ret = data
+def get_tcpdata() -> str:
+    global recdata
+    ret = recdata
     # clear receive buffer
-    data = bytes()
+    recdata = ''
     return ret
 
 def send_tcpip(data):
@@ -102,7 +111,7 @@ def main():
             mydata = get_tcpdata()
             print("###", mydata)
             if(mydata):
-                send_tcpip("received: " + mydata.decode('utf-8'))
+                send_tcpip("received: " + mydata)  #.decode('utf-8'))
             time.sleep(0.5)
     except Exception as e:
         print("main", e)

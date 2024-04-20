@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 # local log files
 *.log
+*.csv
 # user specific files
 settings_ini.py
+test.py
 .vscode/
 old_test/
 venv

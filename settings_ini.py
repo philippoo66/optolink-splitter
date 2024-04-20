@@ -5,7 +5,7 @@ port_optolink = "COM4"   # "/dev/ttyUSB0"
 
 
 # MQTT +++++++++++++++++++
-mqtt = None #"192.168.1.115:1883"         # e.g. "192.168.0.1:1883"; set None to disable MQTT
+mqtt = "192.168.1.115:1883"         # e.g. "192.168.0.1:1883"; set None to disable MQTT
 mqtt_user = None  # "<user>:<pwd>"
 mqtt_topic = "Vitodens"
 mqtt_fstr = "{dpname}"  # "{dpaddr:04X}_{dpname}"
@@ -19,7 +19,7 @@ tcpip_fullraw_timeout = 2     # seconds. timeout, return in any case
 
 
 # polling datapoints +++++++++++++++++++
-poll_interval = -15      # seconds. 0 for continuous, set -1 to disable Polling
+poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
 poll_items = [
     # (Name, DpAddr, Len, Scale/Type, Signed)
     ("AussenTemp", 0x0800, 2, 0.1, True),

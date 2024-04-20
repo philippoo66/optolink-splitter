@@ -2,31 +2,35 @@ import serial
 import binascii
 import time
 import threading
-
+import importlib
 
 import settings_ini
 import optolinkvs2
 import viessdata_util
 import tcpip_util
-import mqtt_util
+#import mqtt_util
 
 # request buffers
 vicon_request = bytearray()
-#tcpip_request = bytearray()
 mqtt_request = bytearray()
-tcpip_request_string = ""
+#tcpip_request = bytearray()
+#tcpip_request_string = ""
 
 # utils +++++++++++++++++++++++++++++
-def olbreath(retcode:int):
-    if(retcode <= 0x03):
-        # success, err msg
-        time.sleep(0.1)
-    elif(retcode == 0xFF):
-        # timeout
-        pass
+def get_int(v) -> int:
+    if type(v) is int:
+        return v
     else:
-        # allow calming down
-        time.sleep(0.5)
+        return int(eval(str(v)))
+
+def to_number(s: str):
+    try:
+        return int(s)
+    except ValueError:
+        try:
+            return float(s)
+        except ValueError:
+            raise ValueError("Ungültige Zeichenkette für Umwandlung in eine Zahl")
 
 def bbbstr(data):
     return ' '.join([format(byte, '02X') for byte in data])
@@ -73,22 +77,22 @@ def str2bstr(normal_str:str) -> bytes:
 #     else:
 #         raise TypeError("Unsupported data type")
 
-def tonumber(s: str):
-    try:
-        return int(s)
-    except ValueError:
-        try:
-            return float(s)
-        except ValueError:
-            raise ValueError("Ungültige Zeichenkette für Umwandlung in eine Zahl")
+def olbreath(retcode:int):
+    if(retcode <= 0x03):
+        # success, err msg
+        time.sleep(0.1)
+    elif(retcode == 0xFF):
+        # timeout
+        pass
+    else:
+        # allow calming down
+        time.sleep(0.5)
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
 poll_data = [None] * len(settings_ini.poll_items)
 
 def do_poll_item(idx:int, poll_data, ser:serial.Serial):
-    if(idx >= len(settings_ini.poll_items)):
-        return   
     item = settings_ini.poll_items[idx]  # (Name, DpAddr, Len, Scale/Type, Signed)  
     retcode, addr, data = optolinkvs2.read_datapoint_ext(item[1], item[2], ser)
     if(retcode == 0x01):
@@ -100,9 +104,6 @@ def do_poll_item(idx:int, poll_data, ser:serial.Serial):
             # is a number
             val = optolinkvs2.bytesval(data, item[3], item[4])
         poll_data[idx] = val
-        # post to MQTT broker
-        if(settings_ini.mqtt is not None):
-            mqtt_util.showread(item[0], item[1], val)   # addr statt item[1]??
     olbreath(retcode)
 
     
@@ -130,6 +131,8 @@ def startPollTimer(secs:float):
 def main():
     global poll_pointer
     global poll_data
+
+    mod_mqtt_util = None
 
     # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
     serViCon = None  # Vitoconnect (Master)
@@ -171,18 +174,20 @@ def main():
     
     # Empfangstask des (der) sekundären Master/s starten (TcpIp, MQTT)
 
-    # MQTT 
+    # MQTT --------
     if(settings_ini.mqtt is not None):
-        mqtt_util.connect_mqtt()
+        # avoid paho.mqtt required if not used
+        mod_mqtt_util = importlib.import_module("mqtt_util")
+        mod_mqtt_util.connect_mqtt()
         #TODO listening thread
 
-    # TCP/IP connection 
+    # TCP/IP connection --------
     if(settings_ini.tcpip_port is not None):
         tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,True))
-        tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread
+        tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
         tcp_thread.start()
 
-    # Polling Mechanismus 
+    # Polling Mechanismus --------
     len_polllist = len(settings_ini.poll_items)
     if(settings_ini.poll_interval > 0) and (len_polllist > 0):
         startPollTimer(settings_ini.poll_interval)
@@ -209,6 +214,11 @@ def main():
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
                     do_poll_item(poll_pointer, poll_data, serViDev)
+                    if(settings_ini.mqtt is not None):
+                        # post to MQTT broker
+                        item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
+                        mod_mqtt_util.showread(item[0], item[1], poll_data[poll_pointer])
+
                     poll_pointer += 1
 
                     if(poll_pointer == len_polllist):
@@ -231,17 +241,17 @@ def main():
                 else:
                     request_pointer += 1
 
-            # Tci/Ip request --------
+            # TCP/IP request --------
             if(request_pointer == 2):
                 if(settings_ini.tcpip_port is None):
                     request_pointer += 1
                 else:
-                    data = tcpip_util.get_tcpdata()
-                    if(data):
+                    msg = tcpip_util.get_tcpdata()
+                    if(msg):
                         try:
-                            msg = data.decode('utf-8').replace('\0','').replace(' ','')
                             parts = msg.split(';')
-                            if(len(parts) == 1):
+                            numelms = len(parts)  
+                            if(numelms == 1):
                                 # full raw  "4105000100F80806"
                                 bstr = bytes.fromhex(parts[0])
                                 serViDev.reset_input_buffer()
@@ -251,7 +261,7 @@ def main():
                                 bstr = arr2hexstr(data)
                                 print("recd fr OL:", bbbstr(data))
                                 tcpip_util.send_tcpip(bstr)
-                            elif(len(parts) > 1):
+                            elif(numelms > 1):
                                 if(parts[0] == "raw"):  # "raw;4105000100F80806"
                                     bstr = bytes.fromhex(parts[1])
                                     serViDev.reset_input_buffer()
@@ -262,15 +272,19 @@ def main():
                                     bstr = str(ret) + ';' + arr2hexstr(data)
                                     tcpip_util.send_tcpip(bstr)
                                 elif(parts[0] == "read"):  # "read;0x0804;1;10;False"
-                                    raise Exception("nicht fertig") #TODO
-                                    ret, addr, data = optolinkvs2.read_datapoint_ext(int(parts[1]), int(parts[2]), serViDev)
-                                    val = optolinkvs2.bytesval(data, tonumber(parts[3]), bool(parts[4]))
+                                    #raise Exception("nicht fertig") #TODO
+                                    ret, addr, data = optolinkvs2.read_datapoint_ext(get_int(parts[1]), int(parts[2]), serViDev)
+                                    if(numelms > 3):
+                                        val = optolinkvs2.bytesval(data, to_number(parts[3]), bool(parts[4]))
+                                    else:
+                                        #return raw
+                                        val = arr2hexstr(data)
                                     bstr = str(ret) + ';' + str(addr) + ';' + str(val)
                                     tcpip_util.send_tcpip(bstr)
                                 elif(parts[0] == "write"):  # "write;0x6300;1;48"
                                     raise Exception("nicht fertig") #TODO
-                                    bstr = int(parts[3]).to_bytes(int(parts[2]), 'big')
-                                    ret, addr, _ = optolinkvs2.write_datapoint_ext(int(parts[1]), bstr, serViDev)
+                                    bstr = get_int(parts[3]).to_bytes(int(parts[2]), 'big')
+                                    ret, addr, _ = optolinkvs2.write_datapoint_ext(get_int(parts[1]), bstr, serViDev)
                                     bstr = str(ret) + ';' + str(addr)
                                     tcpip_util.send_tcpip(bstr)
                         except Exception as e:
@@ -304,7 +318,8 @@ def main():
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
         #tcp_thread.join()  #TODO ??
-        mqtt_util.exit_mqtt()
+        if(settings_ini.mqtt is not None):
+            mod_mqtt_util.exit_mqtt()
 
     # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
 
