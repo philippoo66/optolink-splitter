@@ -2,6 +2,8 @@
 **ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!
 aktuell nur serlog.py 'freigegeben'**
 
+![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/531dccdb-8f63-49d0-a5ba-512b05256ff3)
+
 Splitter for Viessmann Optolink connection planned
 
 experimental development status!!
