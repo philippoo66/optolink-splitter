@@ -1,0 +1,10 @@
+# Byte-compiled / optimized / DLL files (naja)
+__pycache__/
+*.py[cod]
+# local log files
+*.log
+# user specific files
+settings_ini.py
+.vscode/
+old_test/
+venv
