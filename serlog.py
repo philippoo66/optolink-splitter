@@ -78,7 +78,6 @@ def main():
             # Schließen der seriellen Schnittstellen und der Ausgabedatei
             ser1.close()
             ser2.close()
-            f.flush()  # Puffer leeren, um sicherzustellen, dass die Daten sofort in die Datei geschrieben werden
 
 if __name__ == "__main__":
     main()
