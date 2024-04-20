@@ -1,4 +1,7 @@
 # optolink-splitter
+**ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!
+aktuell nur serlog.py 'freigegeben'**
+
 Splitter for Viessmann Optolink connection planned
 
 experimental development status!!
