@@ -90,10 +90,13 @@ def main():
                      stopbits=serial.STOPBITS_TWO,
                      bytesize=serial.EIGHTBITS,
                      timeout=0)
+    else:
+        raise Exception("Optolink devie is mandatory!")
+
 
     if(serViCon is not None):
         # detect VS2 Protokol
-        print("expecting VS2...")
+        print("awaiting VS2...")
         vs2timeout = 120 #seconds
         if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout):
             raise Exception(f"VS2 protocol not detected within {0} seconds", vs2timeout)
@@ -101,8 +104,6 @@ def main():
         vicon_thread = threading.Thread(target=requests_util.listen_to_Vitoconnect, args=(serViCon,))
         vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
         vicon_thread.start()
-       
-
     else:
         # VS2 Protokoll am Slave initialisieren
         if(not optolinkvs2.init_vs2(serViDev)):
@@ -115,10 +116,7 @@ def main():
             #     serViDev.close()
             raise Exception("init_vs2 failed")
 
-
-    # Empfangstask Vitoconnect starten
-    
-    # Empfangstask des (der) sekundären Master/s starten (TcpIp, MQTT)
+    # Empfangstask der sekundären Master starten (TcpIp, MQTT)
 
     # MQTT --------
     if(settings_ini.mqtt is not None):
@@ -143,16 +141,16 @@ def main():
     try:
         while(True):
             # first Vitoconnect request
-            vidata = requests_util.get_ViconData()
+            vidata = requests_util.get_vicon_request()
             if(vidata):
                 serViDev.write(vidata)
                 # recive response an pass bytes directly back to VitoConnect, 
                 # returns when response is complete (or error or timeout) 
-                ret, _,_ = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                ret,_,_ = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
                 olbreath(ret)
 
             # secondary requests ------------------
-            #TODO überlegen, ob Vitoconnect request nicht auch in der Reihe reicht
+            #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
 
             # polling list --------
             if(request_pointer == 0):              
@@ -182,7 +180,7 @@ def main():
                 if(settings_ini.mqtt is None):
                     request_pointer += 1
                 else:
-                    msg = mod_mqtt_util.get_mqttdata()
+                    msg = mod_mqtt_util.get_mqtt_request()
                     if(msg):
                         try:
                             #print("MQTT Req", msg)
@@ -200,7 +198,7 @@ def main():
                 if(settings_ini.tcpip_port is None):
                     request_pointer += 1
                 else:
-                    msg = tcpip_util.get_tcpdata()
+                    msg = tcpip_util.get_tcp_request()
                     if(msg):
                         try:
                             ret, resp = requests_util.respond_to_request(msg, serViDev)
@@ -217,7 +215,7 @@ def main():
                 request_pointer = 0
             
             # let cpu take a breath
-            time.sleep(0.01)  #TODO runter setzen
+            time.sleep(0.002) 
 
     except KeyboardInterrupt:
         print("Abbruch durch Benutzer.")

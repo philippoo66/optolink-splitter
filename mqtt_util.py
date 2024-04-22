@@ -53,7 +53,7 @@ def connect_mqtt() -> bool:
     mqtt_client.loop_start()
     return True  # naja...
 
-def get_mqttdata() -> str:
+def get_mqtt_request() -> str:
     ret = ""
     if len(cmnd_queue) > 0:
         ret = cmnd_queue.pop(0)

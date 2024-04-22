@@ -72,7 +72,7 @@ def tcpip4ever(port:int, verbose = True):
         tcp_client.close()
 
 
-def get_tcpdata() -> str:
+def get_tcp_request() -> str:
     global recdata
     ret = recdata
     # clear receive buffer
@@ -108,7 +108,7 @@ def main():
 
     try:
         while(not exit_flag):
-            mydata = get_tcpdata()
+            mydata = get_tcp_request()
             print("###", mydata)
             if(mydata):
                 send_tcpip("received: " + mydata)  #.decode('utf-8'))

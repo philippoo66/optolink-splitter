@@ -150,7 +150,7 @@ def listen_to_Vitoconnect(servicon):
         if(succ == 1):
             vicon_request = data
 
-def get_ViconData() -> bytearray:
+def get_vicon_request() -> bytearray:
     global vicon_request
     ret = vicon_request
     vicon_request = bytearray()
