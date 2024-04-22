@@ -20,5 +20,5 @@ beim Herstellen der seriellen Verbindungen beachten:
 - beim Vitoconnect vorher die Spannungsversorgung trennen (damit es erst anfängt wenn wir schon lauschen)
 - beim USB2TTL
   a) auf 3.3V jumpern (Raspi UART arbeitet mit 3.3V) 
-  b) +Vcc nicht verbinden (Raspi hat sein eigenes Netzteil)
+  b) +Vcc nicht verbinden (Raspi hat sein eigenes Netzteil) 
   c) Tx/Rx zwischen Raspi und USB2TTL natürlich kreuzen
