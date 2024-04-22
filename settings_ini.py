@@ -1,23 +1,23 @@
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = "COM1"  # "/dev/ttyS0"  older Pi:"/dev/ttyAMA0"
-port_optolink = "COM4"   # "/dev/ttyUSB0"
+port_vitoconnect = "COM1"  # "/dev/ttyS0"  older Pi:"/dev/ttyAMA0"  {optional} set None if no Vitoconnect
+port_optolink = "COM4"   # "/dev/ttyUSB0"  {mandatory}
 
 log_vitoconnect = True
 
 
 # MQTT +++++++++++++++++++
-mqtt = "192.168.1.115:1883"         # e.g. "192.168.0.1:1883"; set None to disable MQTT
-mqtt_user = None  # "<user>:<pwd>"
-mqtt_topic = "Vitodens"  # "optolink"
-mqtt_fstr = "{dpname}"  # "{dpaddr:04X}_{dpname}"
+mqtt = "192.168.1.115:1883"    # e.g. "192.168.0.1:1883"; set None to disable MQTT
+mqtt_user = None               # "<user>:<pwd>"
+mqtt_topic = "Vitodens"        # "optolink"
+mqtt_fstr = "{dpname}"         # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"  # "optolink/cmnd"; set None to disable listening
 
 
 # TCP/IP +++++++++++++++++++
-tcpip_port = 65234   # e.g. 65234 is used by Viessdata; set None to disable TCP/IP
-tcpip_fullraw_eot_time = 0.05  # seconds. time no receive decide end of telegram 
-tcpip_fullraw_timeout = 2     # seconds. timeout, return in any case 
+tcpip_port = 65234             # e.g. 65234 is used by Viessdata; set None to disable TCP/IP
+tcpip_fullraw_eot_time = 0.05  # seconds. time no receive to decide end of telegram 
+tcpip_fullraw_timeout = 2      # seconds. timeout, return in any case 
 
 
 # polling datapoints +++++++++++++++++++
