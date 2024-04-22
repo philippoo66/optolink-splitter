@@ -235,7 +235,7 @@ def main():
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
         #tcp_thread.join()  #TODO ??
-        if(settings_ini.mqtt is not None):
+        if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
 
     # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
