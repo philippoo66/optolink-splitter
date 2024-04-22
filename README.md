@@ -2,9 +2,11 @@
 **ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!
 aktuell nur serlog.py 'freigegeben'**
 
+![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
+
 Splitter for Viessmann Optolink connection planned
 
-experimental development status!!
+experimental development status!! Vitoconnect not implemented as yet!!
 
 serlog.py is currently only a logging bridge to see what's going on between Vitconnect and the Optolink device.
 

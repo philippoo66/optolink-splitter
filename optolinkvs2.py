@@ -73,7 +73,7 @@ def read_datapoint_ext(addr:int, rdlen:int, ser:serial.Serial) -> tuple[int, int
 
     #retcode, addr, data = receive_vs2telegr(True, ser)
     #return retcode, addr, data
-    return receive_vs2telegr(True, ser)
+    return receive_vs2telegr(True, False, ser)
 
 
 def write_datapoint(addr:int, data:bytes, ser:serial.Serial) -> bool:
@@ -100,10 +100,10 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
 
     #retcode, addr, data = receive_vs2telegr(True, ser)
     #return retcode, addr, data
-    return receive_vs2telegr(True, ser)
+    return receive_vs2telegr(True, False, ser)
 
 
-
+'''
 def receive_vs2telegr(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, DpAddress, Data
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
@@ -115,7 +115,9 @@ def receive_vs2telegr(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial=Non
     # for up 30x100ms serial data is read. (we do 300x10ms)
     while(True):
         time.sleep(0.01)
+        #try:
         inbytes = ser.read(ser.in_waiting)
+        #except: return 0, bytearray()
         inbuff += inbytes
         
         # ggf. gleich durchleiten 
@@ -159,7 +161,7 @@ def receive_vs2telegr(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial=Non
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
                     print("rx", bbbstr(inbuff))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
-                    addr = (inbuff[4] << 1) + inbuff[5]
+                    addr = (inbuff[4] << 8) + inbuff[5]
                     valdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
                     if(inbuff[-1] != calc_crc(inbuff)):
                         print("CRC Error")
@@ -174,20 +176,25 @@ def receive_vs2telegr(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial=Non
         if(i > 300):
             print("Timeout")
             return 0xFF, 0, inbuff
+'''
 
-def receive_vs2telegr_raw(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
-    # returns: ReturnCode, Data
-    # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
+def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+    # returns: ReturnCode, Addr, Data
+    # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
     i = 0
     state = 0
     inbuff = bytearray()
     alldata = bytearray()
+    retdata = bytearray()
+    addr = 0
 
     # for up 30x100ms serial data is read. (we do 300x10ms)
     while(True):
-        time.sleep(0.01)
-        inbytes = ser.read(ser.in_waiting)
+        time.sleep(0.005)
+        try:
+            inbytes = ser.read(ser.in_waiting)
+        except: return 0xAA, 0, retdata
         inbuff += inbytes
         alldata += inbytes
 
@@ -205,10 +212,12 @@ def receive_vs2telegr_raw(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
                         print("NACK Error")
-                        return 0x15, alldata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
+                        if(raw): retdata = alldata
+                        return 0x15, 0, retdata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
                         print("unknown first byte Error")
-                        return 0x20, alldata
+                        if(raw): retdata = alldata
+                        return 0x20, 0, retdata
                     # erstes Byte abtrennen
                     inbuff = inbuff[1:]
             else:
@@ -219,7 +228,8 @@ def receive_vs2telegr_raw(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
                     print("STX Error")
-                    return 0x41, alldata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
+                    if(raw): retdata = alldata
+                    return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
 
         if(state == 2):
@@ -228,25 +238,30 @@ def receive_vs2telegr_raw(resptelegr:bool, ser:serial.Serial, ser2:serial.Serial
                 if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
                     print("rx", bbbstr(alldata))
                     print("PL Len Error", pllen)
-                    return 0xFD, alldata
+                    if(raw): retdata = alldata
+                    return 0xFD, 0, retdata
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
                     print("rx", bbbstr(alldata))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
-                    #addr = (inbuff[4] << 1) + inbuff[5]
-                    #data = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
+                    addr = (inbuff[4] << 8) + inbuff[5]  # my be bullshit in case of raw
+                    retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
                     if(inbuff[-1] != calc_crc(inbuff)):
                         print("CRC Error")
-                        return 0xFE, alldata
-                    #if(inbuff[2] & 0x0F == 0x03):
-                    #    print("Error Message", bbbstr(data))
-                    #    return 0x03, data
-                    # success
-                    return 0x01, alldata 
+                        if(raw): retdata = alldata
+                        return 0xFE, addr, retdata
+                    if(inbuff[2] & 0x0F == 0x03):
+                        print("Error Message", bbbstr(retdata))
+                        if(raw): retdata = alldata
+                        return 0x03, addr, retdata
+                    #success
+                    if(raw): retdata = alldata
+                    return 0x01, addr, retdata 
         # timout
         i+=1
-        if(i > 300):
+        if(i > 600):
             print("Timeout")
-            return 0xFF, alldata
+            if(raw): retdata = alldata
+            return 0xFF, addr, retdata
 
 def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
     # times in seconds

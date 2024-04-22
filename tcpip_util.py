@@ -19,11 +19,11 @@ def run_tcpip(host, port) -> socket:
     server_socket.bind((host, port))
     # Listen for incoming connections
     if(not exit_flag):
-        if(fverbose): print(f"Server listening on {host}:{port}")
+        print(f"Server listening on {host}:{port}")  #if(fverbose): 
         server_socket.listen(1)
         # Wait for a connection
         client_socket, client_address = server_socket.accept()
-        if(fverbose): print(f"Connection from {client_address}")
+        print(f"Connection from {client_address}")  #if(fverbose): 
         # Schließe den Server-Socket, da er nicht mehr benötigt wird
         server_socket.close()
         return client_socket
@@ -40,7 +40,7 @@ def listen_tcpip(client:socket):
             data = client.recv(1024)
             if data:
                 if(fverbose): print("TCP recd:", data)  #bbbstr(data)
-                msg = data.decode('utf-8').replace('','').replace('\0','').replace('\n','').replace('\r','')
+                msg = data.decode('utf-8').replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
                 if(msg):
                     if(msg=="exit"):
                         break
@@ -50,7 +50,7 @@ def listen_tcpip(client:socket):
                 # if(data == b'xexit'):
                 #     exit_flag = True
         except ConnectionError:
-            if(fverbose): print("Connection lost")
+            print("Connection lost")
             break
         except Exception as e:
             print(e)
