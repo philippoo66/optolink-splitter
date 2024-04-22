@@ -1,5 +1,5 @@
 # optolink-splitter
-**ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!
+**ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!**
 
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
 
