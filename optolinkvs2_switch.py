@@ -9,7 +9,6 @@ import viconn_util
 import viessdata_util
 import tcpip_util
 import requests_util
-#import mqtt_util
 
 #global_exit_flag = False
 
@@ -24,10 +23,18 @@ def olbreath(retcode:int):
         # allow calming down
         time.sleep(0.5)
 
+# Vitoconnect logging
+vito_log = None
+
+def log_vito(data, pre):
+    global vito_log
+    if(vito_log is not None):
+        sd = requests_util.bbbstr(data)
+        vito_log.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
+
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
-poll_data = [None] * len(settings_ini.poll_items)
 
 def do_poll_item(idx:int, poll_data, ser:serial.Serial) -> int:  # retcode
     item = settings_ini.poll_items[idx]  # (Name, DpAddr, Len, Scale/Type, Signed)  
@@ -43,7 +50,7 @@ def do_poll_item(idx:int, poll_data, ser:serial.Serial) -> int:  # retcode
         poll_data[idx] = val
     return retcode
 
-    
+# poll timer    
 def on_polltimer():
     global poll_pointer
     print("on_polltimer", poll_pointer)
@@ -67,9 +74,10 @@ def startPollTimer(secs:float):
 # ------------------------
 def main():
     global poll_pointer
-    global poll_data
+    global vito_log
 
     mod_mqtt_util = None
+    poll_data = [None] * len(settings_ini.poll_items)
 
     # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
     serViCon = None  # Vitoconnect (Master)
@@ -93,6 +101,8 @@ def main():
     else:
         raise Exception("Optolink devie is mandatory!")
 
+    if(settings_ini.log_vitoconnect and (serViCon is not None)):
+        vito_log = open('vitolog.txt', 'a')
 
     if(serViCon is not None):
         # detect VS2 Protokol
@@ -101,7 +111,7 @@ def main():
         if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout):
             raise Exception(f"VS2 protocol not detected within {0} seconds", vs2timeout)
         print("VS detected")
-        vicon_thread = threading.Thread(target=requests_util.listen_to_Vitoconnect, args=(serViCon,))
+        vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,))
         vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
         vicon_thread.start()
     else:
@@ -140,13 +150,15 @@ def main():
     request_pointer = 0
     try:
         while(True):
-            # first Vitoconnect request
-            vidata = requests_util.get_vicon_request()
+            # first Vitoconnect request -------------------
+            vidata = viconn_util.get_vicon_request()
             if(vidata):
                 serViDev.write(vidata)
+                log_vito(vidata, "M")
                 # recive response an pass bytes directly back to VitoConnect, 
                 # returns when response is complete (or error or timeout) 
-                ret,_,_ = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                ret,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                log_vito(redata, "S")
                 olbreath(ret)
 
             # secondary requests ------------------
@@ -220,6 +232,7 @@ def main():
     except KeyboardInterrupt:
         print("Abbruch durch Benutzer.")
     finally:
+        # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
         print("exit close")
         if(serViCon is not None):
@@ -237,8 +250,9 @@ def main():
         #tcp_thread.join()  #TODO ??
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
+        if(vito_log is not None):
+            vito_log.close()
 
-    # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
-
+ 
 if __name__ == "__main__":
     main()

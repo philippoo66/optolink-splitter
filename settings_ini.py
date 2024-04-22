@@ -3,12 +3,14 @@
 port_vitoconnect = "COM1"  # "/dev/ttyS0"  older Pi:"/dev/ttyAMA0"
 port_optolink = "COM4"   # "/dev/ttyUSB0"
 
+log_vitoconnect = True
+
 
 # MQTT +++++++++++++++++++
 mqtt = "192.168.1.115:1883"         # e.g. "192.168.0.1:1883"; set None to disable MQTT
 mqtt_user = None  # "<user>:<pwd>"
 mqtt_topic = "Vitodens"  # "optolink"
-mqtt_fstr = "{dpaddr:04X}_{dpname}"  # "{dpaddr:04X}_{dpname}"
+mqtt_fstr = "{dpname}"  # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"  # "optolink/cmnd"; set None to disable listening
 
 
@@ -19,7 +21,7 @@ tcpip_fullraw_timeout = 2     # seconds. timeout, return in any case
 
 
 # polling datapoints +++++++++++++++++++
-poll_interval = 35      # seconds. 0 for continuous, set -1 to disable Polling
+poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
 poll_items = [
     # (Name, DpAddr, Len, Scale/Type, Signed)
     ("AussenTemp", 0x0800, 2, 0.1, True),

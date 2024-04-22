@@ -128,7 +128,7 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
                 retstr = "?"
             retstr = str(ret) + ';' + str(addr) + ';' + str(retstr)
         elif(cmnd == "write"):  # "write;0x6300;1;48"
-            #raise Exception("write noch nicht fertig") #TODO
+            #raise Exception("write noch nicht fertig") #TODO scaling
             bval = get_int(parts[3]).to_bytes(int(parts[2]), 'big')
             ret, addr, data = optolinkvs2.write_datapoint_ext(get_int(parts[1]), bval, serViDev)
             if(ret == 1): 
@@ -140,19 +140,4 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
             retstr = str(ret) + ';' + str(addr) + ';' + str(val)
     return ret, retstr
 
-
-vicon_request = bytearray()
-
-def listen_to_Vitoconnect(servicon):
-    global vicon_request
-    while(True):
-        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)
-        if(succ == 1):
-            vicon_request = data
-
-def get_vicon_request() -> bytearray:
-    global vicon_request
-    ret = vicon_request
-    vicon_request = bytearray()
-    return ret
 

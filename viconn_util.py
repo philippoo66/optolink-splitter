@@ -1,6 +1,10 @@
 import serial
 import time
 
+import optolinkvs2
+from optolinkvs2_switch import log_vito
+
+
 # VS detection +++++++++++++++++++++++
 
 # Funktion zum Hinzufügen von Bytes zum Puffer
@@ -27,6 +31,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_buffer(bufferVicon, dataVicon)
+            log_vito(dataVicon, "M")
             fdata = True
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
@@ -35,6 +40,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataOpto:
             serVicon.write(dataOpto)
             add_to_buffer(bufferOpto, dataOpto)
+            log_vito(dataOpto, "S")
             fdata = True
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
@@ -56,3 +62,22 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if(time.time() > timestart + timeout):
             return False
                 
+
+
+vicon_request = bytearray()
+
+def listen_to_Vitoconnect(servicon:serial):
+    global vicon_request
+    while(True):
+        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)
+        if(succ == 1):
+            vicon_request = data
+        else:
+            log_vito(data, "X")
+
+def get_vicon_request() -> bytearray:
+    global vicon_request
+    ret = vicon_request
+    vicon_request = bytearray()
+    return ret
+
