@@ -94,7 +94,7 @@ def main():
     if(serViCon is not None):
         # detect VS2 Protokol
         print("expecting VS2...")
-        vs2timeout = 90 #seconds
+        vs2timeout = 120 #seconds
         if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout):
             raise Exception(f"VS2 protocol not detected within {0} seconds", vs2timeout)
         print("VS detected")
