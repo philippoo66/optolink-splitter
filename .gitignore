@@ -4,6 +4,7 @@ __pycache__/
 # local log files
 *.log
 *.csv
+*.txt
 # user specific files
 settings_ini.py
 test.py
