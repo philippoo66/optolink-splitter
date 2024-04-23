@@ -79,88 +79,85 @@ def main():
     global poll_pointer
     global vitolog
 
-    mod_mqtt_util = None
-    poll_data = [None] * len(settings_ini.poll_items)
-
-
-    # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
-    serViCon = None  # Vitoconnect (Master)
-    serViDev = None  # Viessmann Device (Slave)
-
-    if(settings_ini.port_vitoconnect is not None):
-        serViCon = serial.Serial(settings_ini.port_vitoconnect,
-                     baudrate=4800,
-                     parity=serial.PARITY_EVEN,
-                     stopbits=serial.STOPBITS_TWO,
-                     bytesize=serial.EIGHTBITS,
-                     timeout=0)
-    
-    if(settings_ini.port_optolink is not None):
-        serViDev = serial.Serial(settings_ini.port_optolink,
-                     baudrate=4800,
-                     parity=serial.PARITY_EVEN,
-                     stopbits=serial.STOPBITS_TWO,
-                     bytesize=serial.EIGHTBITS,
-                     timeout=0)
-    else:
-        raise Exception("Optolink devie is mandatory!")
-
-
-    # Empfangstask der sekundären Master starten (TcpIp, MQTT)
-
-    # MQTT --------
-    if(settings_ini.mqtt is not None):
-        # avoid paho.mqtt required if not used
-        mod_mqtt_util = importlib.import_module("mqtt_util")
-        if(not mod_mqtt_util.connect_mqtt()):
-            mod_mqtt_util = None
-
-
-    # TCP/IP connection --------
-    if(settings_ini.tcpip_port is not None):
-        tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
-        tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
-        tcp_thread.start()
-
-
-    # run VS2 connection +++++++++++++++++
-    if(serViCon is not None):
-        # Vitoconncet logging
-        if(settings_ini.log_vitoconnect):
-            vitolog = open('vitolog.txt', 'a')
-        #print("mainmodule", vitolog)
-        #time.sleep(1)
-        # detect VS2 Protokol
-        print("awaiting VS2...")
-        vs2timeout = 120 #seconds
-        if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
-            raise Exception("VS2 protocol not detected within timeout", vs2timeout)
-        print("VS detected")
-        vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,vitolog))
-        vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
-        vicon_thread.start()
-    else:
-        # VS2 Protokoll am Slave initialisieren
-        if(not optolinkvs2.init_vs2(serViDev)):
-            print("init_vs2 failed")
-            #TODO back to VS1, port schliessen etc <- done unten
-            # if serViDev.is_open:
-            #     print("exit close")
-            #     # re-init KW protocol
-            #     serViDev.write([0x04])
-            #     serViDev.close()
-            raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
-
-
-    # Polling Mechanismus --------
-    len_polllist = len(settings_ini.poll_items)
-    if(settings_ini.poll_interval > 0) and (len_polllist > 0):
-        startPollTimer(settings_ini.poll_interval)
-
-
-    # Main Loop starten und Sachen abarbeiten
-    request_pointer = 0
     try:
+        mod_mqtt_util = None
+        poll_data = [None] * len(settings_ini.poll_items)
+
+
+        # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
+        serViCon = None  # Vitoconnect (Master)
+        serViDev = None  # Viessmann Device (Slave)
+
+        if(settings_ini.port_vitoconnect is not None):
+            serViCon = serial.Serial(settings_ini.port_vitoconnect,
+                        baudrate=4800,
+                        parity=serial.PARITY_EVEN,
+                        stopbits=serial.STOPBITS_TWO,
+                        bytesize=serial.EIGHTBITS,
+                        timeout=0)
+        
+        if(settings_ini.port_optolink is not None):
+            serViDev = serial.Serial(settings_ini.port_optolink,
+                        baudrate=4800,
+                        parity=serial.PARITY_EVEN,
+                        stopbits=serial.STOPBITS_TWO,
+                        bytesize=serial.EIGHTBITS,
+                        timeout=0)
+        else:
+            raise Exception("Error: Optolink device is mandatory!")
+
+
+        # Empfangstask der sekundären Master starten (TcpIp, MQTT)
+
+        # MQTT --------
+        if(settings_ini.mqtt is not None):
+            # avoid paho.mqtt required if not used
+            mod_mqtt_util = importlib.import_module("mqtt_util")
+            mod_mqtt_util.connect_mqtt()
+
+
+        # TCP/IP connection --------
+        if(settings_ini.tcpip_port is not None):
+            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
+            tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
+            tcp_thread.start()
+
+
+        # run VS2 connection ------------------
+        if(serViCon is not None):
+            # Vitoconncet logging
+            if(settings_ini.log_vitoconnect):
+                vitolog = open('vitolog.txt', 'a')
+            # detect VS2 Protokol
+            print("awaiting VS2...")
+            vs2timeout = 120 #seconds
+            if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
+                raise Exception("VS2 protocol not detected within timeout", vs2timeout)
+            print("VS detected")
+            vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,vitolog))
+            vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
+            vicon_thread.start()
+        else:
+            # VS2 Protokoll am Slave initialisieren
+            if(not optolinkvs2.init_vs2(serViDev)):
+                print("init_vs2 failed")
+                #TODO back to VS1, port schliessen etc <- done unten
+                # if serViDev.is_open:
+                #     print("exit close")
+                #     # re-init KW protocol
+                #     serViDev.write([0x04])
+                #     serViDev.close()
+                raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
+
+
+        # Polling Mechanismus --------
+        len_polllist = len(settings_ini.poll_items)
+        if(settings_ini.poll_interval > 0) and (len_polllist > 0):
+            startPollTimer(settings_ini.poll_interval)
+
+
+        # Main Loop starten und Sachen abarbeiten
+        request_pointer = 0
         while(True):
             # first Vitoconnect request -------------------
             vidata = viconn_util.get_vicon_request()
@@ -244,6 +241,8 @@ def main():
 
     except KeyboardInterrupt:
         print("Abbruch durch Benutzer.")
+    except Exception as e:
+        print(e)
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 

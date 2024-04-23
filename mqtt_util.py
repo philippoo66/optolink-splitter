@@ -33,10 +33,8 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
     else:
         print(f"Broker granted the following QoS: {reason_code_list[0].value}")
 
-def connect_mqtt() -> bool:
+def connect_mqtt():
     global mqtt_client
-    if(settings_ini.mqtt is None):
-        return False
     try:
         # Verbindung zu MQTT Broker herstellen (ggf) ++++++++++++++
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
@@ -53,9 +51,7 @@ def connect_mqtt() -> bool:
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
         mqtt_client.loop_start()
     except Exception as e:
-        print("Error connecting MQTT client:", e)
-        return False
-    return True  
+        raise Exception("Error connecting MQTT: " + str(e))
 
 def get_mqtt_request() -> str:
     ret = ""
@@ -87,14 +83,14 @@ def exit_mqtt():
 # ------------------------
 def main():
     try:
-        if connect_mqtt():
-            print("connect ok")
-            while(True):
-                for i in range(10):
-                    publish_read("TestVal", 0x0123, i)
-                    time.sleep(3)
-        else:
-            print("fail")
+        connect_mqtt()
+        print("connect ok")
+        while(True):
+            for i in range(10):
+                publish_read("TestVal", 0x0123, i)
+                time.sleep(3)
+        # else:
+        #     print("fail")
     except Exception as e:
         print(e)
     finally:

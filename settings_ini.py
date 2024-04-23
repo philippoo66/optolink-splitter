@@ -1,7 +1,7 @@
 
 # serial ports +++++++++++++++++++
 port_vitoconnect = "COM1"  # "/dev/ttyS0"  older Pi:"/dev/ttyAMA0"  {optional} set None if no Vitoconnect
-port_optolink = "COM4"   # "/dev/ttyUSB0"  {mandatory}
+port_optolink = "COM4"  # "/dev/ttyUSB0"  {mandatory}
 
 log_vitoconnect = True
 
