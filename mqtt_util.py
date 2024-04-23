@@ -37,21 +37,25 @@ def connect_mqtt() -> bool:
     global mqtt_client
     if(settings_ini.mqtt is None):
         return False
-    # Verbindung zu MQTT Broker herstellen (ggf) ++++++++++++++
-    mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
-    if(settings_ini.mqtt_user != None):
-        mlst = settings_ini.mqtt_user.split(':')
-        mqtt_client.username_pw_set(mlst[0], password=mlst[1])
-    mqtt_client.on_connect = on_connect
-    mqtt_client.on_disconnect = on_disconnect
-    if(settings_ini.mqtt_listen != None):
-        mqtt_client.on_message = on_message
-        mqtt_client.on_subscribe = on_subscribe
-    mlst = settings_ini.mqtt.split(':')
-    mqtt_client.connect(mlst[0], int(mlst[1]))
-    mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
-    mqtt_client.loop_start()
-    return True  # naja...
+    try:
+        # Verbindung zu MQTT Broker herstellen (ggf) ++++++++++++++
+        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
+        if(settings_ini.mqtt_user != None):
+            mlst = settings_ini.mqtt_user.split(':')
+            mqtt_client.username_pw_set(mlst[0], password=mlst[1])
+        mqtt_client.on_connect = on_connect
+        mqtt_client.on_disconnect = on_disconnect
+        if(settings_ini.mqtt_listen != None):
+            mqtt_client.on_message = on_message
+            mqtt_client.on_subscribe = on_subscribe
+        mlst = settings_ini.mqtt.split(':')
+        mqtt_client.connect(mlst[0], int(mlst[1]))
+        mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
+        mqtt_client.loop_start()
+    except Exception as e:
+        print("Error connecting MQTT client:", e)
+        return False
+    return True  
 
 def get_mqtt_request() -> str:
     ret = ""

@@ -2,8 +2,7 @@ import serial
 import time
 
 import optolinkvs2
-from optolinkvs2_switch import log_vito
-
+from requests_util import bbbstr
 
 # VS detection +++++++++++++++++++++++
 
@@ -14,7 +13,7 @@ def add_to_buffer(buffer, new_bytes):
         buffer.append(byte)  # Füge das neue Byte am Ende hinzu
 
 
-def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> bool:
+def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float, vitolog_loc) -> bool:
     bufferVicon = bytearray([0xFF, 0xFF, 0xFF])
     bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
@@ -31,7 +30,8 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_buffer(bufferVicon, dataVicon)
-            log_vito(dataVicon, "M")
+            #optolinkvs2_switch.log_vito(dataVicon, "M")  # funktioniert hier nicht!?!?
+            vitolog_loc.write(f"M\t{int(time.time()*1000)}\t{bbbstr(dataVicon)}\n")
             fdata = True
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
@@ -40,7 +40,8 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataOpto:
             serVicon.write(dataOpto)
             add_to_buffer(bufferOpto, dataOpto)
-            log_vito(dataOpto, "S")
+            #optolinkvs2_switch.log_vito(dataOpto, "S")  # funktioniert hier nicht!?!?
+            vitolog_loc.write(f"S\t{int(time.time()*1000)}\t{bbbstr(dataOpto)}\n")
             fdata = True
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
@@ -52,28 +53,23 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
                     if (bufferOpto[3] == 0x01):
                         # Antwort im VS2 Format erkannt
                         return True
-        # if(fdata):
-        #     # Zeitstempel in Millisekunden erzeugen
-        #     timestamp_ms = int(time.time() * 1000)
-        #     # Daten in hexadezimaler Form mit Zeitstempel und Tab getrennt in die Datei schreiben
-        #     f.write(f"{timestamp_ms}\t{data1.hex().upper()}\t{data2.hex().upper()}\n")   #\t{bbbstr(ring_buffer)}\n")
-        #     #f.flush()  # Puffer leeren, um sicherzustellen, dass die Daten sofort in die Datei geschrieben werden
         time.sleep(0.001)
         if(time.time() > timestart + timeout):
+            vitolog_loc.close()
             return False
                 
 
 
 vicon_request = bytearray()
 
-def listen_to_Vitoconnect(servicon:serial):
+def listen_to_Vitoconnect(servicon:serial, vitolog_loc):
     global vicon_request
     while(True):
         succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)
         if(succ == 1):
             vicon_request = data
-        else:
-            log_vito(data, "X")
+        elif(data):
+            vitolog_loc.write(f"X\t{int(time.time()*1000)}\t{bbbstr(data)}\n")
 
 def get_vicon_request() -> bytearray:
     global vicon_request

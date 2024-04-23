@@ -2,8 +2,15 @@
 **ACHTUNG! ABSOLUTER EXPERIMENTAL STATUS!!**
 
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
+<<<<<<< HEAD
+
+Splitter for Viessmann Optolink connection planned
+
+experimental development status!! Vitoconnect not implemented as yet!!
+=======
 
 Splitter for Viessmann Optolink connection
+>>>>>>> develop
 
 Vor dem Start von optolinkvs2_swich.py die settings_ini angucken und ggf anpassen!!
 

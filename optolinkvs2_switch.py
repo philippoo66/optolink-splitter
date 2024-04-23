@@ -24,14 +24,17 @@ def olbreath(retcode:int):
         time.sleep(0.5)
 
 # Vitoconnect logging
-vito_log = None
+vitolog = None
 
 def log_vito(data, pre):
-    global vito_log
-    if(vito_log is not None):
+    global vitolog
+    if(vitolog is not None):
         sd = requests_util.bbbstr(data)
-        vito_log.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
+        vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
+def get_vitolog():
+    global vitolog
+    return vitolog
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
@@ -74,10 +77,11 @@ def startPollTimer(secs:float):
 # ------------------------
 def main():
     global poll_pointer
-    global vito_log
+    global vitolog
 
     mod_mqtt_util = None
     poll_data = [None] * len(settings_ini.poll_items)
+
 
     # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
     serViCon = None  # Vitoconnect (Master)
@@ -101,17 +105,38 @@ def main():
     else:
         raise Exception("Optolink devie is mandatory!")
 
-    if(settings_ini.log_vitoconnect and (serViCon is not None)):
-        vito_log = open('vitolog.txt', 'a')
 
+    # Empfangstask der sekundären Master starten (TcpIp, MQTT)
+
+    # MQTT --------
+    if(settings_ini.mqtt is not None):
+        # avoid paho.mqtt required if not used
+        mod_mqtt_util = importlib.import_module("mqtt_util")
+        if(not mod_mqtt_util.connect_mqtt()):
+            mod_mqtt_util = None
+
+
+    # TCP/IP connection --------
+    if(settings_ini.tcpip_port is not None):
+        tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
+        tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
+        tcp_thread.start()
+
+
+    # run VS2 connection +++++++++++++++++
     if(serViCon is not None):
+        # Vitoconncet logging
+        if(settings_ini.log_vitoconnect):
+            vitolog = open('vitolog.txt', 'a')
+        #print("mainmodule", vitolog)
+        #time.sleep(1)
         # detect VS2 Protokol
         print("awaiting VS2...")
         vs2timeout = 120 #seconds
-        if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout):
-            raise Exception(f"VS2 protocol not detected within {0} seconds", vs2timeout)
+        if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
+            raise Exception("VS2 protocol not detected within timeout", vs2timeout)
         print("VS detected")
-        vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,))
+        vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,vitolog))
         vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
         vicon_thread.start()
     else:
@@ -124,21 +149,8 @@ def main():
             #     # re-init KW protocol
             #     serViDev.write([0x04])
             #     serViDev.close()
-            raise Exception("init_vs2 failed")
+            raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
-    # Empfangstask der sekundären Master starten (TcpIp, MQTT)
-
-    # MQTT --------
-    if(settings_ini.mqtt is not None):
-        # avoid paho.mqtt required if not used
-        mod_mqtt_util = importlib.import_module("mqtt_util")
-        mod_mqtt_util.connect_mqtt()
-
-    # TCP/IP connection --------
-    if(settings_ini.tcpip_port is not None):
-        tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
-        tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
-        tcp_thread.start()
 
     # Polling Mechanismus --------
     len_polllist = len(settings_ini.poll_items)
@@ -172,8 +184,9 @@ def main():
                     ret = do_poll_item(poll_pointer, poll_data, serViDev)
                     if(settings_ini.mqtt is not None):
                         # post to MQTT broker
-                        item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
-                        mod_mqtt_util.publish_read(item[0], item[1], poll_data[poll_pointer])
+                        item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed) 
+                        if(mod_mqtt_util is not None): 
+                            mod_mqtt_util.publish_read(item[0], item[1], poll_data[poll_pointer])
 
                     poll_pointer += 1
 
@@ -189,7 +202,7 @@ def main():
 
             # MQTT request --------
             if(request_pointer == 1):
-                if(settings_ini.mqtt is None):
+                if(mod_mqtt_util is None):
                     request_pointer += 1
                 else:
                     msg = mod_mqtt_util.get_mqtt_request()
@@ -250,8 +263,9 @@ def main():
         #tcp_thread.join()  #TODO ??
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
-        if(vito_log is not None):
-            vito_log.close()
+        if(vitolog is not None):
+            print("closing vitolog")
+            vitolog.close()
 
  
 if __name__ == "__main__":
