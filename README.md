@@ -11,7 +11,7 @@ Splitter for Viessmann Optolink connection
   3. run Python script optolinkvs2_switch.py
   4. feel confortable :-)
      
-### important
+**important**
 regard power-on sequence at start-up:
   1. connect all the wires and plugs
   2. power on Raspi
@@ -41,7 +41,7 @@ regard power-on sequence at start-up:
     - cmnd = write;0x6300;1;45
     - resp = 1;25344;45
 
-(be careful, in case of failure don't panic, see here (pg 2, relatively far down))
+(be careful, in case of failure don't panic, see here ([pg 2, relatively far down](https://community.viessmann.de/t5/Gas/bitte-Hilfe-Heizung-in-Fehler-Aktorentest-B3HB-Umschaltventil/m-p/439827#M113385)))
 
 ## questions, issues
 -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
