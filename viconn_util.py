@@ -31,7 +31,8 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float, vit
             serOpto.write(dataVicon)
             add_to_buffer(bufferVicon, dataVicon)
             #optolinkvs2_switch.log_vito(dataVicon, "M")  # funktioniert hier nicht!?!?
-            vitolog_loc.write(f"M\t{int(time.time()*1000)}\t{bbbstr(dataVicon)}\n")
+            if(vitolog_loc is not None):
+                vitolog_loc.write(f"M\t{int(time.time()*1000)}\t{bbbstr(dataVicon)}\n")
             fdata = True
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
@@ -41,7 +42,8 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float, vit
             serVicon.write(dataOpto)
             add_to_buffer(bufferOpto, dataOpto)
             #optolinkvs2_switch.log_vito(dataOpto, "S")  # funktioniert hier nicht!?!?
-            vitolog_loc.write(f"S\t{int(time.time()*1000)}\t{bbbstr(dataOpto)}\n")
+            if(vitolog_loc is not None):
+                vitolog_loc.write(f"S\t{int(time.time()*1000)}\t{bbbstr(dataOpto)}\n")
             fdata = True
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
@@ -69,7 +71,8 @@ def listen_to_Vitoconnect(servicon:serial, vitolog_loc):
         if(succ == 1):
             vicon_request = data
         elif(data):
-            vitolog_loc.write(f"X\t{int(time.time()*1000)}\t{bbbstr(data)}\n")
+            if(vitolog_loc is not None):
+                vitolog_loc.write(f"X\t{int(time.time()*1000)}\t{bbbstr(data)}\n")
 
 def get_vicon_request() -> bytearray:
     global vicon_request
