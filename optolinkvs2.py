@@ -160,7 +160,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(len(inbuff) > 1):  # STX, Len
                 pllen = inbuff[1]
                 if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
-                    print("rx", bbbstr(alldata))
+                    print("rx", bbbstr(inbuff))
                     print("Len Error", pllen)
                     if(raw): retdata = alldata
                     return 0xFD, 0, retdata

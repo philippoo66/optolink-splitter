@@ -141,12 +141,6 @@ def main():
             # VS2 Protokoll am Slave initialisieren
             if(not optolinkvs2.init_vs2(serViDev)):
                 print("init_vs2 failed")
-                #TODO back to VS1, port schliessen etc <- done unten
-                # if serViDev.is_open:
-                #     print("exit close")
-                #     # re-init KW protocol
-                #     serViDev.write([0x04])
-                #     serViDev.close()
                 raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
 
@@ -252,9 +246,9 @@ def main():
             serViCon.close()
         if(serViDev is not None):
             if serViDev.is_open:
+                print("reset protocol")
+                serViDev.write([0x04])  #TODO yes or no?
                 print("closing serViDev")
-                # re-init KW protocol
-                #serViDev.write([0x04])  #TODO yes or no?
                 serViDev.close()
         print("cancel poll timer ") 
         timer_pollinterval.cancel()
