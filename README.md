@@ -43,6 +43,8 @@ regard power-on sequence at start-up:
 
 (be careful, in case of failure don't panic, see here ([pg 2, relatively far down](https://community.viessmann.de/t5/Gas/bitte-Hilfe-Heizung-in-Fehler-Aktorentest-B3HB-Umschaltventil/m-p/439827#M113385)))
 
+more regarding syntax see here: https://github.com/philippoo66/optolink-splitter/wiki#syntax
+
 ## questions, issues
 -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
 -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
