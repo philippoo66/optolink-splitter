@@ -68,7 +68,7 @@ def publish_read(name, addr, value):
 
 def publish_response(resp:str):
     if(mqtt_client != None):
-        ret = mqtt_client.publish(settings_ini.mqtt_cmdresp + "/" + "resp", resp)    
+        ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)    
         print(ret)
                 
 

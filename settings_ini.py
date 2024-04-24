@@ -4,8 +4,8 @@ show_opto_rx = True
 
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = None  # "/dev/ttyS0"  older Pi:"/dev/ttyAMA0"  {optional} set None if no Vitoconnect
-port_optolink = "COM4"  # "/dev/ttyUSB0"  {mandatory}
+port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+port_optolink = '/dev/ttyUSB0'  # '/dev/ttyUSB0'  {mandatory}
 
 
 # MQTT +++++++++++++++++++
@@ -14,7 +14,7 @@ mqtt_user = None               # "<user>:<pwd>"
 mqtt_topic = "Vitodens"        # "optolink"
 mqtt_fstr = "{dpname}"         # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"  # "optolink/cmnd"; set None to disable listening
-mqtt_cmdresp = "Vitodens/resp" # "optolink/resp"
+mqtt_respond = "Vitodens/resp" # "optolink/resp"
 
 
 # TCP/IP +++++++++++++++++++
@@ -67,7 +67,7 @@ poll_items = [
 ]
 
 
-# Viessdata utils
+# Viessdata utils +++++++++++++++++++
 write_viessdata_csv = True
 viessdata_csv_path = ""
 dec_separator = ","
