@@ -56,7 +56,7 @@ def do_poll_item(idx:int, poll_data, ser:serial.Serial) -> int:  # retcode
 # poll timer    
 def on_polltimer():
     global poll_pointer
-    print("on_polltimer", poll_pointer)
+    #print("on_polltimer", poll_pointer)
     if(poll_pointer > len(settings_ini.poll_items)):
         poll_pointer = 0
     startPollTimer(settings_ini.poll_interval)
