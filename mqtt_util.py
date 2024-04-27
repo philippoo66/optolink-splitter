@@ -16,7 +16,7 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
         print('mqtt broker disconnected. reason_code = ' + str(reason_code))
 
 def on_message(client, userdata, msg):
-    print("MQTT recd:", msg.topic, msg.payload)
+    #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
         return
     topic = str(msg.topic)            # Topic in String umwandeln
@@ -68,7 +68,7 @@ def publish_read(name, addr, value):
 
 def publish_response(resp:str):
     if(mqtt_client != None):
-        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + "resp", resp)    
+        ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)    
         print(ret)
                 
 

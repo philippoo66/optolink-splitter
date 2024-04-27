@@ -32,7 +32,7 @@ def bbbstr(data):
 def arr2hexstr(data):
     return ''.join([format(byte, '02X') for byte in data])
 
-def hexstr2str(thestring:str) -> bytearray:
+def hexstr2arr(thestring:str) -> bytearray:
     # '776F726C64' -> bytearray(b'world') <class 'bytearray'>
     return bytearray.fromhex(thestring)
 
@@ -111,7 +111,7 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
             ret, _, data = optolinkvs2.receive_vs2telegr(True, True, serViDev)
             #print("recd fr OL:", ret, ',', bbbstr(data))
             retstr = str(ret) + ';' + arr2hexstr(data)
-        elif(cmnd == "read"):  # "read;0x0804;1;0.1;False"
+        elif(cmnd in ["read", "r"]):  # "read;0x0804;1;0.1;False"
             ret, addr, data = optolinkvs2.read_datapoint_ext(get_int(parts[1]), int(parts[2]), serViDev)
             if(ret==1):
                 if(numelms > 3):
@@ -127,7 +127,7 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
             else:
                 retstr = "?"
             retstr = str(ret) + ';' + str(addr) + ';' + str(retstr)
-        elif(cmnd == "write"):  # "write;0x6300;1;48"
+        elif(cmnd in ["write", "w"]):  # "write;0x6300;1;48"
             #raise Exception("write noch nicht fertig") #TODO scaling
             bval = get_int(parts[3]).to_bytes(int(parts[2]), 'big')
             ret, addr, data = optolinkvs2.write_datapoint_ext(get_int(parts[1]), bval, serViDev)
@@ -138,6 +138,18 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
             else:
                 val = "?"
             retstr = str(ret) + ';' + str(addr) + ';' + str(val)
+        elif(cmnd in ["writeraw", "wraw"]):  # "writeraw;0x6300;2A"
+            bval = hexstr2arr(parts[2])
+            ret, addr, data = optolinkvs2.write_datapoint_ext(get_int(parts[1]), bval, serViDev)
+            if(ret == 1): 
+                val = int.from_bytes(bval, 'big')
+            elif(data):
+                val = int.from_bytes(data, 'big')
+            else:
+                val = "?"
+            retstr = str(ret) + ';' + str(addr) + ';' + str(val)
+        else:
+            print("unknown command received:", cmnd)
     return ret, retstr
 
 

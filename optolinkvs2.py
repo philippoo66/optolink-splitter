@@ -2,6 +2,8 @@ import serial
 import sys
 import time
 
+import settings_ini
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS2 / 300 Protocol, mainly virtual r/w datapoints
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -131,7 +133,8 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         if(state == 0):
             if(resptelegr):
                 if(len(inbuff) > 0):
-                    print("rx", format(inbuff[0], '02X'))
+                    if(settings_ini.show_opto_rx):
+                        print("rx", format(inbuff[0], '02X'))
                     if(inbuff[0] == 0x06): # VS2_ACK
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
@@ -160,12 +163,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(len(inbuff) > 1):  # STX, Len
                 pllen = inbuff[1]
                 if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
-                    print("rx", bbbstr(alldata))
+                    print("rx", bbbstr(inbuff))
                     print("Len Error", pllen)
                     if(raw): retdata = alldata
                     return 0xFD, 0, retdata
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
-                    print("rx", bbbstr(alldata))
+                    if(settings_ini.show_opto_rx):
+                        print("rx", bbbstr(alldata))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
                     addr = (inbuff[4] << 8) + inbuff[5]  # my be bullshit in case of raw
                     retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
@@ -183,7 +187,8 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         # timout
         i+=1
         if(i > 600):
-            print("Timeout")
+            if(settings_ini.show_opto_rx):
+                print("Timeout")
             if(raw): retdata = alldata
             return 0xFF, addr, retdata
 

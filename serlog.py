@@ -22,10 +22,25 @@ def bbbstr(data_buffer):
 def main():
     # Konfiguration der seriellen Schnittstellen
     # Vitoconnect  (älter: /dev/ttyAMA0)
-    ser1 = serial.Serial('/dev/ttyS0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyS0'
-    # Optolink Kopf
-    ser2 = serial.Serial('/dev/ttyUSB0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyUSB0'
+    #ser1 = serial.Serial('/dev/ttyS0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyS0'
+    ser1 = serial.Serial('/dev/ttyS0',
+            baudrate=4800,
+            parity=serial.PARITY_EVEN,
+            stopbits=serial.STOPBITS_TWO,
+            bytesize=serial.EIGHTBITS,
+            timeout=0,
+            exclusive=True)
 
+    # Optolink Kopf
+    #ser2 = serial.Serial('/dev/ttyUSB0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyUSB0'
+    ser2 = serial.Serial('/dev/ttyUSB0',
+            baudrate=4800,
+            parity=serial.PARITY_EVEN,
+            stopbits=serial.STOPBITS_TWO,
+            bytesize=serial.EIGHTBITS,
+            timeout=0,
+            exclusive=True)
+#
     # VS2 detection
     global ring_buffer
     vs2detectd = False
@@ -78,6 +93,10 @@ def main():
             # Schließen der seriellen Schnittstellen und der Ausgabedatei
             ser1.close()
             ser2.close()
+            ser1.__del__()
+            ser2.__del__()
+            ser1 = None
+            ser2 = None
 
 if __name__ == "__main__":
     main()
