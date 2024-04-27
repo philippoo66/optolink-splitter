@@ -1,11 +1,7 @@
-# info +++++++++++++++++++
-log_vitoconnect = True
-show_opto_rx = True
-
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
-port_optolink = '/dev/ttyUSB0'  # '/dev/ttyUSB0'  {mandatory}
+port_vitoconnect = None #'/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+port_optolink = 'COM4'  # '/dev/ttyUSB0'  {mandatory}
 
 
 # MQTT +++++++++++++++++++
@@ -19,8 +15,6 @@ mqtt_respond = "Vitodens/resp" # "optolink/resp"
 
 # TCP/IP +++++++++++++++++++
 tcpip_port = 65234             # e.g. 65234 is used by Viessdata; set None to disable TCP/IP
-tcpip_fullraw_eot_time = 0.05  # seconds. time no receive to decide end of telegram 
-tcpip_fullraw_timeout = 2      # seconds. timeout, return in any case 
 
 
 # polling datapoints +++++++++++++++++++
@@ -62,9 +56,26 @@ poll_items = [
     ("Zirkulationspumpe", 0x6515, 2, 1, False),
     # bis hierher meine Viessdata Tabelle --------
 
-    ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'raw', False),
+#    ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'raw'),
+    ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
+    ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
+    ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
 
 ]
+
+
+# full raw timing
+fullraw_eot_time = 0.05  # seconds. time no receive to decide end of telegram 
+fullraw_timeout = 2      # seconds. timeout, return in any case 
+
+# logging, info +++++++++++++++++++
+log_vitoconnect = False  # logs communication with Vitoconnect (rx+tx telegrams)
+show_opto_rx = True      # display on screen
+
+# format +++++++++++++++++++
+max_decimals = 4
+hex_format = '02x'   # set to '02X' for capitals
+
 
 
 # Viessdata utils +++++++++++++++++++

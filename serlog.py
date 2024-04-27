@@ -93,8 +93,8 @@ def main():
             # Schließen der seriellen Schnittstellen und der Ausgabedatei
             ser1.close()
             ser2.close()
-            ser1.__del__()
-            ser2.__del__()
+            #ser1.__del__()  # hilft nix, macht man auch nicht
+            #ser2.__del__()
             ser1 = None
             ser2 = None
 

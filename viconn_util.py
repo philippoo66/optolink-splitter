@@ -1,8 +1,8 @@
 import serial
 import time
 
+import utils
 import optolinkvs2
-from requests_util import bbbstr
 
 
 # Funktion zum Hinzufügen von Bytes zum Puffer
@@ -13,7 +13,7 @@ def add_to_ringbuffer(buffer, new_bytes):
 
 def log_vito(data, pre, vitolog):
     if(vitolog is not None):
-        sd = bbbstr(data)
+        sd = utils.bbbstr(data)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
 

@@ -1,8 +1,9 @@
 import time
 import paho.mqtt.client as paho
 
+import utils
 import settings_ini
-from requests_util import bstr2str
+
 
 mqtt_client = None
 cmnd_queue = []   # command queue to serialize bus traffic
@@ -21,7 +22,7 @@ def on_message(client, userdata, msg):
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
-        rec = bstr2str(msg.payload)
+        rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         cmnd_queue.append(rec) 
 
