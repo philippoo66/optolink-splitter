@@ -1,16 +1,16 @@
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = None #'/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
-port_optolink = 'COM4'  # '/dev/ttyUSB0'  {mandatory}
+port_vitoconnect = '/dev/ttyS0' #'/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+port_optolink = '/dev/ttyUSB0'  # '/dev/ttyUSB0'  {mandatory}
 
 
 # MQTT +++++++++++++++++++
-mqtt = "192.168.1.115:1883"    # e.g. "192.168.0.1:1883"; set None to disable MQTT
-mqtt_user = None               # "<user>:<pwd>"
-mqtt_topic = "Vitodens"        # "optolink"
-mqtt_fstr = "{dpname}"         # "{dpaddr:04X}_{dpname}"
-mqtt_listen = "Vitodens/cmnd"  # "optolink/cmnd"; set None to disable listening
-mqtt_respond = "Vitodens/resp" # "optolink/resp"
+mqtt = "192.168.1.115:1883"     # e.g. "192.168.0.1:1883"; set None to disable MQTT
+mqtt_user = None                # "<user>:<pwd>"
+mqtt_topic = "Vitodens"         # "optolink"
+mqtt_fstr = "{dpname}"          # "{dpaddr:04X}_{dpname}"
+mqtt_listen = "Vitodens/cmnd"   # "optolink/cmnd"; set None to disable listening
+mqtt_respond = "Vitodens/resp"  # "optolink/resp"
 
 
 # TCP/IP +++++++++++++++++++
