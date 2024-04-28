@@ -12,6 +12,7 @@ Splitter for Viessmann Optolink connection
   4. feel confortable :-)
      
 **important**
+
 regard power-on sequence at start-up:
   1. connect all the wires and plugs
   2. power on Raspi
@@ -46,8 +47,23 @@ details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command
 (be careful, in case of failure don't panic, see here ([pg 2, relatively far down](https://community.viessmann.de/t5/Gas/bitte-Hilfe-Heizung-in-Fehler-Aktorentest-B3HB-Umschaltventil/m-p/439827#M113385)))
 
 ## questions, issues
--> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
--> [issues](https://github.com/philippoo66/optolink-splitter/issues)
+
+discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
+
+issues and bug reports -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
+
+## version key
+```
+Vers. 1.0.0.0
+      | | | |- minor revision:
+      | | |    enhancements, twaeks and mods, no compatibility issues
+      | | |- major revision:
+      | |    structure/content changes, e.g. settings_ini not compatible or module added etc.
+      | |- minor version:
+      |    major functionality added
+      |- major version:
+         program liftet to a new level
+```
 
 ## more pictures
   
