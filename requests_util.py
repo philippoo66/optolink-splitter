@@ -1,3 +1,19 @@
+'''
+   Copyright 2024 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 import utils
 import optolinkvs2
 import settings_ini
@@ -17,7 +33,13 @@ def perform_bytebit_filter(data, item):
     # may also be read request: ("read", DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
 
     bparts = item[3].split(':')
-    udata = data[int(bparts[1]):(int(bparts[2])+1)]
+
+    bstart = int(bparts[1])
+    bend = bstart
+    if(len(bparts) > 1):
+        bend = int(bparts[2])
+
+    udata = data[bstart:(bend+1)]
  
     # first apply mask if given
     if(len(bparts) > 3):

@@ -1,6 +1,22 @@
+'''
+   Copyright 2024 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = '/dev/ttyS0' #'/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+port_vitoconnect = '/dev/ttyS0' # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 port_optolink = '/dev/ttyUSB0'  # '/dev/ttyUSB0'  {mandatory}
 
 
@@ -60,7 +76,6 @@ poll_items = [
     ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
-
 ]
 
 
