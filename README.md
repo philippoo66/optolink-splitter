@@ -29,6 +29,8 @@ regard power-on sequence at start-up:
   - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.amazon.de/dp/B0B18JKYBF)
 
 ## command syntax MQTT, TCP/IP requests
+details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command-Syntax) 
+
   - read ambient temperature, scaled with sign:
     - cmnd = read;0x0800;2;0.1;true
     - resp = 1;2048;8.2
