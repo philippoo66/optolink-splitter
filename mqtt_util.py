@@ -1,8 +1,25 @@
+'''
+   Copyright 2024 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
 import time
 import paho.mqtt.client as paho
 
+import utils
 import settings_ini
-from requests_util import bstr2str
+
 
 mqtt_client = None
 cmnd_queue = []   # command queue to serialize bus traffic
@@ -21,7 +38,7 @@ def on_message(client, userdata, msg):
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
-        rec = bstr2str(msg.payload)
+        rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         cmnd_queue.append(rec) 
 

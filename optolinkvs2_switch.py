@@ -1,8 +1,27 @@
+'''
+   Copyright 2024 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
+version = "1.0.0.0"
+
 import serial
 import time
 import threading
 import importlib
 
+import utils
 import settings_ini
 import optolinkvs2
 import viconn_util
@@ -39,18 +58,66 @@ def get_vitolog():
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
 
-def do_poll_item(idx:int, poll_data, ser:serial.Serial) -> int:  # retcode
-    item = settings_ini.poll_items[idx]  # (Name, DpAddr, Len, Scale/Type, Signed)  
+def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
+    global poll_pointer
+    val = "?"
+    bytebit_check_next = False
+
+    item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
     retcode, addr, data = optolinkvs2.read_datapoint_ext(item[1], item[2], ser)
+    
     if(retcode == 0x01):
-        #if(item[3] == "raw"):
-        if isinstance(item[3], str):
-            # return bytestring
-            val = ''.join(format(v, '02x') for v in data)           
-        else: 
-            # is a number
-            val = optolinkvs2.bytesval(data, item[3], item[4])
-        poll_data[idx] = val
+        if(len(item) < 4):
+            # only  Name, DpAddr, Len  given
+            # return bytestring, same as 'raw'
+            val = utils.arr2hexstr(data)
+        else:
+            if(not isinstance(item[3], str)):
+                # is a number ++++++++++++++
+                signd = False
+                if(len(item) > 4):
+                    signd = item[4]
+                val = utils.bytesval(data, item[3], signd) 
+
+            else:
+                cmd = str(item[3]).lower()
+                if(cmd == "raw"):
+                    # raw, return bytestring
+                    val = utils.arr2hexstr(data)
+                
+                if(cmd.startswith('b:')):  # (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
+                    # bytebit filter +++++++++
+                    val = requests_util.perform_bytebit_filter(data, item)
+                    bytebit_check_next = True
+
+        # save val in buffer for csv
+        poll_data[poll_pointer] = val
+
+        # post to MQTT broker
+        if(mod_mqtt is not None): 
+            mod_mqtt.publish_read(item[0], item[1], val)
+
+        # probably more bytebit values of the same datapoint?!
+        if(bytebit_check_next):
+            while((poll_pointer + 1) < len(settings_ini.poll_items)):
+                next_idx = poll_pointer + 1
+                next_item = settings_ini.poll_items[next_idx]
+                # if next address same AND next len same AND next type starts with 'b:'
+                if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
+                    next_val = requests_util.perform_bytebit_filter(data, next_item)
+
+                    # save val in buffer for csv
+                    poll_data[next_idx] = next_val
+
+                    if(mod_mqtt is not None): 
+                        # post to MQTT broker
+                        mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+
+                    poll_pointer = next_idx
+                else:
+                    break
+    else:
+        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {utils.bbbstr(data)}")
     return retcode
 
 # poll timer    
@@ -94,6 +161,7 @@ def main():
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
                         bytesize=serial.EIGHTBITS,
+                        exclusive=True,
                         timeout=0)
         
         if(settings_ini.port_optolink is not None):
@@ -102,6 +170,7 @@ def main():
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
                         bytesize=serial.EIGHTBITS,
+                        exclusive=True,
                         timeout=0)
         else:
             raise Exception("Error: Optolink device is mandatory!")
@@ -172,12 +241,7 @@ def main():
                 if(settings_ini.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    ret = do_poll_item(poll_pointer, poll_data, serViDev)
-                    if(settings_ini.mqtt is not None):
-                        # post to MQTT broker
-                        item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed) 
-                        if(mod_mqtt_util is not None): 
-                            mod_mqtt_util.publish_read(item[0], item[1], poll_data[poll_pointer])
+                    ret = do_poll_item(poll_data, serViDev, mod_mqtt_util)
 
                     poll_pointer += 1
 
