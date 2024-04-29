@@ -7,8 +7,8 @@ Splitter for Viessmann Optolink connection
 
 ## usage:
   1. clone files on your Pi (or other Linux or Win computer)
-  2. adjust settings in settings_ini.py
-  3. run Python script optolinkvs2_switch.py
+  2. **adjust settings in settings_ini.py**
+  3. run Python script optolinkvs2_switch.py (better [run it as a service](https://github.com/philippoo66/optolink-splitter/wiki/optolinkvs2_switch-automatisch-starten))
   4. feel confortable :-)
      
 **important**
