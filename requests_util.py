@@ -37,7 +37,8 @@ def perform_bytebit_filter(data, item):
     bstart = int(bparts[1])
     bend = bstart
     if(len(bparts) > 1):
-        bend = int(bparts[2])
+        if(bparts[2] != ''):
+            bend = int(bparts[2])
 
     udata = data[bstart:(bend+1)]
  
@@ -149,7 +150,8 @@ def respond_to_request(request:str, serViDev) -> tuple[int, str]:   # retcode, s
             if(retcode == 1): 
                 val = int.from_bytes(bval, 'big')
             elif(data):
-                val = int.from_bytes(data, 'big')
+                # probably error message
+                val = f"{int.from_bytes(data, 'little')} ({utils.bbbstr(data)})"
             else:
                 val = "?"
             retstr = str(retcode) + ';' + str(addr) + ';' + str(val)

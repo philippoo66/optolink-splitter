@@ -10,8 +10,9 @@ Splitter for Viessmann Optolink connection
   2. **adjust settings in settings_ini.py**
   3. run Python script optolinkvs2_switch.py (better [run it as a service](https://github.com/philippoo66/optolink-splitter/wiki/optolinkvs2_switch-automatisch-starten))
   4. feel confortable :-)
-     
+
 **important**
+
 regard power-on sequence at start-up:
   1. connect all the wires and plugs
   2. power on Raspi
@@ -29,6 +30,8 @@ regard power-on sequence at start-up:
   - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.amazon.de/dp/B0B18JKYBF)
 
 ## command syntax MQTT, TCP/IP requests
+details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command-Syntax) 
+
   - read ambient temperature, scaled with sign:
     - cmnd = read;0x0800;2;0.1;true
     - resp = 1;2048;8.2
@@ -46,8 +49,23 @@ regard power-on sequence at start-up:
 more regarding syntax see here: https://github.com/philippoo66/optolink-splitter/wiki#syntax
 
 ## questions, issues
--> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
--> [issues](https://github.com/philippoo66/optolink-splitter/issues)
+
+discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
+
+issues and bug reports -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
+
+## version key
+```
+Vers. 1.0.0.0
+      | | | |- minor revision:
+      | | |    enhancements, twaeks, mods, bug fixes no compatibility issues
+      | | |- major revision:
+      | |    structure/content changes, e.g. settings_ini not compatible or module added etc. or functionality added
+      | |- minor version:
+      |    major functionality added
+      |- major version:
+         program liftet to a new level
+```
 
 ## more pictures
   
