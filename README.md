@@ -1,9 +1,11 @@
 # optolink-switch/splitter
 **development status!! use at your own risk!**
 
+
+
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
 
-Splitter for Viessmann Optolink connection
+Splitter for Viessmann Optolink connection [Einführungsvideo](https://youtu.be/95WIPFBxMsc)
 
 ## usage:
   1. clone files on your Pi (or other Linux or Win computer)
