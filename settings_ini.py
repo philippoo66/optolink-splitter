@@ -83,7 +83,7 @@ poll_items = [
     ("Volumenstrom", 0x0C24, 2, 0.1, False),  # eigentlich scale 1 aber für Viessdata Grafik
 
     ("KesselTemp_soll", 0x555A, 2, 0.1, False),
-    ("BrennerLeistung", 0xA38F, 1, 1, False),
+    ("BrennerLeistung", 0xA38F, 1, 0.5, False),
     ("BrennerModulation", 0x55D3, 1, 1, False),
 
     ("Status", 0xA152, 2, 1, False),
