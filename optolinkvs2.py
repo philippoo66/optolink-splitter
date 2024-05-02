@@ -151,7 +151,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(resptelegr):
                 if(len(inbuff) > 0):
                     if(settings_ini.show_opto_rx):
-                        print("rx", format(inbuff[0], settings_ini.hex_format))
+                        print("rx", format(inbuff[0], settings_ini.data_hex_format))
                     if(inbuff[0] == 0x06): # VS2_ACK
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
@@ -171,7 +171,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         if(state == 1):
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
-                    print("STX Error", format(inbuff[0], settings_ini.hex_format))
+                    print("STX Error", format(inbuff[0], settings_ini.data_hex_format))
                     if(raw): retdata = alldata
                     return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
@@ -225,16 +225,16 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             last_receive_time = time.time()
             if(ser2 is not None):
                 ser2.write(inbytes)
-            #print(data_buffer.hex())
         elif data_buffer and ((time.time() - last_receive_time) > eot_time):
             # if data received and no further receive since more than eot_time
-            # hex_data = utils.bbbstr(data_buffer)
-            print("rx", utils.bbbstr(data_buffer))
+            if(settings_ini.show_opto_rx):
+                print("rx", utils.bbbstr(data_buffer))
             return data_buffer
 
         time.sleep(0.001)
         if((time.time() - start_time) > timeout):
-            print("rx timeout", utils.bbbstr(data_buffer))
+            if(settings_ini.show_opto_rx):
+                print("rx timeout", utils.bbbstr(data_buffer))
             return data_buffer
 
 
@@ -243,14 +243,6 @@ def calc_crc(telegram) -> int:
     CRCsum = 0
     telestart = 1
     teleend = telegram[1] + 1  # len payload + len byte itself
-
-    # if telegram[0] != 0x41: # STX
-    #     print("ugly STX", utils.bbbstr(telegram))
-    #     telestart += 1
-    #     teleend = telegram[2] + 2
-    #     if (telegram[0] != 0x06) and (telegram[1] != 0x41):
-    #         print("ugly telegram", utils.bbbstr(telegram))
-    #         return 0  # 1:256 that it fits nevertheless
 
     for i in range(telestart, teleend + 1):
         CRCsum += telegram[i]

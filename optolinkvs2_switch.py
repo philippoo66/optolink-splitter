@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.0.0.1"
+version = "1.0.1.0"
 
 import serial
 import time
@@ -61,35 +61,11 @@ poll_pointer = 0
 def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
     val = "?"
-    bytebit_check_next = False
 
     item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
-    retcode, addr, data = optolinkvs2.read_datapoint_ext(item[1], item[2], ser)
-    
+    retcode, data, val, _ = requests_util.respond_to_request(item, ser)
+
     if(retcode == 0x01):
-        if(len(item) < 4):
-            # only  Name, DpAddr, Len  given
-            # return bytestring, same as 'raw'
-            val = utils.arr2hexstr(data)
-        else:
-            if(not isinstance(item[3], str)):
-                # is a number ++++++++++++++
-                signd = False
-                if(len(item) > 4):
-                    signd = item[4]
-                val = utils.bytesval(data, item[3], signd) 
-
-            else:
-                cmd = str(item[3]).lower()
-                if(cmd == "raw"):
-                    # raw, return bytestring
-                    val = utils.arr2hexstr(data)
-                
-                if(cmd.startswith('b:')):  # (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
-                    # bytebit filter +++++++++
-                    val = requests_util.perform_bytebit_filter(data, item)
-                    bytebit_check_next = True
-
         # save val in buffer for csv
         poll_data[poll_pointer] = val
 
@@ -98,32 +74,33 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             mod_mqtt.publish_read(item[0], item[1], val)
 
         # probably more bytebit values of the same datapoint?!
-        if(bytebit_check_next):
-            while((poll_pointer + 1) < len(settings_ini.poll_items)):
-                next_idx = poll_pointer + 1
-                next_item = settings_ini.poll_items[next_idx]
-                # if next address same AND next len same AND next type starts with 'b:'
-                if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
-                    next_val = requests_util.perform_bytebit_filter(data, next_item)
+        if(len(item) > 3):
+            if(str(item[3]).lower().startswith('b:')):
+                # bytebit filter +++++++++
+                while((poll_pointer + 1) < len(settings_ini.poll_items)):
+                    next_idx = poll_pointer + 1
+                    next_item = settings_ini.poll_items[next_idx]
+                    # if next address same AND next len same AND next type starts with 'b:'
+                    if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
+                        next_val = requests_util.perform_bytebit_filter(data, next_item)
 
-                    # save val in buffer for csv
-                    poll_data[next_idx] = next_val
+                        # save val in buffer for csv
+                        poll_data[next_idx] = next_val
 
-                    if(mod_mqtt is not None): 
-                        # post to MQTT broker
-                        mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+                        if(mod_mqtt is not None): 
+                            # post to MQTT broker
+                            mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
 
-                    poll_pointer = next_idx
-                else:
-                    break
+                        poll_pointer = next_idx
+                    else:
+                        break
     else:
-        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {utils.bbbstr(data)}")
+        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {val}")
     return retcode
 
 # poll timer    
 def on_polltimer():
     global poll_pointer
-    #print("on_polltimer", poll_pointer)
     if(poll_pointer > len(settings_ini.poll_items)):
         poll_pointer = 0
     startPollTimer(settings_ini.poll_interval)
@@ -229,9 +206,9 @@ def main():
                 log_vito(vidata, "M")
                 # recive response an pass bytes directly back to VitoConnect, 
                 # returns when response is complete (or error or timeout) 
-                ret,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
                 log_vito(redata, "S")
-                olbreath(ret)
+                olbreath(retcode)
 
             # secondary requests ------------------
             #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
@@ -241,7 +218,7 @@ def main():
                 if(settings_ini.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    ret = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                    retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
 
                     poll_pointer += 1
 
@@ -251,7 +228,7 @@ def main():
                         poll_pointer += 1
                         if(settings_ini.poll_interval == 0):
                             poll_pointer = 0
-                    olbreath(ret)
+                    olbreath(retcode)
                 else:
                     request_pointer += 1
 
@@ -263,11 +240,9 @@ def main():
                     msg = mod_mqtt_util.get_mqtt_request()
                     if(msg):
                         try:
-                            #print("MQTT Req", msg)
-                            ret, resp = requests_util.respond_to_request(msg, serViDev)
-                            #print("MQTT Ret", resp)
+                            retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             mod_mqtt_util.publish_response(resp)
-                            olbreath(ret)
+                            olbreath(retcode)
                         except Exception as e:
                             print("Error handling MQTT request:", e)
                     else:
@@ -281,9 +256,9 @@ def main():
                     msg = tcpip_util.get_tcp_request()
                     if(msg):
                         try:
-                            ret, resp = requests_util.respond_to_request(msg, serViDev)
+                            retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             tcpip_util.send_tcpip(resp)
-                            olbreath(ret)
+                            olbreath(retcode)
                         except Exception as e:
                             print("Error handling TCP request:", e)
                     else:

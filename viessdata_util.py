@@ -27,7 +27,7 @@ def get_headline() -> str:
     for itm in settings_ini.poll_items:
         cols.append(itm[1])
     capts = ';'.join([format(addr, '04X') for addr in cols])
-    return ";" + dt + ";088E;" + capts + ";"
+    return f";{dt};{capts};"
 
 
 def get_filename() -> str:
@@ -39,43 +39,18 @@ def get_filename() -> str:
 def minutes_since_monday_midnight() -> int:
     # Aktuelles Datum und Uhrzeit abrufen
     now = datetime.datetime.now()
-    
     # Montag 0 Uhr 0 Minuten berechnen
     monday_midnight = now - datetime.timedelta(days=now.weekday(), hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
-    
     # Differenz zwischen dem aktuellen Zeitpunkt und Montag 0 Uhr 0 Minuten in Minuten berechnen
-    minutes_since_monday_midnight = int((now - monday_midnight).total_seconds() // 60)
-    
-    return minutes_since_monday_midnight
-
+    return int((now - monday_midnight).total_seconds() // 60)
 
 def formatted_timestamp() -> str:
     # Aktuellen Zeitstempel abrufen
     now = datetime.datetime.now()
-    
     # Wochentag abrufen und in das entsprechende Kürzel umwandeln
     weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
-    
     # Zeitstempel im gewünschten Format erstellen
-    timestamp = "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
-    
-    return timestamp
-
-
-def formatted_timestamp2() -> str:
-    # Aktuellen Zeitstempel abrufen
-    now = datetime.datetime.now()
-    
-    # Wochentag abrufen und in das entsprechende Kürzel umwandeln
-    weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
-    
-    # Datum im gewünschten Format erstellen (z.B. "08.04.2024")
-    date = "{0:02d}.{1:02d}.{2}".format(now.day, now.month, now.year)
-    
-    # Zeitstempel im gewünschten Format erstellen
-    timestamp = "{0} {1} {2:02d}:{3:02d}:{4:02d}".format(weekday, date, now.hour, now.minute, now.second)
-    
-    return timestamp
+    return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
 
 
 def write_csv_line(data):
@@ -84,7 +59,7 @@ def write_csv_line(data):
     writehd = (not os.path.exists(csvfile))
     sline = str(minutes_since_monday_midnight()) + ";"
     sline += formatted_timestamp() + ";"
-    sline += formatted_timestamp2() + ";"
+#    sline += formatted_timestamp2() + ";"
 
     if(settings_ini.dec_separator == ","):
         tbreplaced = "."
@@ -113,4 +88,4 @@ if __name__ == "__main__":
     # Formatierter Zeitstempel ausgeben
     print("Formatierter Zeitstempel:", formatted_timestamp())
     # Formatierter Zeitstempel ausgeben
-    print("Formatierter Zeitstempel2:", formatted_timestamp2())
+#    print("Formatierter Zeitstempel2:", formatted_timestamp2())
