@@ -56,7 +56,7 @@ issues and bug reports -> [issues](https://github.com/philippoo66/optolink-split
 ```
 Vers. 1.0.0.0
       | | | |- minor revision:
-      | | |    enhancements, twaeks, mods, bug fixes no compatibility issues
+      | | |    enhancements, twaeks, mods, bug fixes, no compatibility issues
       | | |- major revision:
       | |    structure/content changes, e.g. settings_ini not compatible or module added etc. or functionality added
       | |- minor version:
