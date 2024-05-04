@@ -15,21 +15,21 @@
 '''
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = '/dev/ttyS0' # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
-port_optolink = '/dev/ttyUSB0'  # '/dev/ttyUSB0'  {mandatory}
+port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+port_optolink = '/dev/ttyUSB0'   # '/dev/ttyUSB0'  {mandatory}
 
 
 # MQTT +++++++++++++++++++
-mqtt = "192.168.0.123:1883"     # e.g. "192.168.0.123:1883"; set None to disable MQTT
-mqtt_user = None                # "<user>:<pwd>"
-mqtt_topic = "Vitodens"         # "optolink"
-mqtt_fstr = "{dpname}"          # "{dpaddr:04X}_{dpname}"
-mqtt_listen = "Vitodens/cmnd"   # "optolink/cmnd"; set None to disable listening
-mqtt_respond = "Vitodens/resp"  # "optolink/resp"
+mqtt = "192.168.0.123:1883"      # e.g. "192.168.0.123:1883"; set None to disable MQTT
+mqtt_user = None                 # "<user>:<pwd>"
+mqtt_topic = "Vitodens"          # "optolink"
+mqtt_fstr = "{dpname}"           # "{dpaddr:04X}_{dpname}"
+mqtt_listen = "Vitodens/cmnd"    # "optolink/cmnd"; set None to disable listening
+mqtt_respond = "Vitodens/resp"   # "optolink/resp"
 
 
 # TCP/IP +++++++++++++++++++
-tcpip_port = 65234              # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
+tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
 
 
 # full raw timing
@@ -57,7 +57,7 @@ poll_items = [
     # (Name, DpAddr, Len, Scale/Type, Signed)
 
     # meine Viessdata Tabelle
-    #088E;0800;0802;0804;0808;5525;5523;5527;0A82;0884;5738;088A;08A7;0A10;0C20;0A3C;0C24;555A;A38F;55D3;A152;6500;6513;6515;
+    #088E;0800;0802;0804;0808;5525;5523;5527;0A82;0884;5738;088A;08A7;0A10;0C20;0A3C;0C24;555A;A38F;55D3;A152;6500;6513;6515;0xFFF4;0xFFFd;
     ("Anlagenzeit", 0x088E, 8, 'vdatetime'),
 
     ("AussenTemp", 0x0800, 2, 0.1, True),
@@ -96,11 +96,14 @@ poll_items = [
     ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
+
+    # 1-wire
+    ("SpeicherTemp_oben", 0xFFFd),
+    ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
 
 w1sensors = {
-    # highest known Optolink addr is 0xff17
-    # address : ('w1_folder', 'slave_type'),
-    0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),
+    # addr : ('<w1_folder/sn>', '<slave_type>'),
+    0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),   # highest known Optolink addr is 0xff17
     0xFFFd : ('28-3ce1d443a4ed', 'ds18b20'),
 }
