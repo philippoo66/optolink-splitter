@@ -97,3 +97,10 @@ poll_items = [
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
 ]
+
+w1sensors = {
+    # highest known Optolink addr is 0xff17
+    # address : ('w1_folder', 'slave_type'),
+    0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),
+    0xFFFd : ('28-3ce1d443a4ed', 'ds18b20'),
+}

@@ -18,6 +18,7 @@ import datetime
 import os
 
 import settings_ini
+import utils
 
 
 def get_headline() -> str:
@@ -68,8 +69,8 @@ def write_csv_line(data):
      
     for i in range(0, len(settings_ini.poll_items)):
         sval = str(data[i])
-        if not isinstance(settings_ini.poll_items[i][3], str):
-            # fomat number, anything else left like it is
+        if(utils.to_number(data[i]) != None):
+            # format number, anything else left like it is
             sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
         sline += sval + ";"
 

@@ -59,12 +59,10 @@ def listen_tcpip(client:socket):
                 msg = data.decode('utf-8').replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
                 if(msg):
                     if(msg=="exit"):
+                        print("Connection exit")
+                        time.sleep(0.5)
                         break
                     recdata = msg
-                #timestamp_ms = int(time.time() * 1000)
-                #if(fverbose): print("TCP recd:", data)  #bbbstr(data)
-                # if(data == b'xexit'):
-                #     exit_flag = True
         except ConnectionError:
             print("Connection lost")
             break

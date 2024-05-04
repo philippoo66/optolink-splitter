@@ -16,6 +16,7 @@
 
 import utils
 import optolinkvs2
+import onewire_util
 import settings_ini
 
 
@@ -129,27 +130,34 @@ def respond_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:   
             #print("recd fr OL:", ret, ',', bbbstr(data))
             val = utils.arr2hexstr(data)
             retstr = f"{retcode};{val}"
+            data = bytearray()
 
         elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False"
             # read +++++++++++++++++++
-            retcode, addr, data = optolinkvs2.read_datapoint_ext(utils.get_int(parts[1]), int(parts[2]), serViDev)
-            if(retcode==1):
-                if(numelms > 3):
-                    if(str(parts[3]).startswith('b:')):
-                        val = perform_bytebit_filter(data, parts)
-                    else:
-                        signd = False
-                        if(numelms > 4):
-                            signd = utils.get_bool(parts[4])
-                        val = get_value(data, parts[3], signd)
-                else:
-                    #return raw
-                    val = utils.arr2hexstr(data)
-            elif(data):
-                # probably error message
-                val = utils.arr2hexstr(data)  #f"{int.from_bytes(data, 'little')} ({utils.bbbstr(data)})"
+            addr = utils.get_int(parts[1])
+            if(addr in settings_ini.w1sensors): 
+                # 1wire sensor
+                retcode, val = onewire_util.read_w1sensor(addr)
             else:
-                val = "?"
+                # Optolink item
+                retcode, addr, data = optolinkvs2.read_datapoint_ext(addr, int(parts[2]), serViDev)
+                if(retcode==1):
+                    if(numelms > 3):
+                        if(str(parts[3]).startswith('b:')):
+                            val = perform_bytebit_filter(data, parts)
+                        else:
+                            signd = False
+                            if(numelms > 4):
+                                signd = utils.get_bool(parts[4])
+                            val = get_value(data, parts[3], signd)
+                    else:
+                        #return raw
+                        val = utils.arr2hexstr(data)
+                elif(data):
+                    # probably error message
+                    val = utils.arr2hexstr(data)  #f"{int.from_bytes(data, 'little')} ({utils.bbbstr(data)})"
+                else:
+                    val = "?"
             retstr = get_retstr(retcode, addr, val)
 
         elif(cmnd in ["write", "w"]):  # "write;0x6300;1;48"
@@ -183,5 +191,4 @@ def respond_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:   
             print("unknown command received:", cmnd)
     # and finally return...
     return retcode, data, val, retstr
-
 

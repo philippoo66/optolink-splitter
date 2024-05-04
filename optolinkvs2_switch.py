@@ -14,14 +14,13 @@
    limitations under the License.
 '''
 
-version = "1.0.1.0"
+version = "1.1.0.0"
 
 import serial
 import time
 import threading
 import importlib
 
-import utils
 import settings_ini
 import optolinkvs2
 import viconn_util
@@ -199,16 +198,19 @@ def main():
         # Main Loop starten und Sachen abarbeiten
         request_pointer = 0
         while(True):
-            # first Vitoconnect request -------------------
-            vidata = viconn_util.get_vicon_request()
-            if(vidata):
-                serViDev.write(vidata)
-                log_vito(vidata, "M")
-                # recive response an pass bytes directly back to VitoConnect, 
-                # returns when response is complete (or error or timeout) 
-                retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
-                log_vito(redata, "S")
-                olbreath(retcode)
+            tookbreath = False
+            if(serViCon is not None):
+                # first Vitoconnect request -------------------
+                vidata = viconn_util.get_vicon_request()
+                if(vidata):
+                    serViDev.write(vidata)
+                    log_vito(vidata, "M")
+                    # recive response an pass bytes directly back to VitoConnect, 
+                    # returns when response is complete (or error or timeout) 
+                    retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                    log_vito(redata, "S")
+                    olbreath(retcode)
+                    tookbreath = True
 
             # secondary requests ------------------
             #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
@@ -229,6 +231,7 @@ def main():
                         if(settings_ini.poll_interval == 0):
                             poll_pointer = 0
                     olbreath(retcode)
+                    tookbreath = True
                 else:
                     request_pointer += 1
 
@@ -243,6 +246,7 @@ def main():
                             retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             mod_mqtt_util.publish_response(resp)
                             olbreath(retcode)
+                            tookbreath = True
                         except Exception as e:
                             print("Error handling MQTT request:", e)
                     else:
@@ -259,6 +263,7 @@ def main():
                             retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             tcpip_util.send_tcpip(resp)
                             olbreath(retcode)
+                            tookbreath = True
                         except Exception as e:
                             print("Error handling TCP request:", e)
                     else:
@@ -270,7 +275,8 @@ def main():
                 request_pointer = 0
             
             # let cpu take a breath
-            time.sleep(0.002) 
+            if(not tookbreath):
+                time.sleep(0.005) 
 
     except KeyboardInterrupt:
         print("Abbruch durch Benutzer.")
