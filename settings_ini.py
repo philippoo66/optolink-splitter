@@ -50,6 +50,13 @@ write_viessdata_csv = True
 viessdata_csv_path = ""
 dec_separator = ","
 
+# 1-wire sensors +++++++++++++++++++
+w1sensors = {}
+#     # addr : ('<w1_folder/sn>', '<slave_type>'),
+#     0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),   # highest known Optolink addr is 0xff17
+#     0xFFFd : ('28-3ce1d443a4ed', 'ds18b20'),
+# }
+
 
 # polling datapoints +++++++++++++++++++
 poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
@@ -97,13 +104,8 @@ poll_items = [
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
 
-    # 1-wire
-    ("SpeicherTemp_oben", 0xFFFd),
-    ("RuecklaufTemp_Sensor", 0xFFF4),
+    # # 1-wire
+    # ("SpeicherTemp_oben", 0xFFFd),
+    # ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
 
-w1sensors = {
-    # addr : ('<w1_folder/sn>', '<slave_type>'),
-    0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),   # highest known Optolink addr is 0xff17
-    0xFFFd : ('28-3ce1d443a4ed', 'ds18b20'),
-}
