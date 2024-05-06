@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.1.0.0"
+version = "1.1.0.1"
 
 import serial
 import time
@@ -27,6 +27,7 @@ import viconn_util
 import viessdata_util
 import tcpip_util
 import requests_util
+import utils
 
 #global_exit_flag = False
 
@@ -47,7 +48,7 @@ vitolog = None
 def log_vito(data, pre):
     global vitolog
     if(vitolog is not None):
-        sd = requests_util.bbbstr(data)
+        sd = utils.bbbstr(data)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
 def get_vitolog():
