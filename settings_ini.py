@@ -48,6 +48,7 @@ resp_addr_format = 'd'     # format of DP address in MQTT/TCPIP request response
 # Viessdata utils +++++++++++++++++++
 write_viessdata_csv = True
 viessdata_csv_path = ""
+buffer_to_write = 60
 dec_separator = ","
 
 # 1-wire sensors +++++++++++++++++++

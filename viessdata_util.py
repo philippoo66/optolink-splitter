@@ -20,6 +20,8 @@ import os
 import settings_ini
 import utils
 
+wrbuffer = []
+mins_old = 0
 
 def get_headline() -> str:
     now = datetime.datetime.now()
@@ -54,31 +56,43 @@ def formatted_timestamp() -> str:
     return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
 
 
-def write_csv_line(data):
-    csvfile = get_filename()
-    csvfile = os.path.join(settings_ini.viessdata_csv_path, csvfile)
-    writehd = (not os.path.exists(csvfile))
-    sline = str(minutes_since_monday_midnight()) + ";"
-    sline += formatted_timestamp() + ";"
-#    sline += formatted_timestamp2() + ";"
+def write_csv_line(data, force=False):
+    global wrbuffer
+    global mins_old
 
-    if(settings_ini.dec_separator == ","):
-        tbreplaced = "."
-    else:
-        tbreplaced = ","
-     
-    for i in range(0, len(settings_ini.poll_items)):
-        sval = str(data[i])
-        if(utils.to_number(data[i]) != None):
-            # format number, anything else left like it is
-            sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
-        sline += sval + ";"
+    if(data):
+        mins_new = minutes_since_monday_midnight()
+        sline = str(mins_new) + ";"
+        sline += formatted_timestamp() + ";"
 
-    with open(csvfile, 'a') as f:
-        if(writehd):
-            hl = get_headline()
-            f.write(hl + '\n')
-        f.write(sline + '\n')
+        # decimal separator
+        if(settings_ini.dec_separator == ","):
+            tbreplaced = "."
+        else:
+            tbreplaced = ","
+        for i in range(0, len(settings_ini.poll_items)):
+            sval = str(data[i])
+            if(utils.to_number(data[i]) != None):
+                # format number, anything else left like it is
+                sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
+            sline += sval + ";"
+
+        force = force or (mins_new < mins_old)  # new week
+        mins_old = mins_new
+        force = force or (len(wrbuffer) >= settings_ini.buffer_to_write)
+
+    if(force):
+        csvfile = get_filename()
+        csvfile = os.path.join(settings_ini.viessdata_csv_path, csvfile)
+        writehd = (not os.path.exists(csvfile))
+        with open(csvfile, 'a') as f:
+            if(writehd):
+                hl = get_headline()
+                f.write(hl + '\n')
+            for ln in wrbuffer:
+                f.write(ln + '\n')
+        wrbuffer = []
+    wrbuffer.append(sline)
 
 
 if __name__ == "__main__":

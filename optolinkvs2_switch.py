@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.1.0.1"
+version = "1.1.1.0"
 
 import serial
 import time

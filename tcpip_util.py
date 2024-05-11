@@ -18,6 +18,7 @@ import threading
 import socket
 import time
 
+import viessdata_util
 
 tcp_client = socket.socket()  #None  # None, bis der Client-Socket erstellt wird
 recdata = bytes()
@@ -58,11 +59,15 @@ def listen_tcpip(client:socket):
                 if(fverbose): print("TCP recd:", data)  #bbbstr(data)
                 msg = data.decode('utf-8').replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
                 if(msg):
-                    if(msg=="exit"):
+                    m = msg.lower() 
+                    if(m == "exit"):
                         print("Connection exit")
                         time.sleep(0.5)
                         break
-                    recdata = msg
+                    elif(m == "flushcsv"):
+                        viessdata_util.write_csv_line([], True)
+                    else:
+                        recdata = msg
         except ConnectionError:
             print("Connection lost")
             break

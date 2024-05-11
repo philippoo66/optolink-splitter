@@ -90,8 +90,7 @@ def read_datapoint_ext(addr:int, rdlen:int, ser:serial.Serial) -> tuple[int, int
     ser.write(outbuff)
     #print("R tx", utils.bbbstr(outbuff))
 
-    #retcode, addr, data = receive_vs2telegr(True, ser)
-    #return retcode, addr, data
+    # return retcode, addr, data
     return receive_vs2telegr(True, False, ser)
 
 
@@ -117,9 +116,9 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     ser.write(outbuff)
     #print("W tx", utils.bbbstr(outbuff))
 
-    #retcode, addr, data = receive_vs2telegr(True, ser)
-    #return retcode, addr, data
+    # return retcode, addr, data
     return receive_vs2telegr(True, False, ser)
+
 
 def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, Addr, Data
@@ -136,7 +135,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
     while(True):
         time.sleep(0.005)
         try:
-            inbytes = ser.read(ser.in_waiting)
+            inbytes = ser.read_all()
         except: return 0xAA, 0, retdata
         inbuff += inbytes
         alldata += inbytes
@@ -209,6 +208,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(raw): retdata = alldata
             return 0xFF, addr, retdata
 
+
 def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
     # times in seconds
     data_buffer = b''
@@ -217,7 +217,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
 
     while True:
         # Zeichen vom Serial Port lesen
-        inbytes = ser.read()
+        inbytes = ser.read_all()
 
         if inbytes:
             # Daten zum Datenpuffer hinzufügen
@@ -231,7 +231,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
                 print("rx", utils.bbbstr(data_buffer))
             return data_buffer
 
-        time.sleep(0.001)
+        time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings_ini.show_opto_rx):
                 print("rx timeout", utils.bbbstr(data_buffer))
