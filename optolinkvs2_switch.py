@@ -176,7 +176,7 @@ def main():
                 vitolog = open('vitolog.txt', 'a')
             # detect VS2 Protokol
             print("awaiting VS2...")
-            vs2timeout = 120 #seconds
+            vs2timeout = settings_ini.vs2timeout
             if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")

@@ -55,7 +55,7 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
 def connect_mqtt():
     global mqtt_client
     try:
-        # Verbindung zu MQTT Broker herstellen (ggf) ++++++++++++++
+        # Verbindung zu MQTT Broker herstellen ++++++++++++++
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
         if(settings_ini.mqtt_user != None):
             mlst = settings_ini.mqtt_user.split(':')

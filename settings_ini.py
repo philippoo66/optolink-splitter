@@ -18,6 +18,8 @@
 port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 port_optolink = '/dev/ttyUSB0'   # '/dev/ttyUSB0'  {mandatory}
 
+vs2timeout = 120                 # seconds to detect VS2 protocol on vitoconnect connection
+
 
 # MQTT +++++++++++++++++++
 mqtt = "192.168.0.123:1883"      # e.g. "192.168.0.123:1883"; set None to disable MQTT
