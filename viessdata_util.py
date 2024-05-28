@@ -20,8 +20,6 @@ import os
 import settings_ini
 import utils
 
-wrbuffer = []
-mins_old = 0
 
 def get_headline() -> str:
     now = datetime.datetime.now()
@@ -56,12 +54,24 @@ def formatted_timestamp() -> str:
     return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
 
 
-def write_csv_line(data, force=False):
+wrbuffer = []
+mins_old = 0
+recent_filename = get_filename()
+
+def buffer_csv_line(data, force_write=False):
     global wrbuffer
     global mins_old
+    global recent_filename
+
+    sline = None
+
+    mins_new = minutes_since_monday_midnight()
+    new_week = (mins_new < mins_old)  # new week
+    mins_old = mins_new
+
+    buffer_full = (len(wrbuffer) >= settings_ini.buffer_to_write)
 
     if(data):
-        mins_new = minutes_since_monday_midnight()
         sline = str(mins_new) + ";"
         sline += formatted_timestamp() + ";"
 
@@ -77,13 +87,13 @@ def write_csv_line(data, force=False):
                 sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
             sline += sval + ";"
 
-        force = force or (mins_new < mins_old)  # new week
-        mins_old = mins_new
-        force = force or (len(wrbuffer) >= settings_ini.buffer_to_write)
+        if(force_write and not new_week):
+            wrbuffer.append(sline)
+            sline = None
 
-    if(force):
-        csvfile = get_filename()
-        csvfile = os.path.join(settings_ini.viessdata_csv_path, csvfile)
+
+    if(force_write or new_week or buffer_full):
+        csvfile = os.path.join(settings_ini.viessdata_csv_path, recent_filename)
         writehd = (not os.path.exists(csvfile))
         with open(csvfile, 'a') as f:
             if(writehd):
@@ -91,10 +101,15 @@ def write_csv_line(data, force=False):
                 f.write(hl + '\n')
             for ln in wrbuffer:
                 f.write(ln + '\n')
+            f.flush()
         wrbuffer = []
-    wrbuffer.append(sline)
+        recent_filename = get_filename()
+
+    if(sline is not None):
+        wrbuffer.append(sline)
 
 
+# main for test only
 if __name__ == "__main__":
     print(get_headline())
     print(get_filename())

@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.1.1.0"
+version = "1.1.1.1"
 
 import serial
 import time
@@ -51,9 +51,6 @@ def log_vito(data, pre):
         sd = utils.bbbstr(data)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
-def get_vitolog():
-    global vitolog
-    return vitolog
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
@@ -227,7 +224,7 @@ def main():
 
                     if(poll_pointer == len_polllist):
                         if(settings_ini.write_viessdata_csv):
-                            viessdata_util.write_csv_line(poll_data)
+                            viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1
                         if(settings_ini.poll_interval == 0):
                             poll_pointer = 0

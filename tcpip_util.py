@@ -65,7 +65,7 @@ def listen_tcpip(client:socket):
                         time.sleep(0.5)
                         break
                     elif(m == "flushcsv"):
-                        viessdata_util.write_csv_line([], True)
+                        viessdata_util.buffer_csv_line([], True)
                     else:
                         recdata = msg
         except ConnectionError:
