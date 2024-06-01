@@ -18,6 +18,7 @@ import datetime
 import os
 
 import settings_ini
+import utils
 
 
 def get_headline() -> str:
@@ -27,7 +28,7 @@ def get_headline() -> str:
     for itm in settings_ini.poll_items:
         cols.append(itm[1])
     capts = ';'.join([format(addr, '04X') for addr in cols])
-    return ";" + dt + ";088E;" + capts + ";"
+    return f";{dt};{capts};"
 
 
 def get_filename() -> str:
@@ -39,72 +40,76 @@ def get_filename() -> str:
 def minutes_since_monday_midnight() -> int:
     # Aktuelles Datum und Uhrzeit abrufen
     now = datetime.datetime.now()
-    
     # Montag 0 Uhr 0 Minuten berechnen
     monday_midnight = now - datetime.timedelta(days=now.weekday(), hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
-    
     # Differenz zwischen dem aktuellen Zeitpunkt und Montag 0 Uhr 0 Minuten in Minuten berechnen
-    minutes_since_monday_midnight = int((now - monday_midnight).total_seconds() // 60)
-    
-    return minutes_since_monday_midnight
-
+    return int((now - monday_midnight).total_seconds() // 60)
 
 def formatted_timestamp() -> str:
     # Aktuellen Zeitstempel abrufen
     now = datetime.datetime.now()
-    
     # Wochentag abrufen und in das entsprechende Kürzel umwandeln
     weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
-    
     # Zeitstempel im gewünschten Format erstellen
-    timestamp = "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
-    
-    return timestamp
+    return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
 
 
-def formatted_timestamp2() -> str:
-    # Aktuellen Zeitstempel abrufen
-    now = datetime.datetime.now()
-    
-    # Wochentag abrufen und in das entsprechende Kürzel umwandeln
-    weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
-    
-    # Datum im gewünschten Format erstellen (z.B. "08.04.2024")
-    date = "{0:02d}.{1:02d}.{2}".format(now.day, now.month, now.year)
-    
-    # Zeitstempel im gewünschten Format erstellen
-    timestamp = "{0} {1} {2:02d}:{3:02d}:{4:02d}".format(weekday, date, now.hour, now.minute, now.second)
-    
-    return timestamp
+wrbuffer = []
+mins_old = 0
+recent_filename = get_filename()
+
+def buffer_csv_line(data, force_write=False):
+    global wrbuffer
+    global mins_old
+    global recent_filename
+
+    sline = None
+
+    mins_new = minutes_since_monday_midnight()
+    new_week = (mins_new < mins_old)  # new week
+    mins_old = mins_new
+
+    buffer_full = (len(wrbuffer) >= settings_ini.buffer_to_write)
+
+    if(data):
+        sline = str(mins_new) + ";"
+        sline += formatted_timestamp() + ";"
+
+        # decimal separator
+        if(settings_ini.dec_separator == ","):
+            tbreplaced = "."
+        else:
+            tbreplaced = ","
+        for i in range(0, len(settings_ini.poll_items)):
+            sval = str(data[i])
+            if(utils.to_number(data[i]) != None):
+                # format number, anything else left like it is
+                sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
+            sline += sval + ";"
+
+        if(force_write and not new_week):
+            wrbuffer.append(sline)
+            sline = None
 
 
-def write_csv_line(data):
-    csvfile = get_filename()
-    csvfile = os.path.join(settings_ini.viessdata_csv_path, csvfile)
-    writehd = (not os.path.exists(csvfile))
-    sline = str(minutes_since_monday_midnight()) + ";"
-    sline += formatted_timestamp() + ";"
-    sline += formatted_timestamp2() + ";"
+    if(force_write or new_week or buffer_full):
+        csvfile = os.path.join(settings_ini.viessdata_csv_path, recent_filename)
+        writehd = (not os.path.exists(csvfile))
+        with open(csvfile, 'a') as f:
+            if(writehd):
+                hl = get_headline()
+                f.write(hl + '\n')
+            for ln in wrbuffer:
+                f.write(ln + '\n')
+            f.flush()
+        wrbuffer = []
+        recent_filename = get_filename()
 
-    if(settings_ini.dec_separator == ","):
-        tbreplaced = "."
-    else:
-        tbreplaced = ","
-     
-    for i in range(0, len(settings_ini.poll_items)):
-        sval = str(data[i])
-        if not isinstance(settings_ini.poll_items[i][3], str):
-            # fomat number, anything else left like it is
-            sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
-        sline += sval + ";"
-
-    with open(csvfile, 'a') as f:
-        if(writehd):
-            hl = get_headline()
-            f.write(hl + '\n')
-        f.write(sline + '\n')
+    if(sline is not None):
+        wrbuffer.append(sline)
 
 
+# main for test only
 if __name__ == "__main__":
     print(get_headline())
     print(get_filename())
@@ -113,4 +118,4 @@ if __name__ == "__main__":
     # Formatierter Zeitstempel ausgeben
     print("Formatierter Zeitstempel:", formatted_timestamp())
     # Formatierter Zeitstempel ausgeben
-    print("Formatierter Zeitstempel2:", formatted_timestamp2())
+#    print("Formatierter Zeitstempel2:", formatted_timestamp2())

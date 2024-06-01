@@ -20,6 +20,7 @@ import paho.mqtt.client as paho
 import utils
 import settings_ini
 
+verbose = False
 
 mqtt_client = None
 cmnd_queue = []   # command queue to serialize bus traffic
@@ -35,6 +36,7 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
+        print("MQTT recd:", msg.topic, msg.payload)  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
@@ -53,20 +55,23 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
 def connect_mqtt():
     global mqtt_client
     try:
-        # Verbindung zu MQTT Broker herstellen (ggf) ++++++++++++++
+        # Verbindung zu MQTT Broker herstellen ++++++++++++++
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
         if(settings_ini.mqtt_user != None):
             mlst = settings_ini.mqtt_user.split(':')
             mqtt_client.username_pw_set(mlst[0], password=mlst[1])
         mqtt_client.on_connect = on_connect
         mqtt_client.on_disconnect = on_disconnect
+        mqtt_client.on_message = on_message
         if(settings_ini.mqtt_listen != None):
-            mqtt_client.on_message = on_message
             mqtt_client.on_subscribe = on_subscribe
         mlst = settings_ini.mqtt.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
         mqtt_client.loop_start()
+        # preparations
+        if(settings_ini.mqtt_fstr is None):
+            settings_ini.mqtt_fstr = "{dpname}"
     except Exception as e:
         raise Exception("Error connecting MQTT: " + str(e))
 
@@ -81,12 +86,12 @@ def publish_read(name, addr, value):
         publishStr = settings_ini.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
         ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)    
-        print(ret)
+        if(verbose): print(ret)
 
 def publish_response(resp:str):
     if(mqtt_client != None):
         ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)    
-        print(ret)
+        if(verbose): print(ret)
                 
 
 def exit_mqtt():

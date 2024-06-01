@@ -23,7 +23,8 @@ def get_int(v) -> int:
     else:
         return int(eval(str(v)))
 
-def to_number(s: str):
+def to_number(v):
+    s = str(v)
     try:
         return int(s)
     except ValueError:
@@ -33,8 +34,10 @@ def to_number(s: str):
             #raise ValueError("Ungültige Zeichenkette für Umwandlung in eine Zahl")
             return None
 
-def to_bool(s:str) -> bool:
-    if(s.lower() == 'true'):
+def get_bool(v) -> bool:
+    if(isinstance(v, bool)):
+        return bool(v)
+    if(str(v).lower() == 'true'):
         return True
     else:
         return False
@@ -48,11 +51,11 @@ def bytesval(data, scale=1, signd=False):
 
 
 def bbbstr(data):
-    return ' '.join([format(byte, settings_ini.hex_format) for byte in data])
+    return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
 
 
 def arr2hexstr(data):
-    return ''.join([format(byte, settings_ini.hex_format) for byte in data])
+    return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])
 
 def hexstr2arr(thestring:str) -> bytearray:
     # '776F726C64' -> bytearray(b'world') <class 'bytearray'>
@@ -95,3 +98,13 @@ def str2bstr(normal_str:str) -> bytes:
 #     else:
 #         raise TypeError("Unsupported data type")
 
+def vdatetime2str(data:bytes) -> str:
+    weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+    wkd = weekdays[int(data[4]) - 1]
+    dt = f"{data[3]:02x}.{data[2]:02x}.{data[0]:02x}{data[1]:02x}"
+    tm = f"{data[5]:02x}:{data[6]:02x}:{data[7]:02x}"
+    return f"{wkd} {dt} {tm}"
+
+def utf82str(data:bytes) -> str:
+    ret = data.decode("utf-8")
+    return ret.replace('\x00', '')

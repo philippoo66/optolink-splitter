@@ -14,20 +14,20 @@
    limitations under the License.
 '''
 
-version = "1.0.0.1"
+version = "1.1.1.1"
 
 import serial
 import time
 import threading
 import importlib
 
-import utils
 import settings_ini
 import optolinkvs2
 import viconn_util
 import viessdata_util
 import tcpip_util
 import requests_util
+import utils
 
 #global_exit_flag = False
 
@@ -48,12 +48,9 @@ vitolog = None
 def log_vito(data, pre):
     global vitolog
     if(vitolog is not None):
-        sd = requests_util.bbbstr(data)
+        sd = utils.bbbstr(data)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
-def get_vitolog():
-    global vitolog
-    return vitolog
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
@@ -61,35 +58,11 @@ poll_pointer = 0
 def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
     val = "?"
-    bytebit_check_next = False
 
     item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
-    retcode, addr, data = optolinkvs2.read_datapoint_ext(item[1], item[2], ser)
-    
+    retcode, data, val, _ = requests_util.respond_to_request(item, ser)
+
     if(retcode == 0x01):
-        if(len(item) < 4):
-            # only  Name, DpAddr, Len  given
-            # return bytestring, same as 'raw'
-            val = utils.arr2hexstr(data)
-        else:
-            if(not isinstance(item[3], str)):
-                # is a number ++++++++++++++
-                signd = False
-                if(len(item) > 4):
-                    signd = item[4]
-                val = utils.bytesval(data, item[3], signd) 
-
-            else:
-                cmd = str(item[3]).lower()
-                if(cmd == "raw"):
-                    # raw, return bytestring
-                    val = utils.arr2hexstr(data)
-                
-                if(cmd.startswith('b:')):  # (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
-                    # bytebit filter +++++++++
-                    val = requests_util.perform_bytebit_filter(data, item)
-                    bytebit_check_next = True
-
         # save val in buffer for csv
         poll_data[poll_pointer] = val
 
@@ -98,32 +71,33 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             mod_mqtt.publish_read(item[0], item[1], val)
 
         # probably more bytebit values of the same datapoint?!
-        if(bytebit_check_next):
-            while((poll_pointer + 1) < len(settings_ini.poll_items)):
-                next_idx = poll_pointer + 1
-                next_item = settings_ini.poll_items[next_idx]
-                # if next address same AND next len same AND next type starts with 'b:'
-                if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
-                    next_val = requests_util.perform_bytebit_filter(data, next_item)
+        if(len(item) > 3):
+            if(str(item[3]).lower().startswith('b:')):
+                # bytebit filter +++++++++
+                while((poll_pointer + 1) < len(settings_ini.poll_items)):
+                    next_idx = poll_pointer + 1
+                    next_item = settings_ini.poll_items[next_idx]
+                    # if next address same AND next len same AND next type starts with 'b:'
+                    if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
+                        next_val = requests_util.perform_bytebit_filter(data, next_item)
 
-                    # save val in buffer for csv
-                    poll_data[next_idx] = next_val
+                        # save val in buffer for csv
+                        poll_data[next_idx] = next_val
 
-                    if(mod_mqtt is not None): 
-                        # post to MQTT broker
-                        mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+                        if(mod_mqtt is not None): 
+                            # post to MQTT broker
+                            mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
 
-                    poll_pointer = next_idx
-                else:
-                    break
+                        poll_pointer = next_idx
+                    else:
+                        break
     else:
-        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {utils.bbbstr(data)}")
+        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {val}")
     return retcode
 
 # poll timer    
 def on_polltimer():
     global poll_pointer
-    #print("on_polltimer", poll_pointer)
     if(poll_pointer > len(settings_ini.poll_items)):
         poll_pointer = 0
     startPollTimer(settings_ini.poll_interval)
@@ -199,7 +173,7 @@ def main():
                 vitolog = open('vitolog.txt', 'a')
             # detect VS2 Protokol
             print("awaiting VS2...")
-            vs2timeout = 120 #seconds
+            vs2timeout = settings_ini.vs2timeout
             if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")
@@ -222,16 +196,19 @@ def main():
         # Main Loop starten und Sachen abarbeiten
         request_pointer = 0
         while(True):
-            # first Vitoconnect request -------------------
-            vidata = viconn_util.get_vicon_request()
-            if(vidata):
-                serViDev.write(vidata)
-                log_vito(vidata, "M")
-                # recive response an pass bytes directly back to VitoConnect, 
-                # returns when response is complete (or error or timeout) 
-                ret,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
-                log_vito(redata, "S")
-                olbreath(ret)
+            tookbreath = False
+            if(serViCon is not None):
+                # first Vitoconnect request -------------------
+                vidata = viconn_util.get_vicon_request()
+                if(vidata):
+                    serViDev.write(vidata)
+                    log_vito(vidata, "M")
+                    # recive response an pass bytes directly back to VitoConnect, 
+                    # returns when response is complete (or error or timeout) 
+                    retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                    log_vito(redata, "S")
+                    olbreath(retcode)
+                    tookbreath = True
 
             # secondary requests ------------------
             #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
@@ -241,17 +218,18 @@ def main():
                 if(settings_ini.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    ret = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                    retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
 
                     poll_pointer += 1
 
                     if(poll_pointer == len_polllist):
                         if(settings_ini.write_viessdata_csv):
-                            viessdata_util.write_csv_line(poll_data)
+                            viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1
                         if(settings_ini.poll_interval == 0):
                             poll_pointer = 0
-                    olbreath(ret)
+                    olbreath(retcode)
+                    tookbreath = True
                 else:
                     request_pointer += 1
 
@@ -263,11 +241,10 @@ def main():
                     msg = mod_mqtt_util.get_mqtt_request()
                     if(msg):
                         try:
-                            #print("MQTT Req", msg)
-                            ret, resp = requests_util.respond_to_request(msg, serViDev)
-                            #print("MQTT Ret", resp)
+                            retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             mod_mqtt_util.publish_response(resp)
-                            olbreath(ret)
+                            olbreath(retcode)
+                            tookbreath = True
                         except Exception as e:
                             print("Error handling MQTT request:", e)
                     else:
@@ -281,9 +258,10 @@ def main():
                     msg = tcpip_util.get_tcp_request()
                     if(msg):
                         try:
-                            ret, resp = requests_util.respond_to_request(msg, serViDev)
+                            retcode, _, _, resp = requests_util.respond_to_request(msg, serViDev)
                             tcpip_util.send_tcpip(resp)
-                            olbreath(ret)
+                            olbreath(retcode)
+                            tookbreath = True
                         except Exception as e:
                             print("Error handling TCP request:", e)
                     else:
@@ -295,7 +273,8 @@ def main():
                 request_pointer = 0
             
             # let cpu take a breath
-            time.sleep(0.002) 
+            if(not tookbreath):
+                time.sleep(0.005) 
 
     except KeyboardInterrupt:
         print("Abbruch durch Benutzer.")

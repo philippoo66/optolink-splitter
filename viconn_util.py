@@ -85,7 +85,7 @@ vicon_request = bytearray()
 def listen_to_Vitoconnect(servicon:serial, vitolog_loc):
     global vicon_request
     while(True):
-        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)
+        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)  # contains sleep(0.005)
         if(succ == 1):
             vicon_request = data
         elif(data):
