@@ -92,7 +92,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                     else:
                         break
     else:
-        print(f"Error do_poll_item {poll_pointer}, Addr {item[2]}, RetCode {retcode}, Data {val}")
+        print(f"Error do_poll_item {poll_pointer}, Addr {item[1]:04X}, RetCode {retcode}, Data {val}")
     return retcode
 
 # poll timer    
