@@ -50,6 +50,10 @@ details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command
 
 more regarding syntax see here: https://github.com/philippoo66/optolink-splitter/wiki#syntax
 
+**important**
+
+When using PuTTY or some like that, the session must be closed by sending `exit` (as string), because PuTTY seems not to send the FIN-Flag on getting closed.
+
 ## questions, issues
 
 discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
