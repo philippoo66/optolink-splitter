@@ -60,7 +60,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     val = "?"
 
     item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
-    retcode, data, val, _ = requests_util.response_of_request(item, ser)
+    retcode, data, val, _ = requests_util.response_to_request(item, ser)
 
     if(retcode == 0x01):
         # save val in buffer for csv
@@ -241,7 +241,7 @@ def main():
                     msg = mod_mqtt_util.get_mqtt_request()
                     if(msg):
                         try:
-                            retcode, _, _, resp = requests_util.response_of_request(msg, serViDev)
+                            retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
                             mod_mqtt_util.publish_response(resp)
                             olbreath(retcode)
                             tookbreath = True
@@ -258,7 +258,7 @@ def main():
                     msg = tcpip_util.get_tcp_request()
                     if(msg):
                         try:
-                            retcode, _, _, resp = requests_util.response_of_request(msg, serViDev)
+                            retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
                             tcpip_util.send_tcpip(resp)
                             olbreath(retcode)
                             tookbreath = True
