@@ -89,8 +89,29 @@ def get_retstr(retcode, addr, val) -> str:
     return f"{retcode};{saddr};{val}"
 
 
+def get_from_lists(parts):
+    try: #TODO remove try
+        # look if str is poll_item
+        srch = parts[1] #.lower()
+        for index, item in enumerate(settings_ini.poll_items):
+            #if item[0].lower() == srch:
+            if item[0] == srch:
+                return item
+        # look if str is add_command
+        for index, item in enumerate(settings_ini.add_commands):
+            #if item[0].lower() == srch:
+            if item[0] == srch:
+                return item 
+        # not found, keep unchanged
+        return parts  
+    except Exception as e:
+        print(e)
+        # not found, keep unchanged
+        return parts  
+
+
 # 'main' functions +++++++++++++++++++++++++++++
-def response_of_request(request, serViDev) -> tuple[int, bytearray, any, str]:   # retcode, data, value, string_to_pass 
+def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:   # retcode, data, value, string_to_pass 
     ispollitem = False
     if(isinstance(request, str)):
         # TCP, MQTT requests
@@ -134,6 +155,8 @@ def response_of_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
 
         elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False"
             # read +++++++++++++++++++
+            if(not ispollitem):
+                parts = get_from_lists(parts)   # "read;SpeicherTemp"
             addr = utils.get_int(parts[1])
             if(addr in settings_ini.w1sensors): 
                 # 1wire sensor

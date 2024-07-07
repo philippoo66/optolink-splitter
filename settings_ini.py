@@ -112,3 +112,8 @@ poll_items = [
     # ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
 
+add_commands = [
+    # (Name, DpAddr, Len, Scale/Type, Signed)
+    ("GasHeizHeute", 0x9000, 4, 1, False),
+    ("GasWwHeute", 0x9134, 4, 1, False),
+]
