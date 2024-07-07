@@ -1,8 +1,11 @@
 # optolink-switch/splitter
-**development status!! use at your own risk!**
+**use at your own risk!**
 
+Announcements: 
+ - There is a branch supporting VS1 / KW protocol! Choose in case... ;-)
+ - There are other feature branches - look at if you like
 
-
+### System Overview:
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
 
 Splitter for Viessmann Optolink connection [Einführungsvideo](https://youtu.be/95WIPFBxMsc)
