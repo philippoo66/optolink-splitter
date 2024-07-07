@@ -90,7 +90,7 @@ def get_retstr(retcode, addr, val) -> str:
 
 
 # 'main' functions +++++++++++++++++++++++++++++
-def response_of_request(request, serViDev) -> tuple[int, bytearray, any, str]:   # retcode, data, value, string_to_pass 
+def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:   # retcode, data, value, string_to_pass 
     ispollitem = False
     if(isinstance(request, str)):
         # TCP, MQTT requests
