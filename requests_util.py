@@ -163,10 +163,10 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
         elif(cmnd in ["write", "w"]):  # "write;0x6300;1;48"
             # write +++++++++++++++++++
             #raise Exception("write noch nicht fertig") #TODO scaling und so
-            bval = (utils.get_int(parts[3])).to_bytes(int(parts[2]), 'big')
+            bval = (utils.get_int(parts[3])).to_bytes(int(parts[2]), 'little')
             retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
-                val = int.from_bytes(bval, 'big')
+                val = int.from_bytes(bval, 'little')
             elif(data):
                 # probably error message
                 val = utils.arr2hexstr(data)  #f"{int.from_bytes(data, 'little')} ({utils.bbbstr(data)})"
