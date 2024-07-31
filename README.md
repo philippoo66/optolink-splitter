@@ -34,7 +34,7 @@ regard power-on sequence at start-up:
   - Optolink r/w head (original from Viessmann, one of all the self-mades, probably a r/w head for volkszähler may work, too, if distance of LEDs gets adjusted ([8€](https://www.ebay.de/itm/285350331996)))
   - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.google.com/search?q=cp2102+usb+ttl)
 
-**ATTENTION!** Raspi UART works with **3.3V** so **set the jumper on the CP2102 TTL board ACCORDINGLY**!  
+**ATTENTION!** Raspi UART voltage is **3.3V** so **set the jumper on the CP2102 TTL board accordingly**!  
 
 ## command syntax MQTT, TCP/IP requests
 details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command-Syntax) 
