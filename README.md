@@ -32,7 +32,7 @@ regard power-on sequence at start-up:
   - Raspi or other computer
   - Viessmann Optolink generation device (Vitodens, Vitocal, Vitocrossal, ...)
   - Optolink r/w head (original from Viessmann, one of all the self-mades, probably a r/w head for volkszähler may work, too, if distance of LEDs gets adjusted ([8€](https://www.ebay.de/itm/285350331996)))
-  - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.amazon.de/dp/B0B18JKYBF)
+  - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.google.com/search?q=cp2102+usb+ttl)
 
 ## command syntax MQTT, TCP/IP requests
 details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command-Syntax) 
