@@ -2,7 +2,7 @@
 **use at your own risk!**
 
 Announcements: 
- - There is a branch supporting VS1 / KW protocol! Choose in case... ;-)
+ - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
 
 ### System Overview:
