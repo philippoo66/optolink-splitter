@@ -4,6 +4,7 @@
 Announcements: 
  - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
+
 Attention:
  - If you use virtual environment, please use feature branch nodynimport! (the dynamic import of the mqtt_util module in main currently does not work in virtual environment)
 
