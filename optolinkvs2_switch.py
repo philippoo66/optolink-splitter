@@ -19,7 +19,7 @@ version = "1.1.1.1"
 import serial
 import time
 import threading
-import importlib
+#import importlib
 
 import settings_ini
 import optolinkvs2
@@ -152,11 +152,11 @@ def main():
 
         # Empfangstask der sekundären Master starten (TcpIp, MQTT)
 
-        # MQTT --------
-        if(settings_ini.mqtt is not None):
-            # avoid paho.mqtt required if not used
-            mod_mqtt_util = importlib.import_module("mqtt_util")
-            mod_mqtt_util.connect_mqtt()
+        # # MQTT --------
+        # if(settings_ini.mqtt is not None):
+        #     # avoid paho.mqtt required if not used
+        #     mod_mqtt_util = importlib.import_module("mqtt_util")
+        #     mod_mqtt_util.connect_mqtt()
 
 
         # TCP/IP connection --------
