@@ -55,7 +55,7 @@ def log_vito(data, pre):
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
 
-def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
+def do_poll_item(poll_data, ser:serial.Serial) -> int:  # retcode
     global poll_pointer
     val = "?"
 
@@ -67,8 +67,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
         poll_data[poll_pointer] = val
 
         # post to MQTT broker
-        if(mod_mqtt is not None): 
-            mod_mqtt.publish_read(item[0], item[1], val)
+        mqtt_util.publish_read(item[0], item[1], val)
 
         # probably more bytebit values of the same datapoint?!
         if(len(item) > 3):
@@ -84,9 +83,8 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val
 
-                        if(mod_mqtt is not None): 
-                            # post to MQTT broker
-                            mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+                        # post to MQTT broker
+                        mqtt_util.publish_read(next_item[0], next_item[1], next_val)
 
                         poll_pointer = next_idx
                     else:
@@ -216,7 +214,7 @@ def main():
                 if(settings_ini.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    retcode = do_poll_item(poll_data, serViDev, mqtt_utl)
+                    retcode = do_poll_item(poll_data, serViDev)
 
                     poll_pointer += 1
 
@@ -233,20 +231,17 @@ def main():
 
             # MQTT request --------
             if(request_pointer == 1):
-                if(mqtt_utl is None):
-                    request_pointer += 1
+                msg = mqtt_util.get_mqtt_request()
+                if(msg):
+                    try:
+                        retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                        mqtt_util.publish_response(resp)
+                        olbreath(retcode)
+                        tookbreath = True
+                    except Exception as e:
+                        print("Error handling MQTT request:", e)
                 else:
-                    msg = mqtt_utl.get_mqtt_request()
-                    if(msg):
-                        try:
-                            retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                            mqtt_utl.publish_response(resp)
-                            olbreath(retcode)
-                            tookbreath = True
-                        except Exception as e:
-                            print("Error handling MQTT request:", e)
-                    else:
-                        request_pointer += 1
+                    request_pointer += 1
 
             # TCP/IP request --------
             if(request_pointer == 2):
@@ -295,8 +290,7 @@ def main():
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
         #tcp_thread.join()  #TODO ??
-        if(mqtt_utl is not None):
-            mqtt_utl.exit_mqtt()
+        mqtt_util.exit_mqtt()
         if(vitolog is not None):
             print("closing vitolog")
             vitolog.close()
