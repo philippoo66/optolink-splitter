@@ -32,32 +32,38 @@ def read_w1file(device_file):
 
 def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
     for _ in range(10):  # 2 sec
-        lines = read_w1file(device_file)
-        if(lines[0].strip()[-3:] == 'YES'):
-            # Extrahieren der Temperatur aus den Daten
-            pos = lines[1].find('t=')
-            if pos != -1:
-                temp_string = lines[1][pos+2:]
-                temp_c = float(temp_string) / 1000.0
-                if(settings_ini.show_opto_rx):
-                    print("w1", lines[1][:pos])
-                return 0x01, temp_c
+        try:
+            lines = read_w1file(device_file)
+            if(lines[0].strip()[-3:] == 'YES'):
+                # Extrahieren der Temperatur aus den Daten
+                pos = lines[1].find('t=')
+                if pos != -1:
+                    temp_string = lines[1][pos+2:]
+                    temp_c = float(temp_string) / 1000.0
+                    if(settings_ini.show_opto_rx):
+                        print("w1", lines[1][:pos])
+                    return 0x01, temp_c
+        except:
+            pass
         time.sleep(0.2)
     return 0xFF, -999.999  # FF = timeout
 
 
 def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
     for _ in range(10):  # 2 sec
-        lines = read_w1file(device_file)
-        if lines[0].strip()[-3:] == 'YES':
-            counts = []
-            for line in lines[1:]:
-                # Extrahieren der Zählerwerte aus den Daten
-                if line.startswith('count'):
-                    count_value = int(line.split('=')[1])
-                    counts.append(count_value)
-            if len(counts) == 4:  # Stellen sicher, dass wir alle 4 Zählerwerte haben
-                return 0x01, counts
+        try:
+            lines = read_w1file(device_file)
+            if lines[0].strip()[-3:] == 'YES':
+                counts = []
+                for line in lines[1:]:
+                    # Extrahieren der Zählerwerte aus den Daten
+                    if line.startswith('count'):
+                        count_value = int(line.split('=')[1])
+                        counts.append(count_value)
+                if len(counts) == 4:  # Stellen sicher, dass wir alle 4 Zählerwerte haben
+                    return 0x01, counts
+        except:
+            pass
         time.sleep(0.2)
     return 0xFF, []  # FF = timeout
 
