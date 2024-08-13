@@ -19,7 +19,6 @@ version = "1.1.1.1"
 import serial
 import time
 import threading
-import importlib
 
 import settings_ini
 import optolinkvs2
@@ -28,6 +27,7 @@ import viessdata_util
 import tcpip_util
 import requests_util
 import utils
+import mqtt_util
 
 #global_exit_flag = False
 
@@ -121,7 +121,6 @@ def main():
     global vitolog
 
     try:
-        mod_mqtt_util = None
         poll_data = [None] * len(settings_ini.poll_items)
 
 
@@ -155,8 +154,7 @@ def main():
         # MQTT --------
         if(settings_ini.mqtt is not None):
             # avoid paho.mqtt required if not used
-            mod_mqtt_util = importlib.import_module("mqtt_util")
-            mod_mqtt_util.connect_mqtt()
+            mqtt_util.connect_mqtt()
 
 
         # TCP/IP connection --------
@@ -218,7 +216,7 @@ def main():
                 if(settings_ini.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                    retcode = do_poll_item(poll_data, serViDev, mqtt_utl)
 
                     poll_pointer += 1
 
@@ -235,14 +233,14 @@ def main():
 
             # MQTT request --------
             if(request_pointer == 1):
-                if(mod_mqtt_util is None):
+                if(mqtt_utl is None):
                     request_pointer += 1
                 else:
-                    msg = mod_mqtt_util.get_mqtt_request()
+                    msg = mqtt_utl.get_mqtt_request()
                     if(msg):
                         try:
                             retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                            mod_mqtt_util.publish_response(resp)
+                            mqtt_utl.publish_response(resp)
                             olbreath(retcode)
                             tookbreath = True
                         except Exception as e:
@@ -297,8 +295,8 @@ def main():
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
         #tcp_thread.join()  #TODO ??
-        if(mod_mqtt_util is not None):
-            mod_mqtt_util.exit_mqtt()
+        if(mqtt_utl is not None):
+            mqtt_utl.exit_mqtt()
         if(vitolog is not None):
             print("closing vitolog")
             vitolog.close()
