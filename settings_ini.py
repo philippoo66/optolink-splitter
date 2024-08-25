@@ -23,7 +23,7 @@ vs2timeout = 120                 # seconds to detect VS2 protocol on vitoconnect
 
 # MQTT +++++++++++++++++++
 mqtt = "192.168.0.123:1883"      # e.g. "192.168.0.123:1883"; set None to disable MQTT
-mqtt_user = None                 # "<user>:<pwd>"
+mqtt_user = None                 # "<user>:<pwd>"; set None for anonymous connect
 mqtt_topic = "Vitodens"          # "optolink"
 mqtt_fstr = "{dpname}"           # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"    # "optolink/cmnd"; set None to disable listening

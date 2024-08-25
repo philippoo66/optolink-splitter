@@ -31,7 +31,7 @@ def read_w1file(device_file):
 # 69 01 55 05 7f a5 a5 66 fa t=22562
 
 def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
-    for _ in range(10):  # 2 sec
+    for _ in range(15):  # 3 sec
         try:
             lines = read_w1file(device_file)
             if(lines[0].strip()[-3:] == 'YES'):
@@ -50,7 +50,7 @@ def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
 
 
 def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
-    for _ in range(10):  # 2 sec
+    for _ in range(15):  # 3 sec
         try:
             lines = read_w1file(device_file)
             if lines[0].strip()[-3:] == 'YES':

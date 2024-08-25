@@ -5,9 +5,6 @@ Announcements:
  - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
 
-Attention:
- - If you do not use MQTT, please use feature branch no_mqtt! In this case you don't need to install phao-mqtt.
-
 ### System Overview:
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
 
