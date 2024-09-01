@@ -24,6 +24,13 @@ regard power-on sequence at start-up:
   3. run script, wait for prompt "awaiting VS2..."
   4. power on Vitoconnect
 
+At least with the Opto2 Vitoconnect the startup sequence is not important. This device always reconnects without problems.
+
+When using the Vitoconnect you need to make sure that the on-board serial port is enabled and the serial console is disabled. See Wiki for [guidance](https://github.com/philippoo66/optolink-splitter/wiki/050-Prepare:-enable-serial-port,-disable-serial-console).
+
+Attention: When connecting the CP2102 interface, make sure to **cross RX and TX lines**! What Raspi transmits (TX) the CP2102 has to receive (RX) and vice versa. 
+
+
 ## sw requirements
   - Python (not too outdated)
   - if MQTT is used: phao mqtt (pip install paho-mqtt)
