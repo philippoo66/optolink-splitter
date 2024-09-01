@@ -28,7 +28,7 @@ At least with the Opto2 Vitoconnect the startup sequence is not important. This 
 
 When using the Vitoconnect you need to make sure that the on-board serial port is enabled and the serial console is disabled. See Wiki for [guidance](https://github.com/philippoo66/optolink-splitter/wiki/050-Prepare:-enable-serial-port,-disable-serial-console).
 
-Attention: When connecting the CP2102 interface, make sure to **cross RX and TX lines**! What Raspi transmits (TX) the CP2102 has to receive (RX) and vice versa.
+Attention: When connecting the CP2102 interface, make sure to **cross RX and TX lines**! What Raspi transmits (TX) the CP2102 has to receive (RX) and vice versa. Set the voltage jumper on the CP2102 TTL board to 3.3V!
 
 With Raspi 3 or higher you better utilize ttyAMA0 instead of ttyS0. See [here](https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')) for background.
 
@@ -56,7 +56,7 @@ details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command
     - cmnd = read;0xf8;8
     - resp = 1;248;20CB1FC900000114
 
-  - write hotwater temperature stepoint:
+  - write hotwater temperature setpoint:
     - cmnd = write;0x6300;1;45
     - resp = 1;25344;45
 
