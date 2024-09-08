@@ -32,7 +32,7 @@ class SplitterConfig:
 
 
 def add_options(f):
-    """Decorator to add common options."""
+    """Decorator to add cli options."""
     options = [
         option(
             "--optolink-port",
