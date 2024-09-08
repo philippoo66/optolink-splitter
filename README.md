@@ -5,6 +5,7 @@
 
 > [!NOTE] 
 > The steps listed here under Installation will of course only work as soon as we have published the optolink-splitter package under PyPi or similar.
+> For the time being, the steps described under development can be used to obtain an initial version of the CLI within a venv.
 
 To install the `optolink-splitter` as a global CLI, execute the following commands:
 ```bash
@@ -14,6 +15,30 @@ pipx install optolink-splitter
 ```
 
 The CLI can then simply be called up anywhere in the system using optolink-splitter. To get a first idea of the available possibilities and options, simply execute the following:
+```bash
+optolink-splitter --help
+```
+
+## Development
+
+Install [poetry python package manager](https://python-poetry.org/docs/#installing-with-the-official-installer):
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+Clone the repository and cd into it.
+Create a new virtual python environment to use for development purposes:
+```bash
+python3 -m venv /path/to/venv
+source /path/to/venv/bin/activate
+```
+
+Install all necessary dependencies via:
+```bash
+poetry install
+```
+
+You should then have all the necessary dependencies and the optolink-splitter CLI available within your virtual environment.
 ```bash
 optolink-splitter --help
 ```
