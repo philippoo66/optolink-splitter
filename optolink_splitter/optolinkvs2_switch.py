@@ -111,7 +111,6 @@ def startPollTimer(secs:float):
     timer_pollinterval.start()
 
 
-def _
 
 
 def optolink_vs2_switch(config: SplitterConfig) -> None:
