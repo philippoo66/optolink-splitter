@@ -18,8 +18,8 @@ import serial
 import sys
 import time
 
-import utils
-import settings_ini
+import optolink_splitter.utils.utils
+import optolink_splitter.settings_ini
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS2 / 300 Protocol, mainly virtual r/w datapoints

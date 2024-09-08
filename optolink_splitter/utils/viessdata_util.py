@@ -17,8 +17,8 @@
 import datetime
 import os
 
-import settings_ini
-import utils
+import optolink_splitter.settings_ini
+import optolink_splitter.utils.utils
 
 
 def get_headline() -> str:

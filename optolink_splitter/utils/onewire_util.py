@@ -15,7 +15,7 @@
 '''
 
 import time
-import settings_ini
+import optolink_splitter.settings_ini
 
 # Pfad zum One-Wire-Slave-Verzeichnis
 base_dir = '/sys/bus/w1/devices/'

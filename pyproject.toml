@@ -6,7 +6,7 @@ authors = ["philippoo66 <https://github.com/philippoo66>"]
 license = "GNU GENERAL PUBLIC LICENSE"
 readme = "README.md"
 packages = [
-  {include = "optolink-splitter"},
+  {include = "optolink_splitter"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -19,6 +19,9 @@ classifiers = [
 ]
 homepage = "https://github.com/philippoo66/optolink-splitter"
 repository = "https://github.com/philippoo66/optolink-splitter"
+
+[tool.poetry.scripts]
+optolink-splitter = "optolink_splitter.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"

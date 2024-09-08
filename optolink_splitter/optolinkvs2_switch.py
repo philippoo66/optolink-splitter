@@ -21,13 +21,13 @@ import time
 import threading
 import importlib
 
-import settings_ini
-import optolinkvs2
-import viconn_util
-import viessdata_util
-import tcpip_util
-import requests_util
-import utils
+import optolink_splitter.settings_ini
+import optolink_splitter.optolinkvs2
+import optolink_splitter.utils.viconn_util
+import optolink_splitter.utils.viessdata_util
+import optolink_splitter.utils.tcpip_util
+import optolink_splitter.utils.requests_util
+import optolink_splitter.utils.utils
 
 #global_exit_flag = False
 
@@ -116,7 +116,7 @@ def startPollTimer(secs:float):
 # ------------------------
 # Main
 # ------------------------
-def main():
+def optolink_vs2_switch():
     global poll_pointer
     global vitolog
 
@@ -302,7 +302,3 @@ def main():
         if(vitolog is not None):
             print("closing vitolog")
             vitolog.close()
-
- 
-if __name__ == "__main__":
-    main()

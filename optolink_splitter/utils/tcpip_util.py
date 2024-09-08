@@ -18,7 +18,7 @@ import threading
 import socket
 import time
 
-import viessdata_util
+import optolink_splitter.utils.viessdata_util
 
 tcp_client = socket.socket()  #None  # None, bis der Client-Socket erstellt wird
 recdata = bytes()

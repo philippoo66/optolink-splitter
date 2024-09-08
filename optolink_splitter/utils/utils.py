@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-import settings_ini
+import optolink_splitter.settings_ini
 
 # utils +++++++++++++++++++++++++++++
 def get_int(v) -> int:

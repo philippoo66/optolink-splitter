@@ -17,8 +17,8 @@
 import time
 import paho.mqtt.client as paho
 
-import utils
-import settings_ini
+import optolink_splitter.utils.utils
+import optolink_splitter.settings_ini
 
 verbose = False
 

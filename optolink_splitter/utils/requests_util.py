@@ -14,10 +14,10 @@
    limitations under the License.
 '''
 
-import utils
-import optolinkvs2
-import onewire_util
-import settings_ini
+import optolink_splitter.utils.utils
+import optolink_splitter.optolinkvs2
+import optolink_splitter.utils.onewire_util
+import optolink_splitter.settings_ini
 
 
 def get_value(data, frmat, signd:bool) -> any:

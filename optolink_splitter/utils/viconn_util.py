@@ -17,8 +17,8 @@
 import serial
 import time
 
-import utils
-import optolinkvs2
+import optolink_splitter.utils.utils
+import optolink_splitter.optolinkvs2
 
 
 # Funktion zum Hinzufügen von Bytes zum Puffer
