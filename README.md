@@ -1,6 +1,23 @@
 # optolink-switch/splitter
 **use at your own risk!**
 
+## Installation
+
+> [!NOTE] 
+> The steps listed here under Installation will of course only work as soon as we have published the optolink-splitter package under PyPi or similar.
+
+To install the `optolink-splitter` as a global CLI, execute the following commands:
+```bash
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install optolink-splitter
+```
+
+The CLI can then simply be called up anywhere in the system using optolink-splitter. To get a first idea of the available possibilities and options, simply execute the following:
+```bash
+optolink-splitter --help
+```
+
 Announcements: 
  - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
