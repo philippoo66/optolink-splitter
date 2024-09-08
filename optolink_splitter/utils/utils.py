@@ -15,6 +15,7 @@
 '''
 
 import optolink_splitter.settings_ini
+from csv import DictReader, reader
 
 # utils +++++++++++++++++++++++++++++
 def get_int(v) -> int:
@@ -111,3 +112,18 @@ def vdatetime2str(data:bytes) -> str:
 def utf82str(data:bytes) -> str:
     ret = data.decode("utf-8")
     return ret.replace('\x00', '')
+
+def csv_to_dict_list(path: str) -> list[dict]:
+    dict_list = []
+    with open(path, mode='r', newline='', encoding='utf-8') as csvfile:
+        csv_reader = DictReader(csvfile, delimiter=',')
+        dict_list.extend(dict(row) for row in csv_reader)
+    return dict_list
+
+def csv_to_tuple_list(path: str) -> list[tuple]:
+    tuple_list = []
+    with open(path, mode='r', newline='', encoding='utf-8') as csvfile:
+        csv_reader = reader(csvfile, delimiter=',')
+        next(csv_reader) # ignore csv header
+        tuple_list.extend(tuple(row) for row in csv_reader)
+    return tuple_list

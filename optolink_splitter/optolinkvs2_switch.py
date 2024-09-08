@@ -14,8 +14,6 @@
    limitations under the License.
 '''
 
-version = "1.1.1.1"
-
 import serial
 import time
 import threading
@@ -28,6 +26,8 @@ import optolink_splitter.utils.viessdata_util
 import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
 import optolink_splitter.utils.utils
+from optolink_splitter.cli import SplitterConfig
+from optolink_splitter.utils.utils import csv_to_tuple_list
 
 #global_exit_flag = False
 
@@ -111,26 +111,25 @@ def startPollTimer(secs:float):
     timer_pollinterval.start()
 
 
+def _
 
 
-# ------------------------
-# Main
-# ------------------------
-def optolink_vs2_switch():
+def optolink_vs2_switch(config: SplitterConfig) -> None:
     global poll_pointer
     global vitolog
 
+    poll_items = csv_to_tuple_list(config.poll_items_config_path)
     try:
         mod_mqtt_util = None
-        poll_data = [None] * len(settings_ini.poll_items)
+        poll_data = [None] * len(poll_items)
 
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
         serViCon = None  # Vitoconnect (Master)
         serViDev = None  # Viessmann Device (Slave)
 
-        if(settings_ini.port_vitoconnect is not None):
-            serViCon = serial.Serial(settings_ini.port_vitoconnect,
+        if(config.vitoconnect_port is not None):
+            serViCon = serial.Serial(config.vitoconnect_port,
                         baudrate=4800,
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
@@ -138,8 +137,8 @@ def optolink_vs2_switch():
                         exclusive=True,
                         timeout=0)
         
-        if(settings_ini.port_optolink is not None):
-            serViDev = serial.Serial(settings_ini.port_optolink,
+        if(config.optolink_port is not None):
+            serViDev = serial.Serial(config.optolink_port,
                         baudrate=4800,
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
@@ -153,14 +152,14 @@ def optolink_vs2_switch():
         # Empfangstask der sekundären Master starten (TcpIp, MQTT)
 
         # MQTT --------
-        if(settings_ini.mqtt is not None):
+        if(config.mqtt_address is not None):
             # avoid paho.mqtt required if not used
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
 
 
         # TCP/IP connection --------
-        if(settings_ini.tcpip_port is not None):
+        if(config.tcpip_port is not None):
             tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
             tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             tcp_thread.start()
@@ -169,11 +168,11 @@ def optolink_vs2_switch():
         # run VS2 connection ------------------
         if(serViCon is not None):
             # Vitoconncet logging
-            if(settings_ini.log_vitoconnect):
-                vitolog = open('vitolog.txt', 'a')
+            if(config.logging_vitoconnect_log_path is not None):
+                vitolog = open(config.logging_vitoconnect_log_path, 'a')
             # detect VS2 Protokol
             print("awaiting VS2...")
-            vs2timeout = settings_ini.vs2timeout
+            vs2timeout = config.vitoconnect_vs2timeout
             if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")
@@ -188,9 +187,9 @@ def optolink_vs2_switch():
 
 
         # Polling Mechanismus --------
-        len_polllist = len(settings_ini.poll_items)
-        if(settings_ini.poll_interval > 0) and (len_polllist > 0):
-            startPollTimer(settings_ini.poll_interval)
+        len_polllist = len(poll_items)
+        if(config.poll_interval > 0) and (len_polllist > 0):
+            startPollTimer(config.poll_interval)
 
 
         # Main Loop starten und Sachen abarbeiten
@@ -215,7 +214,7 @@ def optolink_vs2_switch():
 
             # polling list --------
             if(request_pointer == 0):              
-                if(settings_ini.poll_interval < 0):
+                if(config.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
                     retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
@@ -223,7 +222,7 @@ def optolink_vs2_switch():
                     poll_pointer += 1
 
                     if(poll_pointer == len_polllist):
-                        if(settings_ini.write_viessdata_csv):
+                        if(config.viessdata_csv_path is not None):
                             viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1
                         if(settings_ini.poll_interval == 0):
@@ -252,7 +251,7 @@ def optolink_vs2_switch():
 
             # TCP/IP request --------
             if(request_pointer == 2):
-                if(settings_ini.tcpip_port is None):
+                if(config.tcpip_port is None):
                     request_pointer += 1
                 else:
                     msg = tcpip_util.get_tcp_request()
