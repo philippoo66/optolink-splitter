@@ -1,0 +1,25 @@
+name,dpaddr,len,scale,signed
+"Anlagenzeit",0x088E,8,'vdatetime',False
+"AussenTemp",0x0800,2,1\10,True
+"KesselTemp", 0x0802,2,1\10,False
+"SpeicherTemp", 0x0804,2,1\10,False
+"AbgasTemp", 0x0808,2,1\10,False
+"AussenTemp_fltrd",0x5525,2,1\10,True
+"AussenTemp_dmpd",0x5523,2,1\10,True
+"AussenTemp_mixed",0x5527,2,1\10,True
+"Eingang STB-Stoerung",0x0A82,1,1,False
+"Brennerstoerung",0x0884,1,1,False
+"Fehlerstatus Brennersteuergeraet",0x5738,1,1,False
+"Brennerstarts",0x088A,4,1,False
+"Betriebsstunden",0x08A7,4,1/3600,False
+"Stellung Umschaltventil",0x0A10,1,1,False
+"Ruecklauftemp_calcd",0x0C20,2,1\10,False
+"Pumpenleistung",0x0A3C,1,1,False
+"Volumenstrom",0x0C24,2,1\10,False
+"KesselTemp_soll",0x555A,2,1\10,False
+"BrennerLeistung",0xA38F,1,1\2,False
+"BrennerModulation",0x55D3,1,1,False
+"Status",0xA152,2,1,False
+"SpeicherTemp_soll_akt",0x6500,2,1\10,False
+"Speicherladepumpe",0x6513,1,1,False
+"Zirkulationspumpe",0x6515,2,1,False
