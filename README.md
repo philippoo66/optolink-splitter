@@ -23,6 +23,11 @@ The CLI can then simply be called up anywhere in the system using optolink-split
 optolink-splitter --help
 ```
 
+A simple use could then look like this, for example:
+```bash
+optolink-splitter --optolink-port /dev/ttyUSB0 --poll-items-config-path /path/to/your/poll_items.csv --vitoconnect-port /dev/ttyAMA0  --mqtt-address 192.168.176.3:1883
+```
+
 ## Development
 
 Install [poetry python package manager](https://python-poetry.org/docs/#installing-with-the-official-installer):
