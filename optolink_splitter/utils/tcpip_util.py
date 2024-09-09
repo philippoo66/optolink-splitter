@@ -18,7 +18,8 @@ import threading
 import socket
 import time
 
-import optolink_splitter.utils.viessdata_util
+from optolink_splitter.config_model import SplitterConfig
+from optolink_splitter.utils.viessdata_util import buffer_csv_line
 
 tcp_client = socket.socket()  # None  # None, bis der Client-Socket erstellt wird
 recdata = bytes()
@@ -46,7 +47,7 @@ def run_tcpip(host, port) -> socket:
         return client_socket
 
 
-def listen_tcpip(client: socket):
+def listen_tcpip(config: SplitterConfig, poll_items: list[tuple], client: socket):
     global exit_flag
     global fverbose
     global recdata
@@ -75,7 +76,14 @@ def listen_tcpip(client: socket):
                         time.sleep(0.5)
                         break
                     elif m == "flushcsv":
-                        viessdata_util.buffer_csv_line([], True)
+                        buffer_csv_line(
+                            [],
+                            config.viessdata_csv_path,
+                            config.viessdata_csv_buffer_to_write,
+                            config.viessdata_csv_delimiter,
+                            poll_items,
+                            True,
+                        )
                     else:
                         recdata = msg
         except ConnectionError:
@@ -85,7 +93,9 @@ def listen_tcpip(client: socket):
             print(e)
 
 
-def tcpip4ever(port: int, verbose=True):
+def tcpip4ever(
+    config: SplitterConfig, poll_items: list[tuple], port: int, verbose=True
+):
     global exit_flag
     global tcp_client
     global fverbose
@@ -95,7 +105,7 @@ def tcpip4ever(port: int, verbose=True):
     while not exit_flag:
         tcp_client.close()
         tcp_client = run_tcpip("0.0.0.0", port)
-        listen_tcpip(tcp_client)
+        listen_tcpip(config, poll_items, tcp_client)
     # Schließe den Client-Socket, wenn der Hauptthread beendet wird
     if tcp_client:
         tcp_client.close()

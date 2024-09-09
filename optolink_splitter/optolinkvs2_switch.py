@@ -100,7 +100,7 @@ def do_poll_item(
                         and (next_item[2] == item[2])
                         and (str(next_item[3]).lower()).startswith("b:")
                     ):
-                        next_val = perform_bytebit_filter(data, next_item)
+                        next_val = perform_bytebit_filter(config, data, next_item)
 
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val
@@ -188,7 +188,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
         # TCP/IP connection --------
         if config.tcpip_port is not None:
             tcp_thread = threading.Thread(
-                target=tcpip4ever, args=(config.tcpip_port, False)
+                target=tcpip4ever, args=(config, poll_items, config.tcpip_port, False)
             )
             tcp_thread.daemon = (
                 True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
