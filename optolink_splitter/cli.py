@@ -189,7 +189,7 @@ def add_options(f):
             type=str,
             default=None,
             show_default=True,
-            help="Path to get wisensors config '/path/to/log/config.csv'. Only have to be specified to activate wisensors.",
+            help="Path to get wisensors config '/path/to/log/config.csv'. The header in the csv file must contain 'addr,folder,type' column names. Only have to be specified to activate wisensors.",
         ),
     ]
     for opt in reversed(options):

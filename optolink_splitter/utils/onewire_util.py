@@ -15,7 +15,7 @@
 """
 
 import time
-import optolink_splitter.settings_ini
+from typing import Any, Optional
 
 # Pfad zum One-Wire-Slave-Verzeichnis
 base_dir = "/sys/bus/w1/devices/"
@@ -31,7 +31,9 @@ def read_w1file(device_file):
 # 69 01 55 05 7f a5 a5 66 fa t=22562
 
 
-def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
+def read_ds18b20(
+    device_file, logging_show_opto_rx: bool
+) -> tuple[int, float]:  # retcode, temp_°C
     for _ in range(15):  # 3 sec
         try:
             lines = read_w1file(device_file)
@@ -41,7 +43,7 @@ def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
                 if pos != -1:
                     temp_string = lines[1][pos + 2 :]
                     temp_c = float(temp_string) / 1000.0
-                    if settings_ini.show_opto_rx:
+                    if logging_show_opto_rx:
                         print("w1", lines[1][:pos])
                     return 0x01, temp_c
         except:
@@ -72,13 +74,16 @@ def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
 
 
 # 'main' function -----------------
-def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
-    sensinfo = settings_ini.w1sensors[
-        sensor_id
-    ]  # tuple ('<w1_folder>', '<slave_type>')
+def read_w1sensor(
+    sensor_id, w1sensors: list[tuple], logging_show_opto_rx: bool
+) -> Optional[tuple[int, Any]]:  # retcode, val/s
+    for item in w1sensors:
+        if item[0] == sensor_id:
+            sensinfo = (item[1], item[2])
     device_file = base_dir + sensinfo[0] + "/w1_slave"
     if sensinfo[1].lower() == "ds18b20":
-        return read_ds18b20(device_file)
+        return read_ds18b20(device_file, logging_show_opto_rx)
     elif sensinfo[1].lower() == "ds2423":
         return read_ds2423(device_file)
+    return None
     # elif() to be continued for other w1 sensors...
