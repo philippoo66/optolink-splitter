@@ -1,7 +1,6 @@
 from click import command, option
 from optolink_splitter.optolinkvs2_switch import optolink_vs2_switch
 from optolink_splitter.config_model import SplitterConfig
-from typing import Union
 
 
 def add_options(f):
@@ -42,7 +41,7 @@ def add_options(f):
         option(
             "--vitoconnect-vs2timeout",
             required=False,
-            type=Union[int, float],
+            type=float,
             default=120,
             show_default=True,
             help="Seconds to detect VS2 protocol on vitoconnect connection.",
@@ -106,7 +105,7 @@ def add_options(f):
         option(
             "--fullraw-eot-time",
             required=False,
-            type=Union[int, float],
+            type=float,
             default=0.05,
             show_default=True,
             help="Amount of time in seconds to decide end of telegram.",
@@ -114,7 +113,7 @@ def add_options(f):
         option(
             "--fullraw-timeout",
             required=False,
-            type=Union[int, float],
+            type=float,
             default=2,
             show_default=True,
             help="Amount of time in seconds for timeout to return in any case.",
