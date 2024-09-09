@@ -136,6 +136,10 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
     global vitolog
 
     poll_items = csv_to_tuple_list(config.poll_items_config_path)
+    w1sensors = None
+    if config.w1sensors_config_path is not None:
+        w1sensors = csv_to_tuple_list(config.w1sensors_config_path)
+
     try:
         mod_mqtt_util = None
         poll_data = [None] * len(poll_items)

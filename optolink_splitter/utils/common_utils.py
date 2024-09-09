@@ -49,7 +49,7 @@ def get_bool(v) -> bool:
 
 def bytesval(
     data,
-    format_max_decimals: int,
+    format_max_decimals: Union[int, float],
     scale: Union[int, float] = 1,
     signd: bool = False,
 ) -> Union[int, float]:
