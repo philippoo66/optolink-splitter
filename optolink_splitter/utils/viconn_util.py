@@ -21,6 +21,7 @@ from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import receive_vs2telegr
 from optolink_splitter.utils.common_utils import bbbstr
 
+
 # Funktion zum Hinzufügen von Bytes zum Puffer
 def add_to_ringbuffer(buffer, new_bytes):
     for byte in new_bytes:
@@ -36,7 +37,11 @@ def log_vito(data, format_data_hex_format: str, pre, vitolog):
 
 # VS detection ---------------
 def detect_vs2(
-    config: SplitterConfig, serVicon: serial.Serial, serOpto: serial.Serial, timeout: float, vitolog_loc
+    config: SplitterConfig,
+    serVicon: serial.Serial,
+    serOpto: serial.Serial,
+    timeout: float,
+    vitolog_loc,
 ) -> bool:
     bufferVicon = bytearray([0xFF, 0xFF, 0xFF])
     bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
@@ -89,8 +94,12 @@ vicon_request = bytearray()
 def listen_to_Vitoconnect(config: SplitterConfig, servicon: serial, vitolog_loc):
     global vicon_request
     while True:
-        succ, _, data = receive_vs2telegr(config.format_data_hex_format, config.logging_show_opto_rx,
-            False, True, servicon
+        succ, _, data = receive_vs2telegr(
+            config.format_data_hex_format,
+            config.logging_show_opto_rx,
+            False,
+            True,
+            servicon,
         )  # contains sleep(0.005)
         if succ == 1:
             vicon_request = data
