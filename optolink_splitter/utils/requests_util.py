@@ -14,7 +14,7 @@
    limitations under the License.
 """
 
-from typing import Any
+from typing import Any, Optional
 
 from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import (
@@ -109,7 +109,7 @@ def get_retstr(config: SplitterConfig, retcode, addr, val) -> str:
 
 # 'main' functions +++++++++++++++++++++++++++++
 def response_to_request(
-    config: SplitterConfig, w1sensors: list[tuple], request, serViDev
+    config: SplitterConfig, w1sensors: Optional[list[tuple]], request, serViDev
 ) -> tuple[int, bytearray, Any, str]:  # retcode, data, value, string_to_pass
     ispollitem = False
     if isinstance(request, str):
@@ -163,7 +163,7 @@ def response_to_request(
         elif (cmnd in ["read", "r"]) or ispollitem:  # "read;0x0804;1;0.1;False"
             # read +++++++++++++++++++
             addr = get_int(parts[1])
-            if any(addr in item for item in w1sensors):
+            if w1sensors is not None and any(addr in item for item in w1sensors):
                 # 1wire sensor
                 retcode, val = read_w1sensor(
                     addr, w1sensors, config.logging_show_opto_rx

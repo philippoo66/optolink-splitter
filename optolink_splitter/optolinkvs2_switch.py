@@ -66,13 +66,18 @@ def log_vito(data, format_data_hex_format: str, pre):
 
 
 def do_poll_item(
-    poll_items: list[tuple], poll_data, ser: serial.Serial, mod_mqtt=None
+    config: SplitterConfig,
+    poll_items: list[tuple],
+    w1sensors: list[tuple],
+    poll_data,
+    ser: serial.Serial,
+    mod_mqtt=None,
 ) -> int:  # retcode
     global poll_pointer
     val = "?"
 
     item = poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)
-    retcode, data, val, _ = response_to_request(item, ser)
+    retcode, data, val, _ = response_to_request(config, w1sensors, item, ser)
 
     if retcode == 0x01:
         # save val in buffer for csv
@@ -252,7 +257,12 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                     request_pointer += 1
                 elif poll_pointer < len_polllist:
                     retcode = do_poll_item(
-                        poll_items, poll_data, serViDev, mod_mqtt_util
+                        config,
+                        poll_items,
+                        w1sensors,
+                        poll_data,
+                        serViDev,
+                        mod_mqtt_util,
                     )
 
                     poll_pointer += 1
@@ -282,7 +292,9 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                     msg = mod_mqtt_util.get_mqtt_request()
                     if msg:
                         try:
-                            retcode, _, _, resp = response_to_request(msg, serViDev)
+                            retcode, _, _, resp = response_to_request(
+                                config, w1sensors, msg, serViDev
+                            )
                             mod_mqtt_util.publish_response(resp)
                             olbreath(retcode)
                             tookbreath = True
@@ -299,7 +311,9 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                     msg = get_tcp_request()
                     if msg:
                         try:
-                            retcode, _, _, resp = response_to_request(msg, serViDev)
+                            retcode, _, _, resp = response_to_request(
+                                config, w1sensors, msg, serViDev
+                            )
                             send_tcpip(resp)
                             olbreath(retcode)
                             tookbreath = True
