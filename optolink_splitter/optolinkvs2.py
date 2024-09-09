@@ -18,7 +18,7 @@ import serial
 import sys
 import time
 
-from optolink_splitter.cli import SplitterConfig
+from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.utils.common_utils import bytesval, bbbstr
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

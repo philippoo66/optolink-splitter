@@ -25,7 +25,7 @@ import optolink_splitter.utils.viessdata_util
 import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
 import optolink_splitter.utils.common_utils
-from optolink_splitter.cli import SplitterConfig
+from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
 
