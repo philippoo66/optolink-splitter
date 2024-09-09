@@ -203,11 +203,11 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
             # detect VS2 Protokol
             print("awaiting VS2...")
             vs2timeout = config.vitoconnect_vs2timeout
-            if not detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
+            if not detect_vs2(config, serViCon, serViDev, vs2timeout, vitolog):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")
             vicon_thread = threading.Thread(
-                target=listen_to_Vitoconnect, args=(serViCon, vitolog)
+                target=listen_to_Vitoconnect, args=(config, serViCon, vitolog)
             )
             vicon_thread.daemon = (
                 True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
