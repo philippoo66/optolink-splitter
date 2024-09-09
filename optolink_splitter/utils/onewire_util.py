@@ -1,4 +1,4 @@
-'''
+"""
    Copyright 2024 philippoo66
    
    Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
@@ -12,17 +12,17 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-'''
+"""
 
 import time
 import optolink_splitter.settings_ini
 
 # Pfad zum One-Wire-Slave-Verzeichnis
-base_dir = '/sys/bus/w1/devices/'
+base_dir = "/sys/bus/w1/devices/"
 
 
 def read_w1file(device_file):
-    with open(device_file, 'r') as f:
+    with open(device_file, "r") as f:
         lines = f.readlines()
     return lines
 
@@ -30,17 +30,18 @@ def read_w1file(device_file):
 # 69 01 55 05 7f a5 a5 66 fa : crc=fa YES
 # 69 01 55 05 7f a5 a5 66 fa t=22562
 
+
 def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
     for _ in range(15):  # 3 sec
         try:
             lines = read_w1file(device_file)
-            if(lines[0].strip()[-3:] == 'YES'):
+            if lines[0].strip()[-3:] == "YES":
                 # Extrahieren der Temperatur aus den Daten
-                pos = lines[1].find('t=')
+                pos = lines[1].find("t=")
                 if pos != -1:
-                    temp_string = lines[1][pos+2:]
+                    temp_string = lines[1][pos + 2 :]
                     temp_c = float(temp_string) / 1000.0
-                    if(settings_ini.show_opto_rx):
+                    if settings_ini.show_opto_rx:
                         print("w1", lines[1][:pos])
                     return 0x01, temp_c
         except:
@@ -53,14 +54,16 @@ def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
     for _ in range(15):  # 3 sec
         try:
             lines = read_w1file(device_file)
-            if lines[0].strip()[-3:] == 'YES':
+            if lines[0].strip()[-3:] == "YES":
                 counts = []
                 for line in lines[1:]:
                     # Extrahieren der Zählerwerte aus den Daten
-                    if line.startswith('count'):
-                        count_value = int(line.split('=')[1])
+                    if line.startswith("count"):
+                        count_value = int(line.split("=")[1])
                         counts.append(count_value)
-                if len(counts) == 4:  # Stellen sicher, dass wir alle 4 Zählerwerte haben
+                if (
+                    len(counts) == 4
+                ):  # Stellen sicher, dass wir alle 4 Zählerwerte haben
                     return 0x01, counts
         except:
             pass
@@ -70,10 +73,12 @@ def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
 
 # 'main' function -----------------
 def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
-    sensinfo = settings_ini.w1sensors[sensor_id]  # tuple ('<w1_folder>', '<slave_type>')
-    device_file = base_dir + sensinfo[0] + '/w1_slave'
-    if(sensinfo[1].lower() == 'ds18b20'):
+    sensinfo = settings_ini.w1sensors[
+        sensor_id
+    ]  # tuple ('<w1_folder>', '<slave_type>')
+    device_file = base_dir + sensinfo[0] + "/w1_slave"
+    if sensinfo[1].lower() == "ds18b20":
         return read_ds18b20(device_file)
-    elif(sensinfo[1].lower() == 'ds2423'):
+    elif sensinfo[1].lower() == "ds2423":
         return read_ds2423(device_file)
-    #elif() to be continued for other w1 sensors...
+    # elif() to be continued for other w1 sensors...

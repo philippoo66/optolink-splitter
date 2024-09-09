@@ -165,7 +165,7 @@ def add_options(f):
             type=str,
             default=None,
             show_default=True,
-            help="Path to write viessdata .csv file. E.g '/path/to/log/file.csv'. Only have to be specified to generate viessdata .csv.",
+            help="Path to write viessdata .csv files. E.g '/path/to/log/'. File names will be auto generated. Only have to be specified to generate viessdata .csv.",
         ),
         option(
             "--viessdata-csv-delimiter",
