@@ -120,7 +120,7 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     return receive_vs2telegr(True, False, ser)
 
 
-def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_vs2telegr(format_data_hex_format: str, logging_show_opto_rx: bool, resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
@@ -149,8 +149,8 @@ def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:ser
         if(state == 0):
             if(resptelegr):
                 if(len(inbuff) > 0):
-                    if(config.logging_show_opto_rx):
-                        print("rx", format(inbuff[0], config.format_data_hex_format))
+                    if(logging_show_opto_rx):
+                        print("rx", format(inbuff[0], format_data_hex_format))
                     if(inbuff[0] == 0x06): # VS2_ACK
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
@@ -170,7 +170,7 @@ def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:ser
         if(state == 1):
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
-                    print("STX Error", format(inbuff[0], config.format_data_hex_format))
+                    print("STX Error", format(inbuff[0], format_data_hex_format))
                     if(raw): retdata = alldata
                     return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
@@ -179,13 +179,13 @@ def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:ser
             if(len(inbuff) > 1):  # STX, Len
                 pllen = inbuff[1]
                 if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
-                    print("rx", bbbstr(inbuff, config.format_data_hex_format))
+                    print("rx", bbbstr(inbuff, format_data_hex_format))
                     print("Len Error", pllen)
                     if(raw): retdata = alldata
                     return 0xFD, 0, retdata
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
-                    if(config.logging_show_opto_rx):
-                        print("rx", bbbstr(inbuff, config.format_data_hex_format))
+                    if(logging_show_opto_rx):
+                        print("rx", bbbstr(inbuff, format_data_hex_format))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
                     addr = (inbuff[4] << 8) + inbuff[5]  # my be bullshit in case of raw
                     retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
@@ -194,7 +194,7 @@ def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:ser
                         if(raw): retdata = alldata
                         return 0xFE, addr, retdata
                     if(inbuff[2] & 0x0F == 0x03):
-                        print("Error Message", bbbstr(retdata, config.format_data_hex_format))
+                        print("Error Message", bbbstr(retdata, format_data_hex_format))
                         if(raw): retdata = alldata
                         return 0x03, addr, retdata
                     #success

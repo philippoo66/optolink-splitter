@@ -20,14 +20,13 @@ import threading
 import importlib
 
 
-import optolink_splitter.utils.viconn_util
-import optolink_splitter.utils.viessdata_util
-import optolink_splitter.utils.tcpip_util
-import optolink_splitter.utils.requests_util
 from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
-
+from optolink_splitter.utils.requests_util import response_to_request, perform_bytebit_filter
+from optolink_splitter.utils.tcpip_util import tcpip4ever, get_tcp_request, send_tcpip, exit_tcpip
+from optolink_splitter.utils.viessdata_util import buffer_csv_line
+from optolink_splitter.utils.viconn_util import detect_vs2, listen_to_Vitoconnect, get_vicon_request
 
 #global_exit_flag = False
 vitolog = None # Vitoconnect logging
@@ -58,7 +57,7 @@ def do_poll_item(poll_items: list[tuple], poll_data, ser:serial.Serial, mod_mqtt
     val = "?"
 
     item = poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
-    retcode, data, val, _ = requests_util.response_to_request(item, ser)
+    retcode, data, val, _ = response_to_request(item, ser)
 
     if(retcode == 0x01):
         # save val in buffer for csv
@@ -77,7 +76,7 @@ def do_poll_item(poll_items: list[tuple], poll_data, ser:serial.Serial, mod_mqtt
                     next_item = poll_items[next_idx]
                     # if next address same AND next len same AND next type starts with 'b:'
                     if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
-                        next_val = requests_util.perform_bytebit_filter(data, next_item)
+                        next_val = perform_bytebit_filter(data, next_item)
 
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val
@@ -154,7 +153,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
 
         # TCP/IP connection --------
         if(config.tcpip_port is not None):
-            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(config.tcpip_port, False))
+            tcp_thread = threading.Thread(target=tcpip4ever, args=(config.tcpip_port, False))
             tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             tcp_thread.start()
 
@@ -167,10 +166,10 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
             # detect VS2 Protokol
             print("awaiting VS2...")
             vs2timeout = config.vitoconnect_vs2timeout
-            if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
+            if not detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")
-            vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,vitolog))
+            vicon_thread = threading.Thread(target=listen_to_Vitoconnect, args=(serViCon,vitolog))
             vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             vicon_thread.start()
         else:
@@ -192,13 +191,13 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
             tookbreath = False
             if(serViCon is not None):
                 # first Vitoconnect request -------------------
-                vidata = viconn_util.get_vicon_request()
+                vidata = get_vicon_request()
                 if(vidata):
                     serViDev.write(vidata)
                     log_vito(vidata, config.format_data_hex_format, "M")
                     # recive response an pass bytes directly back to VitoConnect, 
                     # returns when response is complete (or error or timeout) 
-                    retcode,_, redata = receive_vs2telegr(True, True, serViDev, serViCon)
+                    retcode,_, redata = receive_vs2telegr(config.format_data_hex_format, config.logging_show_opto_rx, True, True, serViDev, serViCon)
                     log_vito(redata, config.format_data_hex_format, "S")
                     olbreath(retcode)
                     tookbreath = True
@@ -217,7 +216,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
 
                     if(poll_pointer == len_polllist):
                         if(config.viessdata_csv_path is not None):
-                            viessdata_util.buffer_csv_line(poll_data)
+                            buffer_csv_line(poll_data)
                         poll_pointer += 1
                         if(config.poll_interval == 0):
                             poll_pointer = 0
@@ -234,7 +233,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                     msg = mod_mqtt_util.get_mqtt_request()
                     if(msg):
                         try:
-                            retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                            retcode, _, _, resp = response_to_request(msg, serViDev)
                             mod_mqtt_util.publish_response(resp)
                             olbreath(retcode)
                             tookbreath = True
@@ -248,11 +247,11 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                 if(config.tcpip_port is None):
                     request_pointer += 1
                 else:
-                    msg = tcpip_util.get_tcp_request()
+                    msg = get_tcp_request()
                     if(msg):
                         try:
-                            retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                            tcpip_util.send_tcpip(resp)
+                            retcode, _, _, resp = response_to_request(msg, serViDev)
+                            send_tcpip(resp)
                             olbreath(retcode)
                             tookbreath = True
                         except Exception as e:
@@ -288,7 +287,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                 serViDev.close()
         print("cancel poll timer ") 
         timer_pollinterval.cancel()
-        tcpip_util.exit_tcpip()
+        exit_tcpip()
         #tcp_thread.join()  #TODO ??
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
