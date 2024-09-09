@@ -17,6 +17,8 @@
 import datetime
 import os
 
+from optolink_splitter.utils.common_utils import to_number
+
 
 def get_headline(poll_items: list[tuple]) -> str:
     now = datetime.datetime.now()
@@ -96,7 +98,7 @@ def buffer_csv_line(
             tbreplaced = ","
         for i in range(0, len(poll_items)):
             sval = str(data[i])
-            if utils.to_number(data[i]) != None:
+            if to_number(data[i]) != None:
                 # format number, anything else left like it is
                 sval = sval.replace(tbreplaced, viessdata_csv_delimiter)
             sline += sval + ";"
@@ -110,7 +112,7 @@ def buffer_csv_line(
         writehd = not os.path.exists(csvfile)
         with open(csvfile, "a") as f:
             if writehd:
-                hl = get_headline()
+                hl = get_headline(poll_items)
                 f.write(hl + "\n")
             for ln in wrbuffer:
                 f.write(ln + "\n")

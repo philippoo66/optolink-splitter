@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class SplitterConfig:
+    """Data class with optolink-splitter config parameters and their data types."""
     optolink_port: str
     poll_items_config_path: str
     poll_interval: int

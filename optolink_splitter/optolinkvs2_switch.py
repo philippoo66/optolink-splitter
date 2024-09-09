@@ -23,7 +23,13 @@ import importlib
 from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
-from optolink_splitter.utils.mqtt_util import connect_mqtt
+from optolink_splitter.utils.mqtt_util import (
+    connect_mqtt,
+    publish_read,
+    get_mqtt_request,
+    publish_response,
+    exit_mqtt,
+)
 from optolink_splitter.utils.requests_util import (
     response_to_request,
     perform_bytebit_filter,
@@ -72,7 +78,7 @@ def do_poll_item(
     w1sensors: list[tuple],
     poll_data,
     ser: serial.Serial,
-    mod_mqtt=None,
+    mqtt_address=None,
 ) -> int:  # retcode
     global poll_pointer
     val = "?"
@@ -85,8 +91,8 @@ def do_poll_item(
         poll_data[poll_pointer] = val
 
         # post to MQTT broker
-        if mod_mqtt is not None:
-            mod_mqtt.publish_read(item[0], item[1], val)
+        if mqtt_address is not None:
+            publish_read(config, item[0], item[1], val)
 
         # probably more bytebit values of the same datapoint?!
         if len(item) > 3:
@@ -106,9 +112,9 @@ def do_poll_item(
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val
 
-                        if mod_mqtt is not None:
+                        if mqtt_address is not None:
                             # post to MQTT broker
-                            mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+                            publish_read(config, next_item[0], next_item[1], next_val)
 
                         poll_pointer = next_idx
                     else:
@@ -261,7 +267,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                         w1sensors,
                         poll_data,
                         serViDev,
-                        mod_mqtt_util,
+                        config.mqtt_address,
                     )
 
                     poll_pointer += 1
@@ -285,16 +291,16 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
 
             # MQTT request --------
             if request_pointer == 1:
-                if mod_mqtt_util is None:
+                if config.mqtt_address is None:
                     request_pointer += 1
                 else:
-                    msg = mod_mqtt_util.get_mqtt_request()
+                    msg = get_mqtt_request()
                     if msg:
                         try:
                             retcode, _, _, resp = response_to_request(
                                 config, w1sensors, msg, serViDev
                             )
-                            mod_mqtt_util.publish_response(resp)
+                            publish_response(config, resp)
                             olbreath(retcode)
                             tookbreath = True
                         except Exception as e:
@@ -351,8 +357,8 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
         timer_pollinterval.cancel()
         exit_tcpip()
         # tcp_thread.join()  #TODO ??
-        if mod_mqtt_util is not None:
-            mod_mqtt_util.exit_mqtt()
+        if config.mqtt_address is not None:
+            exit_mqtt()
         if vitolog is not None:
             print("closing vitolog")
             vitolog.close()
