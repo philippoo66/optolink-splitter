@@ -25,9 +25,9 @@ import optolink_splitter.utils.viconn_util
 import optolink_splitter.utils.viessdata_util
 import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
-import optolink_splitter.utils.utils
+import optolink_splitter.utils.common_utils
 from optolink_splitter.cli import SplitterConfig
-from optolink_splitter.utils.utils import csv_to_tuple_list
+from optolink_splitter.utils.common_utils import csv_to_tuple_list
 
 #global_exit_flag = False
 
