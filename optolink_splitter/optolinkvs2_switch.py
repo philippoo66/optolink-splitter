@@ -17,7 +17,6 @@
 import serial
 import time
 import threading
-import importlib
 
 
 from optolink_splitter.config_model import SplitterConfig
@@ -50,7 +49,7 @@ from optolink_splitter.utils.viconn_util import (
 # global_exit_flag = False
 vitolog = None  # Vitoconnect logging
 poll_pointer = 0  # polling list
-timer_pollinterval = 0  # Initialise global timer pollinterval
+timer_pollinterval = threading.Timer(1, None)  # Initialise global timer pollinterval
 
 
 def olbreath(retcode: int) -> None:
