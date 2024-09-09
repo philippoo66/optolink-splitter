@@ -19,7 +19,6 @@ import time
 import threading
 import importlib
 
-import optolink_splitter.settings_ini
 import optolink_splitter.optolinkvs2
 import optolink_splitter.utils.viconn_util
 import optolink_splitter.utils.viessdata_util
@@ -27,11 +26,15 @@ import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
 import optolink_splitter.utils.common_utils
 from optolink_splitter.cli import SplitterConfig
-from optolink_splitter.utils.common_utils import csv_to_tuple_list
+from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
+
 
 #global_exit_flag = False
+vitolog = None # Vitoconnect logging
+poll_pointer = 0 # polling list
 
-def olbreath(retcode:int):
+
+def olbreath(retcode:int) -> None:
     if(retcode <= 0x03):
         # success, err msg
         time.sleep(0.1)
@@ -42,24 +45,19 @@ def olbreath(retcode:int):
         # allow calming down
         time.sleep(0.5)
 
-# Vitoconnect logging
-vitolog = None
 
 def log_vito(data, pre):
     global vitolog
     if(vitolog is not None):
-        sd = utils.bbbstr(data)
+        sd = bbbstr(data)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
 
-# polling list +++++++++++++++++++++++++++++
-poll_pointer = 0
-
-def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
+def do_poll_item(poll_items: list[tuple], poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
     val = "?"
 
-    item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
+    item = poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
     retcode, data, val, _ = requests_util.response_to_request(item, ser)
 
     if(retcode == 0x01):
@@ -74,9 +72,9 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
         if(len(item) > 3):
             if(str(item[3]).lower().startswith('b:')):
                 # bytebit filter +++++++++
-                while((poll_pointer + 1) < len(settings_ini.poll_items)):
+                while((poll_pointer + 1) < len(poll_items)):
                     next_idx = poll_pointer + 1
-                    next_item = settings_ini.poll_items[next_idx]
+                    next_item = poll_items[next_idx]
                     # if next address same AND next len same AND next type starts with 'b:'
                     if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
                         next_val = requests_util.perform_bytebit_filter(data, next_item)
@@ -96,21 +94,21 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     return retcode
 
 # poll timer    
-def on_polltimer():
+def on_polltimer(poll_items: list[tuple], poll_interval: int) -> None:
     global poll_pointer
-    if(poll_pointer > len(settings_ini.poll_items)):
+    if(poll_pointer > len(poll_items)):
         poll_pointer = 0
-    startPollTimer(settings_ini.poll_interval)
+    startPollTimer(poll_interval)
+
 
 timer_pollinterval = threading.Timer(1.0, on_polltimer)
 
-def startPollTimer(secs:float):
+
+def startPollTimer(poll_interval: int):
     global timer_pollinterval
     timer_pollinterval.cancel()
-    timer_pollinterval = threading.Timer(secs, on_polltimer)
+    timer_pollinterval = threading.Timer(poll_interval, on_polltimer)
     timer_pollinterval.start()
-
-
 
 
 def optolink_vs2_switch(config: SplitterConfig) -> None:
@@ -159,7 +157,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
 
         # TCP/IP connection --------
         if(config.tcpip_port is not None):
-            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
+            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(config.tcpip_port, False))
             tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             tcp_thread.start()
 
@@ -216,7 +214,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                 if(config.poll_interval < 0):
                     request_pointer += 1
                 elif(poll_pointer < len_polllist):
-                    retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                    retcode = do_poll_item(poll_items, poll_data, serViDev, mod_mqtt_util)
 
                     poll_pointer += 1
 
@@ -224,7 +222,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                         if(config.viessdata_csv_path is not None):
                             viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1
-                        if(settings_ini.poll_interval == 0):
+                        if(config.poll_interval == 0):
                             poll_pointer = 0
                     olbreath(retcode)
                     tookbreath = True
