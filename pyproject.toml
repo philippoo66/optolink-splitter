@@ -29,6 +29,10 @@ click = "^8.1"
 pyserial = "^3.5"
 paho-mqtt = "^2.1"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3"
+pre-commit = "^3.8"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

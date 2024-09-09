@@ -1,6 +1,10 @@
 # optolink-switch/splitter
 **use at your own risk!**
 
+Announcements: 
+ - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
+ - There are other feature branches - look at if you like
+
 ## Installation
 
 > [!NOTE] 
@@ -35,7 +39,7 @@ source /path/to/venv/bin/activate
 
 Install all necessary dependencies via:
 ```bash
-poetry install
+poetry install --with dev
 ```
 
 You should then have all the necessary dependencies and the optolink-splitter CLI available within your virtual environment.
@@ -43,9 +47,10 @@ You should then have all the necessary dependencies and the optolink-splitter CL
 optolink-splitter --help
 ```
 
-Announcements: 
- - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
- - There are other feature branches - look at if you like
+To run tests before commiting xou can use pytest via:
+```bash
+pytest tests/ -s
+```
 
 ### System Overview:
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
