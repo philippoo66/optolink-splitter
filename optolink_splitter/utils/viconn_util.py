@@ -17,7 +17,7 @@
 import serial
 import time
 
-import optolink_splitter.utils.utils
+import optolink_splitter.utils.common_utils
 import optolink_splitter.optolinkvs2
 
 

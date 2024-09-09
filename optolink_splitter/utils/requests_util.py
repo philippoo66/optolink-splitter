@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-import optolink_splitter.utils.utils
+import optolink_splitter.utils.common_utils
 import optolink_splitter.optolinkvs2
 import optolink_splitter.utils.onewire_util
 import optolink_splitter.settings_ini
