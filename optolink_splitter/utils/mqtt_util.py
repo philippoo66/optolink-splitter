@@ -17,18 +17,18 @@
 import time
 import paho.mqtt.client as paho
 
-import optolink_splitter.utils.common_utils
-import optolink_splitter.settings_ini
+from optolink_splitter.config_model import SplitterConfig
+from optolink_splitter.utils.common_utils import bstr2str
+
 
 verbose = False
-
 mqtt_client = None
 cmnd_queue = []  # command queue to serialize bus traffic
 
 
 def on_connect(client, userdata, flags, reason_code, properties):
-    if settings_ini.mqtt_listen != None:
-        client.subscribe(settings_ini.mqtt_listen)
+    if userdata != None:
+        client.subscribe(userdata)
 
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
@@ -38,12 +38,12 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 
 def on_message(client, userdata, msg):
     # print("MQTT recd:", msg.topic, msg.payload)
-    if settings_ini.mqtt_listen is None:
+    if userdata is None:
         print("MQTT recd:", msg.topic, msg.payload)  # ErrMsg oder so?
         return
     topic = str(msg.topic)  # Topic in String umwandeln
-    if topic == settings_ini.mqtt_listen:
-        rec = utils.bstr2str(msg.payload)
+    if topic == userdata:
+        rec = bstr2str(msg.payload)
         rec = (
             rec.replace(" ", "")
             .replace("\0", "")
@@ -64,29 +64,30 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
         print(f"Broker granted the following QoS: {reason_code_list[0].value}")
 
 
-def connect_mqtt():
+def connect_mqtt(config: SplitterConfig):
     global mqtt_client
     try:
         # Verbindung zu MQTT Broker herstellen ++++++++++++++
         mqtt_client = paho.Client(
             paho.CallbackAPIVersion.VERSION2,
             "OLswitch" + "_" + str(int(time.time() * 1000)),
+            userdata=config.mqtt_listen_address,
         )  # Unique mqtt id using timestamp
-        if settings_ini.mqtt_user is not None:
-            mlst = settings_ini.mqtt_user.split(":")
+        if config.mqtt_user is not None:
+            mlst = config.mqtt_user.split(":")
             mqtt_client.username_pw_set(mlst[0], password=mlst[1])
         mqtt_client.on_connect = on_connect
         mqtt_client.on_disconnect = on_disconnect
         mqtt_client.on_message = on_message
-        if settings_ini.mqtt_listen != None:
+        if config.mqtt_listen_address is not None:
             mqtt_client.on_subscribe = on_subscribe
-        mlst = settings_ini.mqtt.split(":")
+        mlst = config.mqtt_address.split(":")
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
         mqtt_client.loop_start()
         # preparations
-        if settings_ini.mqtt_fstr is None:
-            settings_ini.mqtt_fstr = "{dpname}"
+        if config.mqtt_fstr is None:
+            config.mqtt_fstr = "{dpname}"
     except Exception as e:
         raise Exception("Error connecting MQTT: " + str(e))
 
@@ -98,18 +99,18 @@ def get_mqtt_request() -> str:
     return ret
 
 
-def publish_read(name, addr, value):
+def publish_read(config: SplitterConfig, name, addr, value):
     if mqtt_client != None:
-        publishStr = settings_ini.mqtt_fstr.format(dpaddr=addr, dpname=name)
+        publishStr = config.mqtt_fstr.format(dpaddr=addr, dpname=name)
         # send
-        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)
+        ret = mqtt_client.publish(config.mqtt_topic + "/" + publishStr, value)
         if verbose:
             print(ret)
 
 
-def publish_response(resp: str):
+def publish_response(config: SplitterConfig, resp: str):
     if mqtt_client != None:
-        ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)
+        ret = mqtt_client.publish(config.mqtt_respond_address, resp)
         if verbose:
             print(ret)
 

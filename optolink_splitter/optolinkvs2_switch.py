@@ -23,6 +23,7 @@ import importlib
 from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
+from optolink_splitter.utils.mqtt_util import connect_mqtt
 from optolink_splitter.utils.requests_util import (
     response_to_request,
     perform_bytebit_filter,
@@ -181,9 +182,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
 
         # MQTT --------
         if config.mqtt_address is not None:
-            # avoid paho.mqtt required if not used
-            mod_mqtt_util = importlib.import_module("mqtt_util")
-            mod_mqtt_util.connect_mqtt()
+            connect_mqtt(config)
 
         # TCP/IP connection --------
         if config.tcpip_port is not None:
