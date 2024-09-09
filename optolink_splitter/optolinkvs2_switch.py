@@ -32,7 +32,7 @@ from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
 #global_exit_flag = False
 vitolog = None # Vitoconnect logging
 poll_pointer = 0 # polling list
-
+timer_pollinterval = None # Initialise global timer pollinterval
 
 def olbreath(retcode:int) -> None:
     if(retcode <= 0x03):
@@ -96,18 +96,15 @@ def do_poll_item(poll_items: list[tuple], poll_data, ser:serial.Serial, mod_mqtt
 # poll timer    
 def on_polltimer(poll_items: list[tuple], poll_interval: int) -> None:
     global poll_pointer
-    if(poll_pointer > len(poll_items)):
-        poll_pointer = 0
-    startPollTimer(poll_interval)
+    poll_pointer = (poll_pointer + 1) % len(poll_items)
+    startPollTimer(poll_items, poll_interval)
 
 
-timer_pollinterval = threading.Timer(1.0, on_polltimer)
-
-
-def startPollTimer(poll_interval: int):
+def startPollTimer(poll_items: list[tuple], poll_interval: int) -> None:
     global timer_pollinterval
-    timer_pollinterval.cancel()
-    timer_pollinterval = threading.Timer(poll_interval, on_polltimer)
+    if timer_pollinterval is not None:
+        timer_pollinterval.cancel()
+    timer_pollinterval = threading.Timer(poll_interval, on_polltimer, args=(poll_items, poll_interval))
     timer_pollinterval.start()
 
 
@@ -186,7 +183,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
         # Polling Mechanismus --------
         len_polllist = len(poll_items)
         if(config.poll_interval > 0) and (len_polllist > 0):
-            startPollTimer(config.poll_interval)
+            startPollTimer(poll_items, config.poll_interval)
 
 
         # Main Loop starten und Sachen abarbeiten
