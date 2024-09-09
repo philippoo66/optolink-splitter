@@ -71,13 +71,15 @@ def init_vs2(ser: serial.Serial) -> bool:
     return True
 
 
-def read_datapoint(addr: int, rdlen: int, ser: serial.Serial) -> bytes:
-    _, _, data = read_datapoint_ext(addr, rdlen, ser)
+def read_datapoint(
+    config: SplitterConfig, addr: int, rdlen: int, ser: serial.Serial
+) -> bytes:
+    _, _, data = read_datapoint_ext(config, addr, rdlen, ser)
     return data
 
 
 def read_datapoint_ext(
-    addr: int, rdlen: int, ser: serial.Serial
+    config: SplitterConfig, addr: int, rdlen: int, ser: serial.Serial
 ) -> tuple[int, int, bytearray]:
     outbuff = bytearray(8)
     outbuff[0] = 0x41  # 0x41 Telegrammstart
@@ -95,16 +97,20 @@ def read_datapoint_ext(
     # print("R tx", utils.bbbstr(outbuff))
 
     # return retcode, addr, data
-    return receive_vs2telegr(True, False, ser)
+    return receive_vs2telegr(
+        config.format_data_hex_format, config.logging_show_opto_rx, True, False, ser
+    )
 
 
-def write_datapoint(addr: int, data: bytes, ser: serial.Serial) -> bool:
-    retcode, _, _ = write_datapoint_ext(addr, data, ser)
+def write_datapoint(
+    config: SplitterConfig, addr: int, data: bytes, ser: serial.Serial
+) -> bool:
+    retcode, _, _ = write_datapoint_ext(config, addr, data, ser)
     return retcode == 0x01
 
 
 def write_datapoint_ext(
-    addr: int, data: bytes, ser: serial.Serial
+    config: SplitterConfig, addr: int, data: bytes, ser: serial.Serial
 ) -> tuple[int, int, bytearray]:
     wrlen = len(data)
     outbuff = bytearray(wrlen + 8)
@@ -124,7 +130,9 @@ def write_datapoint_ext(
     # print("W tx", utils.bbbstr(outbuff))
 
     # return retcode, addr, data
-    return receive_vs2telegr(True, False, ser)
+    return receive_vs2telegr(
+        config.format_data_hex_format, config.logging_show_opto_rx, True, False, ser
+    )
 
 
 def receive_vs2telegr(
@@ -235,7 +243,7 @@ def receive_vs2telegr(
         # timout
         i += 1
         if i > 600:
-            if config.logging_show_opto_rx:
+            if logging_show_opto_rx:
                 print("Timeout")
             if raw:
                 retdata = alldata

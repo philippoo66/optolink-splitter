@@ -132,7 +132,7 @@ def utf82str(data: bytes) -> str:
 
 
 def csv_to_dict_list(path: str) -> list[dict]:
-    dict_list = []
+    dict_list: list = []
     with open(path, mode="r", newline="", encoding="utf-8") as csvfile:
         csv_reader = DictReader(csvfile, delimiter=",")
         dict_list.extend(dict(row) for row in csv_reader)
@@ -140,7 +140,7 @@ def csv_to_dict_list(path: str) -> list[dict]:
 
 
 def csv_to_tuple_list(path: str) -> list[tuple]:
-    tuple_list = []
+    tuple_list: list = []
     with open(path, mode="r", newline="", encoding="utf-8") as csvfile:
         csv_reader = reader(csvfile, delimiter=",")
         next(csv_reader)  # ignore csv header

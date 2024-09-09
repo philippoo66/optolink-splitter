@@ -36,7 +36,7 @@ from optolink_splitter.utils.common_utils import (
 from optolink_splitter.utils.onewire_util import read_w1sensor
 
 
-def get_value(data, frmat, signd: bool) -> Any:
+def get_value(data, frmat, signd: bool, format_data_hex_format: str) -> Any:
     scale = to_number(frmat)
     if scale is not None:
         return bytesval(data, scale, signd)
@@ -48,7 +48,7 @@ def get_value(data, frmat, signd: bool) -> Any:
             return utf82str(data)
         else:
             # return raw
-            return arr2hexstr(data)
+            return arr2hexstr(data, format_data_hex_format)
 
 
 def perform_bytebit_filter(config: SplitterConfig, data, item):
@@ -170,7 +170,7 @@ def response_to_request(
                 )
             else:
                 # Optolink item
-                retcode, addr, data = read_datapoint_ext(addr, int(parts[2]), serViDev)
+                retcode, addr, data = read_datapoint_ext(config, addr, int(parts[2]), serViDev)
                 if retcode == 1:
                     if numelms > 3:
                         if str(parts[3]).startswith("b:"):
@@ -179,7 +179,7 @@ def response_to_request(
                             signd = False
                             if numelms > 4:
                                 signd = get_bool(parts[4])
-                            val = get_value(data, parts[3], signd)
+                            val = get_value(data, parts[3], signd, config.format_data_hex_format)
                     else:
                         # return raw
                         val = arr2hexstr(data, config.format_data_hex_format)
