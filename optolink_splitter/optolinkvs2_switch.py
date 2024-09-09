@@ -50,7 +50,7 @@ from optolink_splitter.utils.viconn_util import (
 # global_exit_flag = False
 vitolog = None  # Vitoconnect logging
 poll_pointer = 0  # polling list
-timer_pollinterval = None  # Initialise global timer pollinterval
+timer_pollinterval = 0  # Initialise global timer pollinterval
 
 
 def olbreath(retcode: int) -> None:
