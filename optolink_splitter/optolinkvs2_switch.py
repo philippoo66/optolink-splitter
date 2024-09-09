@@ -24,7 +24,6 @@ import optolink_splitter.utils.viconn_util
 import optolink_splitter.utils.viessdata_util
 import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
-import optolink_splitter.utils.common_utils
 from optolink_splitter.config_model import SplitterConfig
 from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
@@ -47,10 +46,10 @@ def olbreath(retcode:int) -> None:
         time.sleep(0.5)
 
 
-def log_vito(data, pre):
+def log_vito(data, format_data_hex_format: str, pre):
     global vitolog
     if(vitolog is not None):
-        sd = bbbstr(data)
+        sd = bbbstr(data, format_data_hex_format)
         vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
 
@@ -196,11 +195,11 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                 vidata = viconn_util.get_vicon_request()
                 if(vidata):
                     serViDev.write(vidata)
-                    log_vito(vidata, "M")
+                    log_vito(vidata, config.format_data_hex_format, "M")
                     # recive response an pass bytes directly back to VitoConnect, 
                     # returns when response is complete (or error or timeout) 
                     retcode,_, redata = receive_vs2telegr(True, True, serViDev, serViCon)
-                    log_vito(redata, "S")
+                    log_vito(redata, config.format_data_hex_format, "S")
                     olbreath(retcode)
                     tookbreath = True
 
