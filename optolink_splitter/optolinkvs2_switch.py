@@ -19,13 +19,14 @@ import time
 import threading
 import importlib
 
-import optolink_splitter.optolinkvs2
+
 import optolink_splitter.utils.viconn_util
 import optolink_splitter.utils.viessdata_util
 import optolink_splitter.utils.tcpip_util
 import optolink_splitter.utils.requests_util
 import optolink_splitter.utils.common_utils
 from optolink_splitter.cli import SplitterConfig
+from optolink_splitter.optolinkvs2 import init_vs2, receive_vs2telegr
 from optolink_splitter.utils.common_utils import csv_to_tuple_list, bbbstr
 
 
@@ -175,7 +176,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
             vicon_thread.start()
         else:
             # VS2 Protokoll am Slave initialisieren
-            if(not optolinkvs2.init_vs2(serViDev)):
+            if(not init_vs2(serViDev)):
                 print("init_vs2 failed")
                 raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
@@ -198,7 +199,7 @@ def optolink_vs2_switch(config: SplitterConfig) -> None:
                     log_vito(vidata, "M")
                     # recive response an pass bytes directly back to VitoConnect, 
                     # returns when response is complete (or error or timeout) 
-                    retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                    retcode,_, redata = receive_vs2telegr(True, True, serViDev, serViCon)
                     log_vito(redata, "S")
                     olbreath(retcode)
                     tookbreath = True

@@ -18,8 +18,8 @@ import serial
 import sys
 import time
 
-import optolink_splitter.utils.common_utils
-import optolink_splitter.settings_ini
+from optolink_splitter.cli import SplitterConfig
+from optolink_splitter.utils.common_utils import bytesval, bbbstr
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS2 / 300 Protocol, mainly virtual r/w datapoints
@@ -120,7 +120,7 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     return receive_vs2telegr(True, False, ser)
 
 
-def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_vs2telegr(config: SplitterConfig, resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
@@ -149,8 +149,8 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         if(state == 0):
             if(resptelegr):
                 if(len(inbuff) > 0):
-                    if(settings_ini.show_opto_rx):
-                        print("rx", format(inbuff[0], settings_ini.data_hex_format))
+                    if(config.logging_show_opto_rx):
+                        print("rx", format(inbuff[0], config.format_data_hex_format))
                     if(inbuff[0] == 0x06): # VS2_ACK
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
@@ -170,7 +170,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         if(state == 1):
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
-                    print("STX Error", format(inbuff[0], settings_ini.data_hex_format))
+                    print("STX Error", format(inbuff[0], config.format_data_hex_format))
                     if(raw): retdata = alldata
                     return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
@@ -179,13 +179,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(len(inbuff) > 1):  # STX, Len
                 pllen = inbuff[1]
                 if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
-                    print("rx", utils.bbbstr(inbuff))
+                    print("rx", bbbstr(inbuff, config.format_data_hex_format))
                     print("Len Error", pllen)
                     if(raw): retdata = alldata
                     return 0xFD, 0, retdata
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
-                    if(settings_ini.show_opto_rx):
-                        print("rx", utils.bbbstr(inbuff))
+                    if(config.logging_show_opto_rx):
+                        print("rx", bbbstr(inbuff, config.format_data_hex_format))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
                     addr = (inbuff[4] << 8) + inbuff[5]  # my be bullshit in case of raw
                     retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
@@ -194,7 +194,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                         if(raw): retdata = alldata
                         return 0xFE, addr, retdata
                     if(inbuff[2] & 0x0F == 0x03):
-                        print("Error Message", utils.bbbstr(retdata))
+                        print("Error Message", bbbstr(retdata, config.format_data_hex_format))
                         if(raw): retdata = alldata
                         return 0x03, addr, retdata
                     #success
@@ -203,13 +203,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         # timout
         i+=1
         if(i > 600):
-            if(settings_ini.show_opto_rx):
+            if(config.logging_show_opto_rx):
                 print("Timeout")
             if(raw): retdata = alldata
             return 0xFF, addr, retdata
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
+def receive_fullraw(config: SplitterConfig, eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
     # times in seconds
     data_buffer = b''
     start_time = time.time()
@@ -227,14 +227,14 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
                 ser2.write(inbytes)
         elif data_buffer and ((time.time() - last_receive_time) > eot_time):
             # if data received and no further receive since more than eot_time
-            if(settings_ini.show_opto_rx):
-                print("rx", utils.bbbstr(data_buffer))
+            if(config.logging_show_opto_rx):
+                print("rx", bbbstr(data_buffer, config.format_data_hex_format))
             return data_buffer
 
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
-            if(settings_ini.show_opto_rx):
-                print("rx timeout", utils.bbbstr(data_buffer))
+            if(config.logging_show_opto_rx):
+                print("rx timeout", bbbstr(data_buffer, config.format_data_hex_format))
             return data_buffer
 
 
@@ -258,6 +258,8 @@ def calc_crc(telegram) -> int:
 # --------------------
 def main():
     port = "COM4"  #'/dev/ttyUSB0' #'COM1'
+    max_decimals = 4
+    hex_format = "02x"
 
     if(len(sys.argv) > 1):
         port = sys.argv[1]
@@ -277,15 +279,15 @@ def main():
         if(True):
             while(True):
                 buff = read_datapoint(0x00f8, 8, ser)
-                print("0x00f8", utils.bbbstr(buff))
+                print("0x00f8", bbbstr(buff, hex_format))
                 time.sleep(0.1)
 
                 buff = read_datapoint(0x0802, 2, ser)
-                print("KT", utils.bbbstr(buff), utils.bytesval(buff, 0.1))
+                print("KT", bbbstr(buff, hex_format), bytesval(buff, max_decimals, 0.1))
                 time.sleep(0.1)
 
                 buff = read_datapoint(0x0804, 2, ser)
-                print("WW", utils.bbbstr(buff), utils.bytesval(buff, 0.1))
+                print("WW", bbbstr(buff, hex_format), bytesval(buff, max_decimals, 0.1))
                 time.sleep(1)
 
 
@@ -293,7 +295,7 @@ def main():
         if(False):
             buff = read_datapoint(0x6300, 1, ser)
             currval = buff
-            print("Soll Ist", utils.bbbstr(buff), bytesval(buff))
+            print("Soll Ist", bbbstr(buff, hex_format), bytesval(buff, max_decimals))
             
             time.sleep(1)
 
@@ -304,7 +306,7 @@ def main():
             time.sleep(2)
 
             buff = read_datapoint(0x6300, 1, ser)
-            print("Soll neu", utils.bbbstr(buff), bytesval(buff))
+            print("Soll neu", bbbstr(buff, hex_format), bytesval(buff, max_decimals))
 
             time.sleep(1)
 
@@ -314,7 +316,7 @@ def main():
             time.sleep(2)
 
             buff = read_datapoint(0x6300, 1, ser)
-            print("Soll read back", utils.bbbstr(buff), bytesval(buff))
+            print("Soll read back", bbbstr(buff, hex_format), bytesval(buff, max_decimals))
 
     
     except KeyboardInterrupt:
