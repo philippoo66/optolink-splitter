@@ -1,5 +1,5 @@
-import pytest
 from uuid import uuid4
+from pytest import raises
 from click.testing import CliRunner
 from optolink_splitter.cli import main
 
@@ -30,7 +30,7 @@ def test_cli_option_poll_items_config_path_missing() -> None:
 
 def test_cli_poll_items_config_path_non_existent() -> None:
     runner = CliRunner()
-    with pytest.raises(FileNotFoundError) as excinfo:
+    with raises(FileNotFoundError) as excinfo:
         runner.invoke(
             main,
             [
