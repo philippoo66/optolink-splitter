@@ -199,6 +199,7 @@ def add_options(f):
 @command()
 @add_options
 def main(**kwargs):
+    """Main CLI Function."""
     config = SplitterConfig(**kwargs)
     optolink_vs2_switch(config)
 
