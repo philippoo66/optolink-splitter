@@ -1,0 +1,37 @@
+---
+name: "Test code"
+
+env:
+  COLUMNS: 120
+
+on:
+  push:
+    branches: ["master", "main"]
+  pull_request:
+
+jobs:
+  pytest:
+    name: "Pytest"
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    runs-on: "ubuntu-latest"
+    env:
+      OS: "ubuntu-latest"
+      PYTHON: "${{ matrix.python-version }}"
+    steps:
+      - name: "⤵️ Check out code from GitHub"
+        uses: "actions/checkout@v4"
+      - name: "🐍 Set up Python ${{ matrix.python-version }}"
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ matrix.python-version }}"
+      - name: "⚙️ Install Poetry"
+        uses: "abatilo/actions-poetry@v3.0.0"
+        with:
+          poetry-version: 1.8.3
+      - name: "⚙️ Install dependencies"
+        run: "poetry install --with dev"
+      - name: "🚀 Run pytest"
+        run: |
+          poetry run pytest tests/ -s -vv
