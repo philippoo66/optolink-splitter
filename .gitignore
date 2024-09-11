@@ -1,6 +1,8 @@
 # Byte-compiled / optimized / DLL files (naja)
 __pycache__/
 *.py[cod]
+.pytest_cache
+.mypy_cache
 # local log files
 *.log
 *.csv
