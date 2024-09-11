@@ -1,4 +1,4 @@
-'''
+"""
    Copyright 2024 philippoo66
    
    Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
@@ -12,22 +12,21 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-'''
+"""
 
 import datetime
 import os
 
-import settings_ini
-import utils
+from optolink_splitter.utils.common_utils import to_number
 
 
-def get_headline() -> str:
+def get_headline(poll_items: list[tuple]) -> str:
     now = datetime.datetime.now()
-    dt =  "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
+    dt = "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
     cols = []
-    for itm in settings_ini.poll_items:
+    for itm in poll_items:
         cols.append(itm[1])
-    capts = ';'.join([format(addr, '04X') for addr in cols])
+    capts = ";".join([format(addr, "04X") for addr in cols])
     return f";{dt};{capts};"
 
 
@@ -41,9 +40,16 @@ def minutes_since_monday_midnight() -> int:
     # Aktuelles Datum und Uhrzeit abrufen
     now = datetime.datetime.now()
     # Montag 0 Uhr 0 Minuten berechnen
-    monday_midnight = now - datetime.timedelta(days=now.weekday(), hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
+    monday_midnight = now - datetime.timedelta(
+        days=now.weekday(),
+        hours=now.hour,
+        minutes=now.minute,
+        seconds=now.second,
+        microseconds=now.microsecond,
+    )
     # Differenz zwischen dem aktuellen Zeitpunkt und Montag 0 Uhr 0 Minuten in Minuten berechnen
     return int((now - monday_midnight).total_seconds() // 60)
+
 
 def formatted_timestamp() -> str:
     # Aktuellen Zeitstempel abrufen
@@ -51,14 +57,24 @@ def formatted_timestamp() -> str:
     # Wochentag abrufen und in das entsprechende Kürzel umwandeln
     weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
     # Zeitstempel im gewünschten Format erstellen
-    return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
+    return "{0}-{1:02d}:{2:02d}:{3:02d}".format(
+        weekday, now.hour, now.minute, now.second
+    )
 
 
 wrbuffer = []
 mins_old = 0
 recent_filename = get_filename()
 
-def buffer_csv_line(data, force_write=False):
+
+def buffer_csv_line(
+    data,
+    viessdata_csv_path: str,
+    viessdata_csv_buffer_to_write: int,
+    viessdata_csv_delimiter: str,
+    poll_items: list[tuple],
+    force_write=False,
+):
     global wrbuffer
     global mins_old
     global recent_filename
@@ -66,46 +82,45 @@ def buffer_csv_line(data, force_write=False):
     sline = None
 
     mins_new = minutes_since_monday_midnight()
-    new_week = (mins_new < mins_old)  # new week
+    new_week = mins_new < mins_old  # new week
     mins_old = mins_new
 
-    buffer_full = (len(wrbuffer) >= settings_ini.buffer_to_write)
+    buffer_full = len(wrbuffer) >= viessdata_csv_buffer_to_write
 
-    if(data):
+    if data:
         sline = str(mins_new) + ";"
         sline += formatted_timestamp() + ";"
 
         # decimal separator
-        if(settings_ini.dec_separator == ","):
+        if viessdata_csv_delimiter == ",":
             tbreplaced = "."
         else:
             tbreplaced = ","
-        for i in range(0, len(settings_ini.poll_items)):
+        for i in range(0, len(poll_items)):
             sval = str(data[i])
-            if(utils.to_number(data[i]) != None):
+            if to_number(data[i]) != None:
                 # format number, anything else left like it is
-                sval = sval.replace(tbreplaced, settings_ini.dec_separator) 
+                sval = sval.replace(tbreplaced, viessdata_csv_delimiter)
             sline += sval + ";"
 
-        if(force_write and not new_week):
+        if force_write and not new_week:
             wrbuffer.append(sline)
             sline = None
 
-
-    if(force_write or new_week or buffer_full):
-        csvfile = os.path.join(settings_ini.viessdata_csv_path, recent_filename)
-        writehd = (not os.path.exists(csvfile))
-        with open(csvfile, 'a') as f:
-            if(writehd):
-                hl = get_headline()
-                f.write(hl + '\n')
+    if force_write or new_week or buffer_full:
+        csvfile = os.path.join(viessdata_csv_path, recent_filename)
+        writehd = not os.path.exists(csvfile)
+        with open(csvfile, "a") as f:
+            if writehd:
+                hl = get_headline(poll_items)
+                f.write(hl + "\n")
             for ln in wrbuffer:
-                f.write(ln + '\n')
+                f.write(ln + "\n")
             f.flush()
         wrbuffer = []
         recent_filename = get_filename()
 
-    if(sline is not None):
+    if sline is not None:
         wrbuffer.append(sline)
 
 

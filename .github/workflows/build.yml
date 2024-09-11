@@ -1,0 +1,37 @@
+---
+name: "Build package"
+
+on:
+  push:
+    branches: ["master", "main"]
+  pull_request:
+    branches: ["master", "main"]
+
+jobs:
+  build:
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      matrix:
+        os: ["macos-latest", "ubuntu-latest", "windows-latest"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+      fail-fast: false
+    steps:
+      - name: "⤵️ Check out code from GitHub"
+        uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: "🐍 Set up Python ${{ matrix.python-version }}"
+        uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ matrix.python-version }}"
+      - name: "⚙️ Install Poetry"
+        uses: "abatilo/actions-poetry@v3.0.0"
+        with:
+          poetry-version: 1.8.3
+      - name: "⚙️ Install dependencies"
+        run: |
+          poetry install --without dev
+          poetry self add "poetry-dynamic-versioning[plugin]"
+      - name: "🚀 Test package building"
+        run: "poetry build"
