@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "optolink-splitter"
+version = "1.1.1.1"
+description = "Splitter for Viessmann Optolink connection."
+authors = ["philippoo66 <https://github.com/philippoo66>"]
+license = "GNU General Public License (GPL)"
+readme = "README.md"
+packages = [
+  {include = "optolink_splitter"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU General Public License (GPL)",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+homepage = "https://github.com/philippoo66/optolink-splitter"
+repository = "https://github.com/philippoo66/optolink-splitter"
+
+[tool.poetry.scripts]
+optolink-splitter = "optolink_splitter.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "^8.1"
+pyserial = "^3.5"
+paho-mqtt = "^2.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3"
+pre-commit = "^3.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
