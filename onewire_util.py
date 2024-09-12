@@ -40,9 +40,12 @@ def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
                 if pos != -1:
                     temp_string = lines[1][pos+2:]
                     temp_c = float(temp_string) / 1000.0
-                    if(settings_ini.show_opto_rx):
-                        print("w1", lines[1][:pos])
-                    return 0x01, temp_c
+                    if(temp_reasonable(temp_c)):
+                        if(settings_ini.show_opto_rx):
+                            print("w1", lines[1][:pos])
+                        return 0x01, temp_c
+                    else:
+                        print("Err_temp_reasonabe", temp_c, lines)
         except:
             pass
         time.sleep(0.2)
@@ -77,3 +80,7 @@ def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
     elif(sensinfo[1].lower() == 'ds2423'):
         return read_ds2423(device_file)
     #elif() to be continued for other w1 sensors...
+
+# util -----------
+def temp_reasonable(temp) -> bool:
+    return ((temp > -50.0) and (temp < 150.0))
