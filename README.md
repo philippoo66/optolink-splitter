@@ -13,7 +13,7 @@ Splitter for Viessmann Optolink connection [Einführungsvideo](https://youtu.be/
 ## usage:
   1. clone files on your Pi (or other Linux or Win computer)
   2. **adjust settings in settings_ini.py** (for datapoint info see [here](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip) )
-  3. run Python script optolinkvs2_switch.py (better [run it as a service](https://github.com/philippoo66/optolink-splitter/wiki/optolinkvs2_switch-automatisch-starten))
+  3. run Python script optolinkvs2_switch.py (better [run it as a service](https://github.com/philippoo66/optolink-splitter/wiki/120-optolinkvs2_switch-automatisch-starten)
   4. feel confortable :-)
 
 **important** for use with Vitoconnect:

@@ -58,7 +58,7 @@ def connect_mqtt():
     global mqtt_client
     try:
         # Verbindung zu MQTT Broker herstellen ++++++++++++++
-        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "OLswitch" + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
+        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "olswitch") # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
         if(settings_ini.mqtt_user is not None):
             mlst = settings_ini.mqtt_user.split(':')
             mqtt_client.username_pw_set(mlst[0], password=mlst[1])
