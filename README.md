@@ -63,9 +63,9 @@ details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command
     - cmnd = write;0x6300;1;45
     - resp = 1;25344;45
 
-(be careful, in case of failure don't panic, see here ([pg 2, relatively far down](https://community.viessmann.de/t5/Gas/bitte-Hilfe-Heizung-in-Fehler-Aktorentest-B3HB-Umschaltventil/m-p/439827#M113385)))
+(be careful, in case of failure don't panic, see here ([pg 2, relatively far down](https://community.viessmann.de/t5/Gas/bitte-Hilfe-Heizung-in-Fehler-Aktorentest-B3HB-Umschaltventil/m-p/412866/highlight/true#M108705)))
 
-more regarding syntax see here: https://github.com/philippoo66/optolink-splitter/wiki#syntax
+more regarding syntax see here: https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax
 
 **important**
 
