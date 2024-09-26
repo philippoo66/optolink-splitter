@@ -93,17 +93,20 @@ def buffer_csv_line(data, force_write=False):
 
 
     if(force_write or new_week or buffer_full):
-        csvfile = os.path.join(settings_ini.viessdata_csv_path, recent_filename)
-        writehd = (not os.path.exists(csvfile))
-        with open(csvfile, 'a') as f:
-            if(writehd):
-                hl = get_headline()
-                f.write(hl + '\n')
-            for ln in wrbuffer:
-                f.write(ln + '\n')
-            f.flush()
-        wrbuffer = []
-        recent_filename = get_filename()
+        try:
+            csvfile = os.path.join(settings_ini.viessdata_csv_path, recent_filename)
+            writehd = (not os.path.exists(csvfile))
+            with open(csvfile, 'a') as f:
+                if(writehd):
+                    hl = get_headline()
+                    f.write(hl + '\n')
+                for ln in wrbuffer:
+                    f.write(ln + '\n')
+                f.flush()
+            wrbuffer = []
+            recent_filename = get_filename()
+        except Exception as e:
+            print("ERROR write csv: ", e)
 
     if(sline is not None):
         wrbuffer.append(sline)
