@@ -49,7 +49,7 @@ With Raspi 3 or higher you better utilize ttyAMA0 instead of ttyS0. See [here](h
 **ATTENTION!** Raspi UART voltage is **3.3V** so **set the jumper on the CP2102 TTL board accordingly**!  
 
 ## command syntax MQTT, TCP/IP requests
-details see [here](https://github.com/philippoo66/optolink-splitter/wiki/Command-Syntax) 
+details see [here](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip) 
 
   - read ambient temperature, scaled with sign:
     - cmnd = read;0x0800;2;0.1;true
