@@ -88,7 +88,10 @@ def publish_read(name, addr, value):
     if(mqtt_client != None):
         publishStr = settings_ini.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
-        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)    
+        if settings_ini.mqtt_payload_format == "value":
+            ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)    
+        elif settings_ini.mqtt_payload_format == "json":
+            ret = mqtt_client.publish(settings_ini.mqtt_topic, {publishStr: value})
         if(verbose): print(ret)
 
 def publish_response(resp:str):

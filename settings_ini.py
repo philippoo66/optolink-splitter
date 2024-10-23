@@ -28,7 +28,7 @@ mqtt_topic = "Vitodens"          # "optolink"
 mqtt_fstr = "{dpname}"           # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"    # "optolink/cmnd"; set None to disable listening
 mqtt_respond = "Vitodens/resp"   # "optolink/resp"
-
+mqtt_payload_format = "value"    # "value" or "json"
 
 # TCP/IP +++++++++++++++++++
 tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
