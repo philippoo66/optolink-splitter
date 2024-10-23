@@ -20,6 +20,8 @@ import paho.mqtt.client as paho
 import utils
 import settings_ini
 
+import json
+
 verbose = False
 
 mqtt_client = None
@@ -91,7 +93,7 @@ def publish_read(name, addr, value):
         if settings_ini.mqtt_payload_format == "value":
             ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)    
         elif settings_ini.mqtt_payload_format == "json":
-            ret = mqtt_client.publish(settings_ini.mqtt_topic, {publishStr: value})
+            ret = mqtt_client.publish(settings_ini.mqtt_topic, json.dumps({publishStr: value}))
         if(verbose): print(ret)
 
 def publish_response(resp:str):
