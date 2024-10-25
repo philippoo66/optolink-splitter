@@ -28,7 +28,7 @@ mqtt_topic = "Vitodens"          # "optolink"
 mqtt_fstr = "{dpname}"           # "{dpaddr:04X}_{dpname}"
 mqtt_listen = "Vitodens/cmnd"    # "optolink/cmnd"; set None to disable listening
 mqtt_respond = "Vitodens/resp"   # "optolink/resp"
-
+mqtt_json_format = False         # if False, each data point is sent on its own topic, otherwise it is sent in JSON format on one topic
 
 # TCP/IP +++++++++++++++++++
 tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
