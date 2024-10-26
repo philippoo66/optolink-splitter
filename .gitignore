@@ -8,6 +8,7 @@ __pycache__/
 # user specific files
 settings_ini.py
 test.py
+allupdate.sh
 .vscode/
 old_test/
 venv

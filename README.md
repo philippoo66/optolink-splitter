@@ -10,6 +10,8 @@ Announcements:
 
 Splitter for Viessmann Optolink connection [Einführungsvideo](https://youtu.be/95WIPFBxMsc)
 
+Extened Setup Tutorial (German) on https://www.rustimation.eu/index.php/category/iot/viessmann-api/
+
 ## usage:
   1. clone files on your Pi (or other Linux or Win computer)
   2. **adjust settings in settings_ini.py** (for datapoint info see [here](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip) )
