@@ -10,7 +10,7 @@ Announcements:
 
 Splitter for Viessmann Optolink connection [Einführungsvideo](https://youtu.be/95WIPFBxMsc)
 
-Extened Setup Tutorial (German) on https://www.rustimation.eu/index.php/category/iot/viessmann-api/
+Extened Setup Tutorial (German) on https://www.rustimation.eu/index.php/viessmann-ohne-api-optolink-splitter-1/
 
 ## usage:
   1. clone files on your Pi (or other Linux or Win computer)
