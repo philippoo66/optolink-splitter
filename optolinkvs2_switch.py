@@ -201,6 +201,7 @@ def main():
                 # first Vitoconnect request -------------------
                 vidata = viconn_util.get_vicon_request()
                 if(vidata):
+                    serViDev.reset_input_buffer()
                     serViDev.write(vidata)
                     log_vito(vidata, "M")
                     # recive response an pass bytes directly back to VitoConnect, 
