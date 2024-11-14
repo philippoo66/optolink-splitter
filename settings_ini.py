@@ -48,7 +48,7 @@ data_hex_format = '02x'    # set to '02X' for capitals
 resp_addr_format = 'd'     # format of DP address in MQTT/TCPIP request response; e.g. 'd': decimal, '04X': hex 4 digits
 
 # Viessdata utils +++++++++++++++++++
-write_viessdata_csv = True
+write_viessdata_csv = False
 viessdata_csv_path = ""
 buffer_to_write = 60
 dec_separator = ","
