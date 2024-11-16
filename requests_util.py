@@ -28,6 +28,8 @@ def get_value(data, frmat, signd:bool) -> any:
         #TODO hier evtl weitere Formate umsetzen
         if(frmat == 'vdatetime'):
             return utils.vdatetime2str(data)
+        elif(frmat == 'unixtime'):
+            return utils.unixtime2str(data)
         elif(frmat == 'utf8'):
             return utils.utf82str(data)
         else:

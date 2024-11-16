@@ -14,6 +14,7 @@
    limitations under the License.
 '''
 
+from datetime import datetime
 import settings_ini
 
 # utils +++++++++++++++++++++++++++++
@@ -111,3 +112,11 @@ def vdatetime2str(data:bytes) -> str:
 def utf82str(data:bytes) -> str:
     ret = data.decode("utf-8")
     return ret.replace('\x00', '')
+
+def unixtime2str(data) -> str:
+    if(len(data) <= 4):
+        return str(datetime.fromtimestamp(int.from_bytes(data, byteorder="little", signed=False)))
+    else:
+        dval = int.from_bytes(data, byteorder="little", signed=False)
+        return f"{datetime.fromtimestamp(dval//1000)}.{dval%1000}"
+
