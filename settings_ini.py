@@ -102,7 +102,8 @@ poll_items = [
     ("Zirkulationspumpe", 0x6515, 2, 1, False),
     # bis hierher meine Viessdata Tabelle --------
 
-#    ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'raw'),
+    # ByteBit filter examples
+    #("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'raw'),
     ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
