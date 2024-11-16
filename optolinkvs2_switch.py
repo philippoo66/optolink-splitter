@@ -247,6 +247,7 @@ def main():
                             olbreath(retcode)
                             tookbreath = True
                         except Exception as e:
+                            mod_mqtt_util.publish_response(f"Error: {e}")
                             print("Error handling MQTT request:", e)
                     else:
                         request_pointer += 1
