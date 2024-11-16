@@ -107,6 +107,10 @@ poll_items = [
     ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
     ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
 
+    # heat pump example
+    ("WPR3_HEISSGAS-Temperatur", 0xB40A, 3, 'b:0:1', 0.1, False),
+    ("WPR3_HEISSGAS-Sensorstatus", 0xB40A, 3, 'b:2'),
+
     # # 1-wire
     # ("SpeicherTemp_oben", 0xFFFd),
     # ("RuecklaufTemp_Sensor", 0xFFF4),
