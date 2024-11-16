@@ -38,7 +38,7 @@ def get_value(data, frmat, signd:bool) -> any:
 
 def perform_bytebit_filter(data, item):
     # item is poll list entry:    (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
-    # may also be read request: ("read", DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
+    # may also be read request: ("read; DpAddr; Len; 'b:startbyte:lastbyte:bitmask:endian'; Scale; Signed)
 
     bparts = item[3].split(':')
 
@@ -68,6 +68,8 @@ def perform_bytebit_filter(data, item):
         scal = item[4]
         if(scal == 'raw'):
             endian = 'raw'
+    else:
+        scal = None
 
     if(endian == 'raw'):
         return utils.arr2hexstr(udata)
@@ -78,8 +80,13 @@ def perform_bytebit_filter(data, item):
 
         uvalue = int.from_bytes(udata, byteorder=endian, signed=signd)
 
-        if((scal is not None) and (scal != 1)):
-            uvalue = round(uvalue * scal, settings_ini.max_decimals)
+        if(scal is not None):
+            scal = float(scal)
+            if(scal != 1.0):
+                #print("H round called")
+                #print(f"{type(uvalue)} {uvalue} {type(scal)} {scal}")
+                uvalue = round(uvalue * scal, int(settings_ini.max_decimals))
+                #print("H round done")
         return uvalue
 
 def get_retstr(retcode, addr, val) -> str:
@@ -134,7 +141,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
             retstr = f"{retcode};{val}"
             data = bytearray()
 
-        elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False"
+        elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False" or "r;0x2500;22;'b:0:1';0.1"
             # read +++++++++++++++++++
             addr = utils.get_int(parts[1])
             if(addr in settings_ini.w1sensors): 
@@ -146,6 +153,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
                 if(retcode==1):
                     if(numelms > 3):
                         if(str(parts[3]).startswith('b:')):
+                            #print(f"H perform_bytebit_filter, ispollitem {ispollitem}")
                             val = perform_bytebit_filter(data, parts)
                         else:
                             signd = False
