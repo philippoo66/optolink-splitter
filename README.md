@@ -79,6 +79,13 @@ discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-spli
 
 issues and bug reports -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
 
+## more pictures
+  
+![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
+ 
+![grafik](https://github.com/user-attachments/assets/fee2151f-7d99-45a0-a85a-897b54085289)
+
+
 ## version key
 ```
 Vers. 1.0.0.0
@@ -91,12 +98,6 @@ Vers. 1.0.0.0
       |- major version:
          program liftet to a new level
 ```
-
-## more pictures
-  
-![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
-
-
 
 ## old stuff
 serlog.py is only a logging bridge to see what's going on between Vitconnect and the Optolink device.
