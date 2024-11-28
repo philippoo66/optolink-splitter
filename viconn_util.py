@@ -45,15 +45,12 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float, vit
         dataVicon = serVicon.read()
         dataOpto = serOpto.read()
 
-        fdata = False
-
         # Überprüfen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_ringbuffer(bufferVicon, dataVicon)
             #optolinkvs2_switch.log_vito(dataVicon, "M")  # funktioniert hier nicht!?!?
             log_vito(dataVicon, "M", vitolog_loc)
-            fdata = True
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
@@ -63,7 +60,6 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float, vit
             add_to_ringbuffer(bufferOpto, dataOpto)
             #optolinkvs2_switch.log_vito(dataOpto, "S")  # funktioniert hier nicht!?!?
             log_vito(dataOpto, "S", vitolog_loc)
-            fdata = True
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
                 if(dataOpto == b'\x06'):
