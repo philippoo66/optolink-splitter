@@ -36,7 +36,7 @@ With Raspi 3 or higher you better utilize ttyAMA0 instead of ttyS0. See [here](h
 
 
 ## sw requirements
-  - Python (not too outdated)
+  - Python >= 3.9
   - pySerial (`pip install pyserial`)
   - if MQTT is used: phao mqtt (`pip install paho-mqtt`)
 
