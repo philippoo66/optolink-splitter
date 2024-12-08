@@ -118,38 +118,36 @@ poll_items = [
     ("cop", 0x1680, 1, 0.1, False),
 
 
-    """
-    # Tabelle fuer eine Vitodens 300 B3HB
-    ("Anlagenzeit", 0x088E, 8, 'vdatetime'),
-    ("AussenTemp", 0x0800, 2, 0.1, True),
-    ("KesselTemp", 0x0802, 2, 0.1, False),
-    ("SpeicherTemp", 0x0804, 2, 0.1, False),
-    ("AbgasTemp", 0x0808, 2, 0.1, False),
-    ("AussenTemp_fltrd", 0x5525, 2, 0.1, True),
-    ("AussenTemp_dmpd", 0x5523, 2, 0.1, True),
-    ("AussenTemp_mixed", 0x5527, 2, 0.1, True),
-    ("Eingang STB-Stoerung", 0x0A82, 1, 1, False),
-    ("Brennerstoerung", 0x0884, 1, 1, False),
-    ("Fehlerstatus Brennersteuergeraet", 0x5738, 1, 1, False),
-    ("Brennerstarts", 0x088A, 4, 1, False),
-    ("Betriebsstunden", 0x08A7, 4, 2.7777778e-4, False),  # 1/3600
-    ("Stellung Umschaltventil", 0x0A10, 1, 1, False),
-    ("Ruecklauftemp_calcd", 0x0C20, 2, 0.01, False),
-    ("Pumpenleistung", 0x0A3C, 1, 1, False),
-    ("Volumenstrom", 0x0C24, 2, 0.1, False),  # eigentlich scale 1 aber für Viessdata Grafik
-    ("KesselTemp_soll", 0x555A, 2, 0.1, False),
-    ("BrennerLeistung", 0xA38F, 1, 0.5, False),
-    ("BrennerModulation", 0x55D3, 1, 1, False),
-    ("Status", 0xA152, 2, 1, False),
-    ("SpeicherTemp_soll_akt", 0x6500, 2, 0.1, False),
-    ("Speicherladepumpe", 0x6513, 1, 1, False),
-    ("Zirkulationspumpe", 0x6515, 2, 1, False),
+    # # Tabelle fuer eine Vitodens 300 B3HB
+    # ("Anlagenzeit", 0x088E, 8, 'vdatetime'),
+    # ("AussenTemp", 0x0800, 2, 0.1, True),
+    # ("KesselTemp", 0x0802, 2, 0.1, False),
+    # ("SpeicherTemp", 0x0804, 2, 0.1, False),
+    # ("AbgasTemp", 0x0808, 2, 0.1, False),
+    # ("AussenTemp_fltrd", 0x5525, 2, 0.1, True),
+    # ("AussenTemp_dmpd", 0x5523, 2, 0.1, True),
+    # ("AussenTemp_mixed", 0x5527, 2, 0.1, True),
+    # ("Eingang STB-Stoerung", 0x0A82, 1, 1, False),
+    # ("Brennerstoerung", 0x0884, 1, 1, False),
+    # ("Fehlerstatus Brennersteuergeraet", 0x5738, 1, 1, False),
+    # ("Brennerstarts", 0x088A, 4, 1, False),
+    # ("Betriebsstunden", 0x08A7, 4, 2.7777778e-4, False),  # 1/3600
+    # ("Stellung Umschaltventil", 0x0A10, 1, 1, False),
+    # ("Ruecklauftemp_calcd", 0x0C20, 2, 0.01, False),
+    # ("Pumpenleistung", 0x0A3C, 1, 1, False),
+    # ("Volumenstrom", 0x0C24, 2, 0.1, False),  # eigentlich scale 1 aber für Viessdata Grafik
+    # ("KesselTemp_soll", 0x555A, 2, 0.1, False),
+    # ("BrennerLeistung", 0xA38F, 1, 0.5, False),
+    # ("BrennerModulation", 0x55D3, 1, 1, False),
+    # ("Status", 0xA152, 2, 1, False),
+    # ("SpeicherTemp_soll_akt", 0x6500, 2, 0.1, False),
+    # ("Speicherladepumpe", 0x6513, 1, 1, False),
+    # ("Zirkulationspumpe", 0x6515, 2, 1, False),
 
-    # ByteBit filter examples
-    ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
-    ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
-    ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
-    """
+    # # ByteBit filter examples
+    # ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
+    # ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
+    # ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
     
     # # 1-wire
     # ("SpeicherTemp_oben", 0xFFFd),
