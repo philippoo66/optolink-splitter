@@ -38,7 +38,7 @@ With Raspi 3 or higher you better utilize ttyAMA0 instead of ttyS0. See [here](h
 ## sw requirements
   - Python >= 3.9
   - pySerial (`pip install pyserial`)
-  - if MQTT is used: phao mqtt (`pip install paho-mqtt`)
+  - if MQTT is used: phao mqtt >= 2.0 (`pip install paho-mqtt`) 
 
   on more recent systems the use of virtual environment gets more or less 'mandatory' ("externally managed system"...). See Wiki ([here](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)) for details.  
 
