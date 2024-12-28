@@ -83,4 +83,4 @@ def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
 
 # util -----------
 def temp_reasonable(temp) -> bool:
-    return ((temp > -50.0) and (temp < 150.0))
+    return (-50.0 < temp < 150.0)
