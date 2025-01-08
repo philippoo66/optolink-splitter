@@ -28,12 +28,12 @@ cmnd_queue = []   # command queue to serialize bus traffic
 def on_connect(client, userdata, flags, reason_code, properties):
     if settings_ini.mqtt_listen != None:
         client.subscribe(settings_ini.mqtt_listen)
-    ret = mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
+    mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
     
 def on_disconnect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
         print('mqtt broker disconnected. reason_code = ' + str(reason_code))
-    ret = mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+    mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
 
 def on_message(client, userdata, msg):
     #print("MQTT recd:", msg.topic, msg.payload)
@@ -100,6 +100,8 @@ def publish_response(resp:str):
 def exit_mqtt():
     if(mqtt_client != None):
         print("disconnect MQTT client")
+        if(mqtt_client.is_connected):
+            mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
         mqtt_client.disconnect()
 
     

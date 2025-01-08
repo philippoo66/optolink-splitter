@@ -31,7 +31,7 @@ def read_w1file(device_file):
 # 69 01 55 05 7f a5 a5 66 fa t=22562
 
 def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
-    for _ in range(15):  # 3 sec
+    for _ in range(15):  # 1.5 sec
         try:
             lines = read_w1file(device_file)
             if(lines[0].strip()[-3:] == 'YES'):
@@ -45,11 +45,11 @@ def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
                             print("w1", lines[1][:pos])
                         return 0x01, temp_c
                     else:
-                        print("Err_temp_reasonabe", temp_c, lines)
+                        print("Err_w1_temp_reasonabe", temp_c, lines)
         except:
             pass
         time.sleep(0.2)
-    return 0xFF, -999.999  # FF = timeout
+    return 0xFF, -99.999  # FF = timeout
 
 
 def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
@@ -83,4 +83,4 @@ def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
 
 # util -----------
 def temp_reasonable(temp) -> bool:
-    return ((temp > -50.0) and (temp < 150.0))
+    return (-50.0 < temp < 150.0)
