@@ -120,6 +120,8 @@ def main():
     global poll_pointer
     global vitolog
 
+    excptn = None
+
     try:
         mod_mqtt_util = None
         poll_data = [None] * len(settings_ini.poll_items)
@@ -278,10 +280,12 @@ def main():
             if(not tookbreath):
                 time.sleep(0.005) 
 
-    except KeyboardInterrupt:
-        print("Abbruch durch Benutzer.")
     except Exception as e:
-        print(e)
+        excptn = e
+        if(excptn == KeyboardInterrupt):
+            print("Abbruch durch Benutzer.")
+        else:
+            print(e)
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
@@ -290,11 +294,11 @@ def main():
             print("closing serViCon")
             serViCon.close()
         if(serViDev is not None):
-            if serViDev.is_open:
+            if(serViDev.is_open and (excptn != serial.SerialException)):
                 print("reset protocol")
                 serViDev.write([0x04])  #TODO yes or no?
-                print("closing serViDev")
-                serViDev.close()
+            print("closing serViDev")
+            serViDev.close()
         print("cancel poll timer ") 
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
