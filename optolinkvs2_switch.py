@@ -294,9 +294,9 @@ def main():
             print("closing serViCon")
             serViCon.close()
         if(serViDev is not None):
-            if(serViDev.is_open and (excptn != serial.SerialException)):
+            if(serViDev.is_open and (not isinstance(excptn, serial.SerialException))):
                 print("reset protocol")
-                serViDev.write([0x04])  #TODO yes or no?
+                serViDev.write([0x04])
             print("closing serViDev")
             serViDev.close()
         print("cancel poll timer ") 
