@@ -282,7 +282,7 @@ def main():
 
     except Exception as e:
         excptn = e
-        if(excptn == KeyboardInterrupt):
+        if(isinstance(excptn, KeyboardInterrupt)):
             print("Abbruch durch Benutzer.")
         else:
             print(e)
