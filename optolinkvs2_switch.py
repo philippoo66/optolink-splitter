@@ -285,7 +285,7 @@ def main():
         if(isinstance(excptn, KeyboardInterrupt)):
             print("Abbruch durch Benutzer.")
         else:
-            print(e)
+            print(excptn)
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
@@ -294,7 +294,7 @@ def main():
             print("closing serViCon")
             serViCon.close()
         if(serViDev is not None):
-            if(serViDev.is_open and (not isinstance(excptn, serial.SerialException))):
+            if(serViDev.is_open and (not isinstance(excptn, OSError))):
                 print("reset protocol")
                 serViDev.write([0x04])
             print("closing serViDev")
