@@ -290,6 +290,10 @@ def main():
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
         print("exit close")
+        print("cancel poll timer ") 
+        timer_pollinterval.cancel()
+        tcpip_util.exit_tcpip()
+        #tcp_thread.join()  #TODO ??
         if(serViCon is not None):
             print("closing serViCon")
             serViCon.close()
@@ -299,10 +303,6 @@ def main():
                 serViDev.write([0x04])
             print("closing serViDev")
             serViDev.close()
-        print("cancel poll timer ") 
-        timer_pollinterval.cancel()
-        tcpip_util.exit_tcpip()
-        #tcp_thread.join()  #TODO ??
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
         if(vitolog is not None):
