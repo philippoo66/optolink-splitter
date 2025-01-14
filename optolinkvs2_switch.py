@@ -54,12 +54,22 @@ def log_vito(data, pre):
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
+poll_counter = 0
 
 def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
+    global poll_counter
     val = "?"
 
-    item = settings_ini.poll_items[poll_pointer]  # (Name, DpAddr, Len, Scale/Type, Signed)  
+    item = settings_ini.poll_items[poll_pointer]  # ([PollCount], Name, DpAddr, Len, Scale/Type, Signed)
+    if(len(item) > 1 and type(item[0]) is int):
+        if(poll_counter % item[0] != 0):
+            # do not poll this item this time, return 0xAA for no olbreath
+            return 0xAA
+        else:
+            # remove PollCount, for further processing
+            item = item[1:]
+
     retcode, data, val, _ = requests_util.response_to_request(item, ser)
 
     if(retcode == 0x01):
@@ -118,6 +128,7 @@ def startPollTimer(secs:float):
 # ------------------------
 def main():
     global poll_pointer
+    global poll_counter
     global vitolog
 
     excptn = None
@@ -226,6 +237,7 @@ def main():
                     poll_pointer += 1
 
                     if(poll_pointer == len_polllist):
+                        poll_counter += 1
                         if(settings_ini.write_viessdata_csv):
                             viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1
