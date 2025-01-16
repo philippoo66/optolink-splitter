@@ -15,7 +15,7 @@ import mqtt_util
 import time
 
 def Create_Entities():
-    with open("vitocal.json") as js:
+    with open("entities.json") as js:
         ha_ent = json.load(js)
         js.close()
     mqtt_util.connect_mqtt()
