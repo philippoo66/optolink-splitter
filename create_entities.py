@@ -5,7 +5,7 @@
 # MQTT publishing in Homeassistant:
 # Home Assitance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
 #    Topic: 
-#    {mqtt_discovery_topic}/[domain]/{mqtt_base_topic}/config
+#    {mqtt_discovery_topic}/[domain]/{dp_prefix}{mqtt_base_topic}/config
 #    Value:
 #    {"object_id": "{dp_prefix}{name}", "unique_id": "{dp_prefix}[name(converted)]", "device": [...] , "availability_topic": "{mqtt_base_topic}/LWT", "state_topic": "{mqtt_base_topic}/[name(converted)]", "name": "[name]", [...]}
 
@@ -15,7 +15,7 @@ import mqtt_util
 import time
 
 def Create_Entities():
-    with open("entities.json") as js:
+    with open("vitocal.json") as js:
         ha_ent = json.load(js)
         js.close()
     mqtt_util.connect_mqtt()
@@ -55,13 +55,13 @@ def Create_Entities():
         
         ## MQTT-Publishing
         mqtt_util.mqtt_client.publish(
-            f"{mqtt_discovery_topic}/{entity['domain']}/{id}/config",
+            f"{mqtt_discovery_topic}/{entity['domain']}/{ha_ent['dp_prefix']}{id}/config",
             json.dumps(config),
             retain=True,
         )
         
         print(f"Processed entity: {entity['name']}")
-        print(f"{mqtt_discovery_topic}/{entity['domain']}/{id}/config")
+        print(f"{mqtt_discovery_topic}/{entity['domain']}/{ha_ent['dp_prefix']}{id}/config")
 #        print(json.dumps(config))
         
 #        time.sleep(3) ## Uncomment only if necessary: Might be necessary to give HA some time to process the message before the next message arrives. Can lead to MQTT disconnects and entities not being created.
