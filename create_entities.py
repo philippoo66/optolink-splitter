@@ -1,10 +1,11 @@
 # "mqtt_base_topic": topic that is read from the optolink-splitter
-# "mqtt_publishing_topic": topic in which the entity will be published in homeassistant
+# "mqtt_discovery_topic": topic that home assistant is listening to for mqtt discovery
 # "dp_prefix": added to object_id" and "unique_id" in value of the entity config
 #
 # MQTT publishing in Homeassistant:
+# Home Assitance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
 #    Topic: 
-#    homeassistant/[domain]/{mqtt_publishing_topic}/config
+#    {mqtt_discovery_topic}/[domain]/{mqtt_base_topic}/config
 #    Value:
 #    {"object_id": "{dp_prefix}{name}", "unique_id": "{dp_prefix}[name(converted)]", "device": [...] , "availability_topic": "{mqtt_base_topic}/LWT", "state_topic": "{mqtt_base_topic}/[name(converted)]", "name": "[name]", [...]}
 
@@ -20,11 +21,11 @@ def Create_Entities():
     mqtt_util.connect_mqtt()
     
     mqtt_base_topic = ha_ent.get("mqtt_base_topic", "")
-    mqtt_publishing_topic = ha_ent.get("mqtt_publishing_topic", "")
+    mqtt_discovery_topic = ha_ent.get("mqtt_discovery_topic", "")
     dp_prefix = ha_ent.get("dp_prefix", "")
     
     ## Print out all prefix information
-    print(f"\nPrefix information \n  mqtt_base_topic: {mqtt_base_topic} \n  mqtt_publishing_topic: {mqtt_publishing_topic} \n  dp_prefix: {dp_prefix}")
+    print(f"\nPrefix information \n  mqtt_base_topic: {mqtt_base_topic} \n  mqtt_discovery_topic: {mqtt_discovery_topic} \n  dp_prefix: {dp_prefix}")
     ## Print out all datapoints and their name conversions
     print("\nAll generated IDs from Entities")
     for entity in ha_ent["datapoints"]:
@@ -54,16 +55,16 @@ def Create_Entities():
         
         ## MQTT-Publishing
         mqtt_util.mqtt_client.publish(
-            f"homeassistant/{entity['domain']}/{mqtt_publishing_topic}/{id}/config",
+            f"{mqtt_discovery_topic}/{entity['domain']}/{id}/config",
             json.dumps(config),
             retain=True,
         )
         
         print(f"Processed entity: {entity['name']}")
-        print(f"homeassistant/{entity['domain']}/{mqtt_publishing_topic}/{id}/config")
-        print(json.dumps(config))
+        print(f"{mqtt_discovery_topic}/{entity['domain']}/{id}/config")
+#        print(json.dumps(config))
         
-        #time.sleep(3) ## Uncomment only if necessary: Might be necessary to give HA some time to process the message before the next message arrives. Can lead to MQTT disconnects and entities not being created.
+#        time.sleep(3) ## Uncomment only if necessary: Might be necessary to give HA some time to process the message before the next message arrives. Can lead to MQTT disconnects and entities not being created.
    
 if __name__ == "__main__":
     Create_Entities()
