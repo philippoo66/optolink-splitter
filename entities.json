@@ -1,5 +1,5 @@
 {
-"base_topic":"vitocal/",
+"mqtt_base_topic":"vitocal/",
 "dp_prefix":"vitocal_",
 "device": {"identifiers":["Vitotronic_WO1C"],"name":"Vitocal","model":"Vitocal 300G","manufacturer": "Viessmann"},
 "device_short":{"identifiers": ["Vitotronic_WO1C"]},
