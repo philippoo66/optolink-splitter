@@ -64,7 +64,7 @@ w1sensors = {}
 # polling datapoints +++++++++++++++++++
 poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
 poll_items = [
-    # ([PollCount], Name, DpAddr, Len, Scale/Type, Signed)
+    # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
 
     # Tabelle fuer Vitocalxxx-G mit Vitotronic 200 (Typ WO1C) (ab 04/2012)
     ("error", 0x0491, 1, 1, False),
