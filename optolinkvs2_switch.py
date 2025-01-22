@@ -28,6 +28,7 @@ import viessdata_util
 import tcpip_util
 import requests_util
 import utils
+import c_logging
 
 #global_exit_flag = False
 
@@ -41,15 +42,6 @@ def olbreath(retcode:int):
     else:
         # allow calming down
         time.sleep(5 * settings_ini.olbreath)
-
-# Vitoconnect logging
-vitolog = None
-
-def log_vito(data, pre):
-    global vitolog
-    if(vitolog is not None):
-        sd = utils.bbbstr(data)
-        vitolog.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
 
 
 # polling list +++++++++++++++++++++++++++++
@@ -138,7 +130,6 @@ def startPollTimer(secs:float):
 def main():
     global poll_pointer
     global poll_cycle
-    global vitolog
 
     excptn = None
 
@@ -192,14 +183,14 @@ def main():
         if(serViCon is not None):
             # Vitoconncet logging
             if(settings_ini.log_vitoconnect):
-                vitolog = open('vitolog.txt', 'a')
+                c_logging.vitolog.open_log()
             # detect VS2 Protokol
             print("awaiting VS2...")
             vs2timeout = settings_ini.vs2timeout
-            if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout, vitolog):
+            if not viconn_util.detect_vs2(serViCon, serViDev, vs2timeout):
                 raise Exception("VS2 protocol not detected within timeout", vs2timeout)
             print("VS detected")
-            vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,vitolog))
+            vicon_thread = threading.Thread(target=viconn_util.listen_to_Vitoconnect, args=(serViCon,))
             vicon_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             vicon_thread.start()
         else:
@@ -225,11 +216,11 @@ def main():
                 if(vidata):
                     serViDev.reset_input_buffer()
                     serViDev.write(vidata)
-                    log_vito(vidata, "M")
+                    c_logging.vitolog.do_log(vidata, "M")
                     # recive response an pass bytes directly back to VitoConnect, 
                     # returns when response is complete (or error or timeout) 
                     retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
-                    log_vito(redata, "S")
+                    c_logging.vitolog.do_log(redata, "S")
                     olbreath(retcode)
                     tookbreath = True
 
@@ -326,9 +317,9 @@ def main():
             serViDev.close()
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
-        if(vitolog is not None):
+        if(c_logging.vitolog.log_handle is not None):
             print("closing vitolog")
-            vitolog.close()
+            c_logging.vitolog.close_log()
 
  
 if __name__ == "__main__":
