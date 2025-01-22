@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.1.1.1"
+version = "1.2.0.0"
 
 import serial
 import time
@@ -34,13 +34,13 @@ import utils
 def olbreath(retcode:int):
     if(retcode <= 0x03):
         # success, err msg
-        time.sleep(0.1)
+        time.sleep(settings_ini.olbreath)
     elif(retcode in [0xFF, 0xAA]):
         # timeout, err_handle
         pass
     else:
         # allow calming down
-        time.sleep(0.5)
+        time.sleep(5 * settings_ini.olbreath)
 
 # Vitoconnect logging
 vitolog = None
@@ -54,21 +54,25 @@ def log_vito(data, pre):
 
 # polling list +++++++++++++++++++++++++++++
 poll_pointer = 0
-poll_counter = 0
+poll_cycle = 0
 
 def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
-    global poll_counter
+    global poll_cycle
     val = "?"
 
-    item = settings_ini.poll_items[poll_pointer]  # ([PollCount], Name, DpAddr, Len, Scale/Type, Signed)
-    if(len(item) > 1 and type(item[0]) is int):
-        if(poll_counter % item[0] != 0):
-            # do not poll this item this time, return 0xAA for no olbreath
-            return 0xAA
+    while(True):
+        item = settings_ini.poll_items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
+        if(len(item) > 1 and type(item[0]) is int):
+            if(poll_cycle % item[0] != 0):
+                # do not poll this item this time
+                poll_pointer += 1
+            else:
+                # remove PollCycle for further processing
+                item = item[1:]
+                break
         else:
-            # remove PollCount, for further processing
-            item = item[1:]
+            break
 
     retcode, data, val, _ = requests_util.response_to_request(item, ser)
 
@@ -87,15 +91,20 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                 while((poll_pointer + 1) < len(settings_ini.poll_items)):
                     next_idx = poll_pointer + 1
                     next_item = settings_ini.poll_items[next_idx]
+
+                    # remove PollCycle in case
+                    if(type(next_item[0]) is int):
+                        next_item = next_item[1:]
+                    
                     # if next address same AND next len same AND next type starts with 'b:'
-                    if((next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
+                    if((len(next_item) > 3) and (next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
                         next_val = requests_util.perform_bytebit_filter(data, next_item)
 
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val
 
                         if(mod_mqtt is not None): 
-                            # post to MQTT broker
+                            # publish to MQTT broker
                             mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
 
                         poll_pointer = next_idx
@@ -128,7 +137,7 @@ def startPollTimer(secs:float):
 # ------------------------
 def main():
     global poll_pointer
-    global poll_counter
+    global poll_cycle
     global vitolog
 
     excptn = None
@@ -237,7 +246,7 @@ def main():
                     poll_pointer += 1
 
                     if(poll_pointer == len_polllist):
-                        poll_counter += 1
+                        poll_cycle += 1
                         if(settings_ini.write_viessdata_csv):
                             viessdata_util.buffer_csv_line(poll_data)
                         poll_pointer += 1

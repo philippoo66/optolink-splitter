@@ -34,9 +34,10 @@ mqtt_respond = "Vito/resp"       # "optolink/resp"
 tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
 
 
-# full raw timing
+# timing +++++++++++++++++++
 fullraw_eot_time = 0.05    # seconds. time no receive to decide end of telegram 
 fullraw_timeout = 2        # seconds. timeout, return in any case 
+olbreath = 0.1             # seconds of sleep after request-response cycle
 
 # logging, info +++++++++++++++++++
 log_vitoconnect = False    # logs communication with Vitoconnect (rx+tx telegrams)
