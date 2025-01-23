@@ -19,16 +19,7 @@ import os
 
 import settings_ini
 import utils
-
-
-def get_headline() -> str:
-    now = datetime.datetime.now()
-    dt =  "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
-    cols = []
-    for itm in settings_ini.poll_items:
-        cols.append(itm[1])
-    capts = ';'.join([format(addr, '04X') for addr in cols])
-    return f";{dt};{capts};"
+import c_polllist
 
 
 def get_filename() -> str:
@@ -36,6 +27,19 @@ def get_filename() -> str:
     yr, cw, _ = now.isocalendar()
     return "{0:04d}_KW{1:02d}_data.csv".format(yr, cw)
 
+def get_headline(self) -> str:
+    now = datetime.datetime.now()
+    dt =  "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
+    cols = []
+    for itm in c_polllist.poll_list.items:
+        # get addr as column caption
+        if(type(itm[0]) is int):
+            # PollCycle...
+            cols.append(itm[2])
+        else:
+            cols.append(itm[1])
+    capts = ';'.join([format(addr, '04X') for addr in cols])
+    return f";{dt};{capts};"
 
 def minutes_since_monday_midnight() -> int:
     # Aktuelles Datum und Uhrzeit abrufen
@@ -80,7 +84,7 @@ def buffer_csv_line(data, force_write=False):
             tbreplaced = "."
         else:
             tbreplaced = ","
-        for i in range(0, len(settings_ini.poll_items)):
+        for i in range(0, c_polllist.poll_list.num_items):
             sval = str(data[i])
             if(utils.to_number(data[i]) != None):
                 # format number, anything else left like it is
@@ -98,7 +102,7 @@ def buffer_csv_line(data, force_write=False):
             writehd = (not os.path.exists(csvfile))
             with open(csvfile, 'a') as f:
                 if(writehd):
-                    hl = get_headline()
+                    hl = c_polllist.poll_list.get_headline()
                     f.write(hl + '\n')
                 for ln in wrbuffer:
                     f.write(ln + '\n')
@@ -114,7 +118,7 @@ def buffer_csv_line(data, force_write=False):
 
 # main for test only
 if __name__ == "__main__":
-    print(get_headline())
+    print(c_polllist.poll_list.get_headline())
     print(get_filename())
     # Minuten seit Montag 0 Uhr 0 Minuten berechnen und ausgeben
     print("Minuten seit Montag 0 Uhr 0 Minuten:", minutes_since_monday_midnight())
