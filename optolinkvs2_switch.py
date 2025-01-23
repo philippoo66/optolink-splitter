@@ -40,8 +40,8 @@ def olbreath(retcode:int):
     if(retcode <= 0x03):
         # success, err msg
         time.sleep(settings_ini.olbreath)
-    elif(retcode in [0xFF, 0xAA]):
-        # timeout, err_handle
+    elif(retcode in [0xFF, 0xAA, 0xAB]):
+        # timeout, err_handle, final item skipped in cycle
         pass
     else:
         # allow calming down
@@ -68,7 +68,11 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                     poll_data[poll_pointer] = poll_data[poll_pointer - 1]
                 else:
                     poll_data[poll_pointer] = 0
+                
                 poll_pointer += 1
+                if(poll_pointer == c_polllist.poll_list.num_items):
+                    # no further item this cycle                    
+                    return 0xAB
             else:
                 # remove PollCycle for further processing
                 item = item[1:]
@@ -246,9 +250,9 @@ def main():
 
                     poll_pointer += 1
 
-                    if(poll_pointer == len_polllist):
+                    if(poll_pointer >= len_polllist):
                         poll_cycle += 1
-                        if(poll_cycle == 223092870):  # 1*2*3*5*7*11*13*17*19*23
+                        if(poll_cycle == 2230928700):  # 10*2*3*5*7*11*13*17*19*23
                             poll_cycle = 0
                         if(settings_ini.write_viessdata_csv):
                             viessdata_util.buffer_csv_line(poll_data)
