@@ -252,7 +252,7 @@ def main():
 
                     if(poll_pointer >= len_polllist):
                         poll_cycle += 1
-                        if(poll_cycle == 2230928700):  # 10*2*3*5*7*11*13*17*19*23
+                        if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                             poll_cycle = 0
                         if(settings_ini.write_viessdata_csv):
                             viessdata_util.buffer_csv_line(poll_data)
