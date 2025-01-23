@@ -102,7 +102,7 @@ def buffer_csv_line(data, force_write=False):
             writehd = (not os.path.exists(csvfile))
             with open(csvfile, 'a') as f:
                 if(writehd):
-                    hl = c_polllist.poll_list.get_headline()
+                    hl = get_headline()
                     f.write(hl + '\n')
                 for ln in wrbuffer:
                     f.write(ln + '\n')
@@ -118,7 +118,7 @@ def buffer_csv_line(data, force_write=False):
 
 # main for test only
 if __name__ == "__main__":
-    print(c_polllist.poll_list.get_headline())
+    print(get_headline())
     print(get_filename())
     # Minuten seit Montag 0 Uhr 0 Minuten berechnen und ausgeben
     print("Minuten seit Montag 0 Uhr 0 Minuten:", minutes_since_monday_midnight())

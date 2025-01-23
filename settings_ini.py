@@ -15,8 +15,8 @@
 '''
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 port_optolink = '/dev/ttyUSB0'   # '/dev/ttyUSB0'  {mandatory}
+port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 
 vs2timeout = 120                 # seconds to detect VS2 protocol on vitoconnect connection
 
@@ -34,7 +34,7 @@ mqtt_respond = "Vito/resp"       # "optolink/resp"
 tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
 
 
-# timing +++++++++++++++++++
+# ol comm timing +++++++++++++++++++
 fullraw_eot_time = 0.05    # seconds. time no receive to decide end of telegram 
 fullraw_timeout = 2        # seconds. timeout, return in any case 
 olbreath = 0.1             # seconds of sleep after request-response cycle
