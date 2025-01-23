@@ -2,6 +2,7 @@
 **use at your own risk!**
 
 Announcements: 
+ - NEW Version 1.2.0.0! see [log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1200)
  - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
 
