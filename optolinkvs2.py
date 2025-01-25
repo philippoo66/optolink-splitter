@@ -187,7 +187,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                     if(settings_ini.show_opto_rx):
                         print("rx", utils.bbbstr(inbuff))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
-                    addr = (inbuff[4] << 8) + inbuff[5]  # my be bullshit in case of raw
+                    addr = (inbuff[4] << 8) + inbuff[5]  # may be bullshit in case of raw
                     retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
                     if(inbuff[-1] != calc_crc(inbuff)):
                         print("CRC Error")
