@@ -13,7 +13,7 @@
 # --------------------------------------------------
 #  "mqtt_optolink_base_topic": Topic read from the optolink-splitter. The value must end with a "/", e.g. "vitocal/".
 #  "mqtt_ha_discovery_prefix": Topic Home Assistant listens to for MQTT discovery. Home Assistants default is "homeassistant".
-#  "mqtt_ha_node_id" (optional): Not necessarily needed by Home Assistant. Can be used to structure the MQTT topic — see the example of publishing below. The value must end with a "/" or be empty if not used. 
+#  "mqtt_ha_node_id" (optional): Not necessarily needed by Home Assistant. Can be used to structure the MQTT topic, see the example of publishing above. The value must end with a "/" or be empty if not used. 
 #  "dp_prefix": Added to "object_id" and "unique_id" in the value of the entity configuration. The value should end with an "_", e.g., "vitocal_".
 
 import json
