@@ -81,6 +81,11 @@ discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-spli
 
 issues and bug reports -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
 
+## printable case
+
+there is a [printable case for Raspi 2 and 3](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall) with CP board holder. Probably for Raspi 4 it will follow. Thanks to [Kristian](https://github.com/kristian)!  
+
+
 ## more pictures
   
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
