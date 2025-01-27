@@ -15,8 +15,8 @@
 '''
 
 # serial ports +++++++++++++++++++
-port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 port_optolink = '/dev/ttyUSB0'   # '/dev/ttyUSB0'  {mandatory}
+port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
 
 vs2timeout = 120                 # seconds to detect VS2 protocol on vitoconnect connection
 
@@ -34,9 +34,10 @@ mqtt_respond = "Vito/resp"       # "optolink/resp"
 tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
 
 
-# full raw timing
+# ol comm timing +++++++++++++++++++
 fullraw_eot_time = 0.05    # seconds. time no receive to decide end of telegram 
 fullraw_timeout = 2        # seconds. timeout, return in any case 
+olbreath = 0.1             # seconds of sleep after request-response cycle
 
 # logging, info +++++++++++++++++++
 log_vitoconnect = False    # logs communication with Vitoconnect (rx+tx telegrams)
@@ -64,7 +65,7 @@ w1sensors = {}
 # polling datapoints +++++++++++++++++++
 poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
 poll_items = [
-    # (Name, DpAddr, Len, Scale/Type, Signed)
+    # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
 
     # Tabelle fuer Vitocalxxx-G mit Vitotronic 200 (Typ WO1C) (ab 04/2012)
     ("error", 0x0491, 1, 1, False),
@@ -115,7 +116,7 @@ poll_items = [
     ("electrical_energy", 0x1660, 4, 0.1, False),
     ("thermal_power", 0x16A0, 4, 1, False),
     ("electrical_power", 0x16A4, 4, 1, False),
-    ("cop", 0x1680, 1, 0.1, False),
+    (60, "cop", 0x1680, 1, 0.1, False), # Nur jedes 60. mal pollen (wenn poll_interval=30 => 60 x 30 = alle 30 Minuten)
 
 
     # # Tabelle fuer eine Vitodens 300 B3HB

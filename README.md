@@ -2,6 +2,7 @@
 **use at your own risk!**
 
 Announcements: 
+ - NEW Version 1.2.0.0! see [log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1200)
  - There is a [branch supporting VS1 / KW protocol](https://github.com/philippoo66/optolink-splitter/blob/vs1test/)! Choose in case... ;-)
  - There are other feature branches - look at if you like
 
@@ -46,7 +47,8 @@ With Raspi 3 or higher you better utilize ttyAMA0 instead of ttyS0. See [here](h
   - Raspi or other computer
   - Viessmann Optolink generation device (Vitodens, Vitocal, Vitocrossal, ...)
   - Optolink r/w head (original from Viessmann, one of all the self-mades, probably a r/w head for volkszähler may work, too, if distance of LEDs gets adjusted ([8€](https://www.ebay.de/itm/285350331996)))
-  - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a **CP2102 chip(!)** [(e.g. this)](https://www.google.com/search?q=cp2102+usb+ttl)
+  - if Vitoconnect gets included: USB connection to Vitoconnect utilizing a CP2102 chip [(e.g. this)](https://www.google.com/search?q=cp2102+usb+ttl).<br>
+  With later Vitoconnects a FTDI chips also seem to work. 
 
 **ATTENTION!** Raspi UART voltage is **3.3V** so **set the jumper on the CP2102 TTL board accordingly**!  
 
@@ -78,6 +80,11 @@ When using PuTTY or some like that, the session must be closed by sending `exit`
 discussion, contact -> [dicussions](https://github.com/philippoo66/optolink-splitter/discussions)
 
 issues and bug reports -> [issues](https://github.com/philippoo66/optolink-splitter/issues)
+
+## printable case
+
+there is a [printable case for Raspi 2 and 3](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall) with CP board holder. Probably for Raspi 4 it will follow. Thanks to [Kristian](https://github.com/kristian)!  
+
 
 ## more pictures
   
