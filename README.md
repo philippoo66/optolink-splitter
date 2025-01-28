@@ -92,6 +92,8 @@ there is a [printable case for Raspi 2 and 3](https://www.printables.com/model/1
  
 ![grafik](https://github.com/user-attachments/assets/fee2151f-7d99-45a0-a85a-897b54085289)
 
+![grafik](https://github.com/user-attachments/assets/28901428-5cec-4135-aada-795302d58811)
+ref. https://github.com/philippoo66/optolink-splitter/discussions/67
 
 ## version key
 ```
