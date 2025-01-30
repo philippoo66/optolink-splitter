@@ -51,7 +51,7 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 ## :file_folder: Software Requirements
 - Python >= 3.9:
   - pyserial: `pip install pyserial`
-  - MQTT: `pip install paho-mqtt`
+  - MQTT: `pip install paho-mqtt` version >= 2.0
 - Virtual environments recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
 
 ## :desktop_computer:	Hardware Requirements
