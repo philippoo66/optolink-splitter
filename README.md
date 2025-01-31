@@ -32,8 +32,8 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 
 ## :package: System Architecture
 ### How it Works
-- Enables both **Viessmann's cloud services** and **local monitoring/control** in parallel.
-- Data accessible via **MQTT** for smart home integration (e.g. Home Assistant).
+- Enables both **local monitoring/control** and **Viessmann's cloud services** in parallel.
+- Data accessible via **MQTT** or TCP/IP for smart home integration (e.g. Home Assistant).
 - Supports **VS2 and VS1/KW protocols** with different branches.
   - branch [vs1test](https://github.com/philippoo66/optolink-splitter/tree/vs1test) works as with VS1/KW protocol but only _without_ Vitoconnect.
   - for VS1/KW _with_ Vitoconnect there is the [viconn-listener](https://github.com/philippoo66/viconn-listener) available (beta state).
@@ -90,7 +90,7 @@ pip install paho-mqtt  # Only if MQTT is used
 
 ### 3. Configure the Settings
 Modify `settings_ini.py` according to your heating (/ datapoints):
-- Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses)
+- Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
 - Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
 
 ### 5. Run the Script
