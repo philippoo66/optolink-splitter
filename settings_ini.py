@@ -14,60 +14,64 @@
    limitations under the License.
 '''
 
-# serial ports +++++++++++++++++++
-port_optolink = '/dev/ttyUSB0'   # '/dev/ttyUSB0'  {mandatory}
-port_vitoconnect = '/dev/ttyS0'  # '/dev/ttyS0'  older Pi:'/dev/ttyAMA0'  {optional} set None if no Vitoconnect
+# Serial Ports +++++++++++++++++++
+port_optolink = '/dev/ttyUSB0'   # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
+port_vitoconnect = '/dev/ttyS0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyS0', older Raspberry Pi models: '/dev/ttyAMA0', set None if no Vitoconnect)
 
-vs2timeout = 120                 # seconds to detect VS2 protocol on vitoconnect connection
+vs2timeout = 120                 # Timeout (seconds) for VS2 protocol detection (default: 120)
 
+# MQTT +++++++++++++++++++++++++++
+mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
+mqtt_user = None                 # MQTT user credentials (default: None for anonymous access)
+mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
+mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
+mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
+mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
 
-# MQTT +++++++++++++++++++
-mqtt = "192.168.0.123:1883"      # e.g. "192.168.0.123:1883"; set None to disable MQTT
-mqtt_user = None                 # "<user>:<pwd>"; set None for anonymous connect
-mqtt_topic = "Vito"              # "optolink"
-mqtt_fstr = "{dpname}"           # "{dpaddr:04X}_{dpname}"
-mqtt_listen = "Vito/cmnd"        # "optolink/cmnd"; set None to disable listening
-mqtt_respond = "Vito/resp"       # "optolink/resp"
+# TCP/IP ++++++++++++++++++++++++++
+tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
 
+# Optolink Communication Timing +
+fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
+fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
+olbreath = 0.1                  # Pause (seconds) after a request-response cycle (default: 0.1)
 
-# TCP/IP +++++++++++++++++++
-tcpip_port = 65234         # e.g. 65234 is used by Viessdataby default; set None to disable TCP/IP
+# Optolink Logging ++++++++++++++
+log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
+show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
 
+# Data Formatting +++++++++++++++
+max_decimals = 4                # Max decimal places for float values (default: 4)
+data_hex_format = '02x'         # Hexadecimal formatting (set '02X' for uppercase formatting, default: '02x')
+resp_addr_format = 'd'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, '04X' for 4-digit hex, default: 'd')
 
-# ol comm timing +++++++++++++++++++
-fullraw_eot_time = 0.05    # seconds. time no receive to decide end of telegram 
-fullraw_timeout = 2        # seconds. timeout, return in any case 
-olbreath = 0.1             # seconds of sleep after request-response cycle
+# Viessdata Utilities +++++++++++
+write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: False)
+viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "")
+buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
+dec_separator = ","             # Decimal separator for CSV output (default: ",")
 
-# logging, info +++++++++++++++++++
-log_vitoconnect = False    # logs communication with Vitoconnect (rx+tx telegrams)
-show_opto_rx = True        # display on screen (no output when ran as service)
+# 1-Wire Sensors +++++++++++++++
+# A typical sensor for temperature could be DS18B20; please mind that GPIO must be enabled for 1-Wire sensors (see Optolink-Splitter Wiki)
+# Dictionary for 1-Wire sensor configuration (default: empty dictionary)
+w1sensors = {                  
+    # Addr: ('<w1_folder/sn>', '<slave_type>'),   # entry format
+#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor (highest known Optolink Address is 0xFF17)
+#     0xFFFd: ('28-3ce1d443a4ed', 'ds18b20'),     # Another example sensor
+}
 
-# format +++++++++++++++++++
-max_decimals = 4
-data_hex_format = '02x'    # set to '02X' for capitals
-resp_addr_format = 'd'     # format of DP address in MQTT/TCPIP request response; e.g. 'd': decimal, '04X': hex 4 digits
-
-# Viessdata utils +++++++++++++++++++
-write_viessdata_csv = False
-viessdata_csv_path = ""
-buffer_to_write = 60
-dec_separator = ","
-
-# 1-wire sensors +++++++++++++++++++
-w1sensors = {}
-#     # addr : ('<w1_folder/sn>', '<slave_type>'),
-#     0xFFF4 : ('28-3ce1d4438fd4', 'ds18b20'),   # highest known Optolink addr is 0xff17
-#     0xFFFd : ('28-3ce1d443a4ed', 'ds18b20'),
-# }
-
-
-# polling datapoints +++++++++++++++++++
-poll_interval = 30      # seconds. 0 for continuous, set -1 to disable Polling
-poll_items = [
-    # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
-
-    # Tabelle fuer Vitocalxxx-G mit Vitotronic 200 (Typ WO1C) (ab 04/2012)
+# Datapoint Polling List+++++++++
+poll_interval = 30              # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
+poll_items = [                  # datapoints defined here will be polled, ignored if poll_list.py found in working dir
+    # ([PollCycle,] Name, DpAddr, Length [, Scale/Type [, Signed]),
+       # PollCycle:   Optional entry to allow the item to be polled only every x-th cycle
+       # Name:        Datapoint name, published to MQTT as {dpname}
+       # DpAddr:      Address used to read the datapoint value (hex with '0x' or decimal)
+       # Length:      Number of bytes to read
+       # Scale/Type:  Optional; if omitted, value returns as a hex byte string without '0x'. See Wiki for details
+       # Signed:      Numerical data will interpreted as signed (True) or unsigned (False, default is False if not explicitly set)
+   
+    # Example for Vitocalxxx-G with Vitotronic 200 (Typ WO1C) (from 04/2012)
     ("error", 0x0491, 1, 1, False),
     ("outside_temperature", 0x0101, 2, 0.1, True),
     ("hk1_mode", 0xB000, 1, 1, False),			# betriebsart bit 4,5,6,7 comfort  bit 1 spar bit 0
@@ -116,10 +120,9 @@ poll_items = [
     ("electrical_energy", 0x1660, 4, 0.1, False),
     ("thermal_power", 0x16A0, 4, 1, False),
     ("electrical_power", 0x16A4, 4, 1, False),
-    (60, "cop", 0x1680, 1, 0.1, False), # Nur jedes 60. mal pollen (wenn poll_interval=30 => 60 x 30 = alle 30 Minuten)
+    (60, "cop", 0x1680, 1, 0.1, False), # Poll every 60th poll cycle (if poll_interval = 30 => 60 x 30 = every 30 minutes)
 
-
-    # # Tabelle fuer eine Vitodens 300 B3HB
+    # Example for Vitodens 300 B3HB
     # ("Anlagenzeit", 0x088E, 8, 'vdatetime'),
     # ("AussenTemp", 0x0800, 2, 0.1, True),
     # ("KesselTemp", 0x0802, 2, 0.1, False),
