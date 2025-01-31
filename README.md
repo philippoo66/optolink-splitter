@@ -7,9 +7,9 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 **Use this software at your own risk.**_
 
 ## :white_check_mark: Key Benefits 
-- **Cloud & Local Control** – Retain Viessmann Cloud and App access while enabling full local  control and datapoint access.
-- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal, and other Optolink featured devices.  
-- **Smart Home Ready** – Integrates with **ioBroker**, **Home Assistant**, **Node-RED** or any other system with MQTT Support.
+- **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
+- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal, and most other Optolink featured devices.
+- **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
 
 
 ## 🎉 Announcements
@@ -26,7 +26,6 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 - [Getting Started](#rocket-getting-started)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Questions & Issues](#interrobang-questions--issues)
-- [Version Key](#1234-version-key)
 - [Printable Case](#printable-raspberry-pi-case--usb-ttl-case)
 - [Additional Images](#camera_flash-additional-images-mqtt-home-assistant)
 
@@ -78,8 +77,8 @@ Using a virtual environment is recommended to keep dependencies isolated and avo
 
 #### 2.1. Create & activate the virtual environment:
 ```sh
-python3 -m venv venv
-python3 source venv/bin/activate  # On Windows use: venv\Scripts\activate
+python3 -m venv myvenv
+python3 source myvenv/bin/activate  # On Windows use: venv\Scripts\activate
 ```
 
 #### 2.2. Install required dependencies:
@@ -96,7 +95,7 @@ Modify `settings_ini.py` according to your heating (/ datapoints):
 
 ### 5. Run the Script
 ```sh
-python3 source venv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
+python3 source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
 python3 optolinkvs2_switch.py
 ```
 For automatic startup, set up a service. See the [Wiki Guide](https://github.com/philippoo66/optolink-splitter/wiki/120-optolinkvs2_switch-automatisch-starten).
@@ -123,50 +122,25 @@ The startup sequence for this device is not critical, as it will automatically r
 ## :receipt: Command Syntax: MQTT & TCP/IP
 For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
 
+  - read ambient temperature, scaled with sign:
+    - cmnd = read;0x0800;2;0.1;true
+    - resp: 1;2048;8.2
 
-### Read Ambient Temperature (scaled with sign)
-```sh
-cmnd = read;0x0800;2;0.1;true
-```
+  - read DeviceIdent as raw:
+    - cmnd = read;0xf8;8
+    - resp: 1;248;20CB1FC900000114
 
-```sh
-resp = 1;2048;8.2
-```
+  - write hotwater temperature setpoint:
+    - cmnd = write;0x6300;1;45
+    - resp: 1;25344;45
 
-### Read DeviceIdent (raw)
-```sh
-cmnd = read;0xf8;8
-
-```
-
-```sh
-resp = 1;248;20CB1FC900000114
-```
-
-### Set Hot Water Temperature Setpoint
-```sh
-cmnd = write;0x6300;1;45
-```
-
-```sh
-resp = 1;25344;45
-```
-
-## :1234: Version Key
-```
-Vers. 1.0.0.0
-      | | | |- minor revision: Enhancements, tweaks, bug fixes.
-      | | |- major revision: Structure/content changes, new modules.
-      | |- minor version: Major functionality added.
-      |- major version: Program lifted to a new level.
-```
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
 - Bug reports: [GitHub Issues](https://github.com/philippoo66/optolink-splitter/issues)
 
 ## Printable Raspberry Pi Case / USB-TTL Case 
-[Raspberry Pi 3 case with CP board holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall) (Possibly for Pi 4 in future). Thanks to [Kristian](https://github.com/kristian)!
+[Raspberry Pi2 and Pi3 case with CP board holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall) (Possibly for Pi 4 in future). Thanks to [Kristian](https://github.com/kristian)!
 
 ## :camera_flash: Additional Images (MQTT, Home Assistant)
 ### Datapoints in settings_ini.py & MQTT Explorer monitoring
