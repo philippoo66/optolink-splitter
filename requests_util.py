@@ -57,7 +57,7 @@ def perform_bytebit_filter(data, item):
             imask = utils.get_int(smask)
             dlen = bend - bstart + 1
             amask = bytearray(imask.to_bytes(dlen, 'big'))
-
+            # now apply the mask byte for byte
             for i in range(dlen):
                 udata[i] = udata[i] & amask[i]
 
