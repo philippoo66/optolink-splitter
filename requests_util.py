@@ -53,11 +53,13 @@ def perform_bytebit_filter(data, item):
     # first apply mask if given
     if(len(bparts) > 3):
         if(bparts[3] != ''):
-            amask = utils.hexstr2arr(str(bparts[3]).replace('0x',''))
-            for i in range(len(udata)+1):
-                if(i > len(amask)):
-                    break
-                udata = udata & amask
+            smask = str(bparts[3]).strip()
+            imask = utils.get_int(smask)
+            dlen = bend - bstart + 1
+            amask = bytearray(imask.to_bytes(dlen, 'big'))
+
+            for i in range(dlen):
+                udata[i] = udata[i] & amask[i]
 
     endian = 'little'    # € ['little, 'big', 'raw'] 
     if(len(bparts) > 4):
