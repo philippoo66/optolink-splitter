@@ -185,10 +185,11 @@ def publish_homeassistant_entities():
     print("Category".ljust(20) + "| Entities Published")
     print("-" * (20 + 20))
     total_entities = sum(entity_count_per_category.values())
-    for category, count in entity_count_per_category.items():
+    for category, count in sorted(entity_count_per_category.items()):
         print(f"{category.ljust(20)}| {str(count).rjust(17)}")
     print("-" * (20 + 20))
     print("Total".ljust(20) + f"| {str(total_entities).rjust(17)}\n")
+
 
 
 
