@@ -124,7 +124,7 @@ def publish_homeassistant_entities():
     mqtt_ha_node_id = ha_ent.get("mqtt_ha_node_id", "")
     dp_prefix = ha_ent.get("dp_prefix", "")
 
-    print("\n==== MQTT Topic & Publishing Settings ====\n" + f"mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" + f"mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" + f"mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" + f"dp_prefix:\t\t\t{dp_prefix}")
+    print("\nMQTT Topic & Publishing Settings:\n" + f" mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" + f" mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" + f" mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" + f" dp_prefix:\t\t\t{dp_prefix}")
 
     print("\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):")
     entity_count_per_category = {}
