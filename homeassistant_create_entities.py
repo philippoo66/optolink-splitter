@@ -127,18 +127,18 @@ def publish_homeassistant_entities():
     print("\nMQTT Topic & Publishing Settings:\n" + f" mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" + f" mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" + f" mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" + f" dp_prefix:\t\t\t{dp_prefix}")
 
     print("\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):")
-    entity_count_per_category = {}
+    entity_count_per_domain = {}
     
     for entity in ha_ent["datapoints"]:
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
         entity_domain = entity.get("domain", "unknown")  # Default to 'unknown' if missing
         print(f"  DP-ID: {entity_id} | HA-Entity: {entity['name']} | Domain: {entity_domain}")
         
-        # Count entities per category
-        if entity_domain in entity_count_per_category:
-            entity_count_per_category[entity_domain] += 1
+        # Count entities per domain
+        if entity_domain in entity_count_per_domain:
+            entity_count_per_domain[entity_domain] += 1
         else:
-            entity_count_per_category[entity_domain] = 1
+            entity_count_per_domain[entity_domain] = 1
 
     # Ensure MQTT connection is established before publishing
     connect_mqtt()
@@ -182,11 +182,11 @@ def publish_homeassistant_entities():
         print(json.dumps(config) + "\n")
 
     # Print Summary
-    print("Category".ljust(20) + "| Entities Published")
+    print("Domain".ljust(20) + "| Entities Published")
     print("-" * (20 + 20))
-    total_entities = sum(entity_count_per_category.values())
-    for category, count in sorted(entity_count_per_category.items()):
-        print(f"{category.ljust(20)}| {str(count).rjust(17)}")
+    total_entities = sum(entity_count_per_domain.values())
+    for domain, count in sorted(entity_count_per_domain.items()):
+        print(f"{domain.ljust(20)}| {str(count).rjust(17)}")
     print("-" * (20 + 20))
     print("Total".ljust(20) + f"| {str(total_entities).rjust(17)}\n")
 
