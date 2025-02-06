@@ -22,7 +22,7 @@ vs2timeout = 120                 # Timeout (seconds) for VS2 protocol detection 
 
 # MQTT +++++++++++++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
-mqtt_user = None                 # MQTT user credentials (default: None for anonymous access)
+mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
