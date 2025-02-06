@@ -1,14 +1,14 @@
 # Optolink Switch/Splitter
-Make your Viessmann heating locally available via MQTT while keeping Optolink/ViCare App & more!
+Make your Viessmann heating locally available via MQTT and TCP/IP while keeping Optolink/ViCare App & more!
 
  
 #### Disclaimer
-_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal and ViCare refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners. 
-**Use this software at your own risk.**_
+_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal and ViCare etc refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners._ <br>
+_**Use this software at your own risk.**_
 
 ## :white_check_mark: Key Benefits 
 - **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
-- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal, and most other Optolink featured devices.
+- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal and most other Optolink featured devices.
 - **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
 
 
@@ -78,7 +78,7 @@ Using a virtual environment is recommended to keep dependencies isolated and avo
 #### 2.1. Create & activate the virtual environment:
 ```sh
 python3 -m venv myvenv
-python3 source myvenv/bin/activate  # On Windows use: venv\Scripts\activate
+python3 source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
 ```
 
 #### 2.2. Install required dependencies:
@@ -86,7 +86,7 @@ python3 source myvenv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install pyserial
 pip install paho-mqtt  # Only if MQTT is used
 ```
-*NOTE:* After installation, the environment must be activated each time before running the script.
+*NOTE:* After installation, the environment must be activated before running the script.
 
 ### 3. Configure the Settings
 Modify `settings_ini.py` according to your heating (/ datapoints):
