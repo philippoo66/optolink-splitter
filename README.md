@@ -48,9 +48,9 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 📖 **Extended Setup Tutorial (German):** [Rustimation Blog](https://www.rustimation.eu/index.php/category/iot/viessmann-ohne-api/)
 
 ## :file_folder: Software Requirements
-- Python >= 3.9:
+- Python (versio >= 3.9):
   - pyserial: `pip install pyserial`
-  - MQTT: `pip install paho-mqtt` version >= 2.0
+  - MQTT (version >= 2.0): `pip install paho-mqtt` 
 - Virtual environments recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
 
 ## :desktop_computer:	Hardware Requirements
@@ -93,7 +93,7 @@ Modify `settings_ini.py` according to your heating (/ datapoints):
 - Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
 - Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
 
-### 5. Run the Script
+### 4. Run the Script
 ```sh
 python3 source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
 python3 optolinkvs2_switch.py
