@@ -124,12 +124,21 @@ def publish_homeassistant_entities():
     mqtt_ha_node_id = ha_ent.get("mqtt_ha_node_id", "")
     dp_prefix = ha_ent.get("dp_prefix", "")
 
-    print(f"MQTT Topic & Publishing Settings: \n  mqtt_optolink_base_topic: {mqtt_optolink_base_topic} \n  mqtt_ha_discovery_prefix: {mqtt_ha_discovery_prefix} \n  mqtt_ha_node_id: {mqtt_ha_node_id} \n  dp_prefix: {dp_prefix}")
+    print("\n==== MQTT Topic & Publishing Settings ====\n" + f"mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" + f"mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" + f"mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" + f"dp_prefix:\t\t\t{dp_prefix}")
 
     print("\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):")
+    entity_count_per_category = {}
+    
     for entity in ha_ent["datapoints"]:
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
-        print(f"  ID: {entity_id} / Entity: {entity['name']}")
+        entity_domain = entity.get("domain", "unknown")  # Default to 'unknown' if missing
+        print(f"  DP-ID: {entity_id} | HA-Entity: {entity['name']} | Domain: {entity_domain}")
+        
+        # Count entities per category
+        if entity_domain in entity_count_per_category:
+            entity_count_per_category[entity_domain] += 1
+        else:
+            entity_count_per_category[entity_domain] = 1
 
     # Ensure MQTT connection is established before publishing
     connect_mqtt()
@@ -142,6 +151,8 @@ def publish_homeassistant_entities():
     print(f"\nPublishing entities now...\n")
     for entity in ha_ent["datapoints"]:
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
+        entity_domain = entity.get("domain", "unknown")
+
         config = {
             "object_id": ha_ent["dp_prefix"] + entity_id,
             "unique_id": ha_ent["dp_prefix"] + entity_id,
@@ -149,7 +160,7 @@ def publish_homeassistant_entities():
             "availability_topic": ha_ent['mqtt_optolink_base_topic'] + "LWT"
         }
 
-        if entity["domain"] != "climate":
+        if entity_domain != "climate":
             config["state_topic"] = ha_ent["mqtt_optolink_base_topic"] + entity_id
 
         for key, value in entity.items():
@@ -160,17 +171,26 @@ def publish_homeassistant_entities():
                     config[key] = value
 
         mqtt_client.publish(
-            f"{mqtt_ha_discovery_prefix}/{entity['domain']}/{ha_ent['mqtt_ha_node_id']}{entity_id}/config",
+            f"{mqtt_ha_discovery_prefix}/{entity_domain}/{ha_ent['mqtt_ha_node_id']}{entity_id}/config",
             json.dumps(config),
             retain=True,
         )
         time.sleep(0.5)  # Short delay to allow Home Assistant to process each discovery message before sending the next one.
-                
-        # The following print statements are for debugging the published MQTT discovery messages. 
-        # If you do not need debugging output, you can safely comment them out.
+
         print(f"Published entity: {entity['name']}")
-        print(f"   {mqtt_ha_discovery_prefix}/{entity['domain']}/{ha_ent['mqtt_ha_node_id']}{id}/config")
+        print(f"   {mqtt_ha_discovery_prefix}/{entity_domain}/{ha_ent['mqtt_ha_node_id']}{entity_id}/config")
         print(json.dumps(config) + "\n")
+
+    # Print Summary
+    print("Category".ljust(20) + "| Entities Published")
+    print("-" * (20 + 20))
+    total_entities = sum(entity_count_per_category.values())
+    for category, count in entity_count_per_category.items():
+        print(f"{category.ljust(20)}| {str(count).rjust(17)}")
+    print("-" * (20 + 20))
+    print("Total".ljust(20) + f"| {str(total_entities).rjust(17)}\n")
+
+
 
 if __name__ == "__main__":
     print("\nStarting Home Assistant Entity Creation...\n")
