@@ -1,6 +1,10 @@
 # This script is designed to make Optolink-Splitter datapoints available in Home Assistant by publishing them via MQTT. 
 # The configuration is defined in the homeassistant_entities.json file.
 #
+# Important Note:
+# Home Assistant will ignore MQTT discovery messages if the Optolink-Splitter is offline (LWT != 'online').
+# This means that new entities will not be created, and existing ones may not update correctly.
+#
 # MQTT publishing in Homeassistant:
 # --------------------------------------------------
 #  Home Assistance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
@@ -58,7 +62,7 @@ def connect_mqtt():
         print(f" MQTT connected successfully.")
         
     except Exception as e:
-        print(f" Error connecting to MQTT broker: {e}")
+        print(f" ERROR connecting to MQTT broker: {e}")
         return False
 
 def verify_mqtt_optolink_lwt(timeout=10):
@@ -75,12 +79,12 @@ def verify_mqtt_optolink_lwt(timeout=10):
             raise ValueError("MQTT settings must be in the format 'host:port'")
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
     except Exception as e:
-        print(f"Error in MQTT settings: {e}")
+        print(f"ERROR in MQTT settings: {e}")
         return False
 
     def on_message(client, userdata, message):
         if message.payload.decode() == "online":
-            print(f" MQTT is connected. Optolink-Splitter LWT reports 'online'. Publishing entities now...\n")
+            print(f" MQTT is connected. Optolink-Splitter LWT reports 'online'.")
             client.loop_stop()
             client.disconnect()
             userdata["status"] = True
@@ -88,7 +92,7 @@ def verify_mqtt_optolink_lwt(timeout=10):
     mqtt_lwt_client = paho.Client(paho.CallbackAPIVersion.VERSION2)
     mqtt_lwt_client.user_data_set({"status": False})
     
-    print(f"Subscribing to {LWT_TOPIC} to check Optolink-Splitter state and MQTT connection.")
+    print(f"\nSubscribing to {LWT_TOPIC} to check the Optolink-Splitter's availability and verify the MQTT connection...")
     mqtt_lwt_client.on_message = on_message
     mqtt_lwt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=10)
     mqtt_lwt_client.subscribe(LWT_TOPIC)
@@ -100,7 +104,8 @@ def verify_mqtt_optolink_lwt(timeout=10):
             return True
         time.sleep(3)
 
-    print(f" Error: Optolink-Splitter LWT did not report 'online'. Ensure that optolinkvs2_switch.py (or the corresponding service) is running and retry.")
+    print(f" ERROR: Optolink-Splitter LWT did not report 'online'. This means that Home Assistant will ignore MQTT discovery messages, and entities will not be created or updated.")
+    print(" Make sure that optolinkvs2_switch.py (or the corresponding service) is running, then try again.")
     mqtt_lwt_client.loop_stop()
     mqtt_lwt_client.disconnect()
     return False
@@ -111,30 +116,30 @@ def publish_homeassistant_entities():
         ha_ent = json.load(json_file)
 
     if "datapoints" not in ha_ent:
-        print("Error: 'datapoints' missing in homeassistant_entities.json")
+        print("ERROR: 'datapoints' missing in homeassistant_entities.json")
         return
-
-    # Ensure MQTT connection is established before publishing
-    connect_mqtt()
 
     mqtt_optolink_base_topic = ha_ent.get("mqtt_optolink_base_topic", "")
     mqtt_ha_discovery_prefix = ha_ent.get("mqtt_ha_discovery_prefix", "")
     mqtt_ha_node_id = ha_ent.get("mqtt_ha_node_id", "")
     dp_prefix = ha_ent.get("dp_prefix", "")
 
-    print(f"\nPrefix information \n  mqtt_optolink_base_topic: {mqtt_optolink_base_topic} \n  mqtt_ha_discovery_prefix: {mqtt_ha_discovery_prefix} \n  mqtt_ha_node_id: {mqtt_ha_node_id} \n  dp_prefix: {dp_prefix}")
+    print(f"MQTT Topic & Publishing Settings: \n  mqtt_optolink_base_topic: {mqtt_optolink_base_topic} \n  mqtt_ha_discovery_prefix: {mqtt_ha_discovery_prefix} \n  mqtt_ha_node_id: {mqtt_ha_node_id} \n  dp_prefix: {dp_prefix}")
 
-    print("\nAll generated IDs from Entities")
+    print("\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):")
     for entity in ha_ent["datapoints"]:
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
         print(f"  ID: {entity_id} / Entity: {entity['name']}")
-    print("\n")
+
+    # Ensure MQTT connection is established before publishing
+    connect_mqtt()
 
     # Check if Optolink-Splitter is online
     if not verify_mqtt_optolink_lwt():
-        print("WARNING: Optolink-Splitter is not online. Proceeding without publishing.")
-        return
+        print(f"\nExiting script to prevent MQTT discovery issues.\n")
+        sys.exit(1)
 
+    print(f"\nPublishing entities now...\n")
     for entity in ha_ent["datapoints"]:
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
         config = {
@@ -159,10 +164,11 @@ def publish_homeassistant_entities():
             json.dumps(config),
             retain=True,
         )
-        time.sleep(0.5) # Processing time for Home Assistant Discovery
+        time.sleep(0.5)  # Short delay to allow Home Assistant to process each discovery message before sending the next one.
                 
-        # The following printouts are for debugging of the published discovery messages. Please feel free to comment out.
-        print(f"Processed entity: {entity['name']}")
+        # The following print statements are for debugging the published MQTT discovery messages. 
+        # If you do not need debugging output, you can safely comment them out.
+        print(f"Published entity: {entity['name']}")
         print(f"   {mqtt_ha_discovery_prefix}/{entity['domain']}/{ha_ent['mqtt_ha_node_id']}{id}/config")
         print(json.dumps(config) + "\n")
 
