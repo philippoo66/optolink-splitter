@@ -154,4 +154,5 @@ For more details on the command syntax, see the [Wiki | Command Syntax Overview]
 
 ref. https://github.com/philippoo66/optolink-splitter/discussions/67
 
+![0b87f133-3285-4cb5-871c-87c66598d42d](https://github.com/user-attachments/assets/596c2f3d-24c3-406a-854b-4679ce0643d7)
 
