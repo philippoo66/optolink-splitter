@@ -122,6 +122,9 @@ The startup sequence for this device is not critical, as it will automatically r
 ## :receipt: Command Syntax: MQTT & TCP/IP
 For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
 
+**Important Note for TCP/IP Connections:**  
+When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
+
   - read ambient temperature, scaled with sign:
     - cmnd = read;0x0800;2;0.1;true
     - resp: 1;2048;8.2
