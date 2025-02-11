@@ -1,14 +1,14 @@
 # Optolink Switch/Splitter
-Make your Viessmann heating locally available via MQTT while keeping Optolink/ViCare App & more!
+Make your Viessmann heating locally available via MQTT and TCP/IP while keeping Optolink/ViCare App & more!
 
  
 #### Disclaimer
-_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal and ViCare refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners. 
-**Use this software at your own risk.**_
+_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal and ViCare etc refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners._ <br>
+_**Use this software at your own risk.**_
 
 ## :white_check_mark: Key Benefits 
 - **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
-- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal, and most other Optolink featured devices.
+- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal and most other Optolink featured devices.
 - **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
 
 
@@ -48,9 +48,9 @@ _This software is **not affiliated with, endorsed by, or associated with Viessma
 📖 **Extended Setup Tutorial (German):** [Rustimation Blog](https://www.rustimation.eu/index.php/category/iot/viessmann-ohne-api/)
 
 ## :file_folder: Software Requirements
-- Python >= 3.9:
+- Python (version >= 3.9):
   - pyserial: `pip install pyserial`
-  - MQTT: `pip install paho-mqtt` version >= 2.0
+  - MQTT (version >= 2.0): `pip install paho-mqtt` 
 - Virtual environments recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
 
 ## :desktop_computer:	Hardware Requirements
@@ -78,7 +78,7 @@ Using a virtual environment is recommended to keep dependencies isolated and avo
 #### 2.1. Create & activate the virtual environment:
 ```sh
 python3 -m venv myvenv
-python3 source myvenv/bin/activate  # On Windows use: venv\Scripts\activate
+python3 source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
 ```
 
 #### 2.2. Install required dependencies:
@@ -86,14 +86,14 @@ python3 source myvenv/bin/activate  # On Windows use: venv\Scripts\activate
 pip install pyserial
 pip install paho-mqtt  # Only if MQTT is used
 ```
-*NOTE:* After installation, the environment must be activated each time before running the script.
+*NOTE:* After installation, the environment must be activated before running the script.
 
 ### 3. Configure the Settings
 Modify `settings_ini.py` according to your heating (/ datapoints):
 - Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
 - Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
 
-### 5. Run the Script
+### 4. Run the Script
 ```sh
 python3 source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
 python3 optolinkvs2_switch.py
@@ -137,6 +137,11 @@ When using PuTTY or similar software for a TCP/IP connection, the session must b
     - cmnd = write;0x6300;1;45
     - resp: 1;25344;45
 
+<br>
+
+**important:**
+
+When using PuTTY or some like that, the session must be closed by sending `exit` (as string), because PuTTY seems not to send the FIN-Flag on getting closed.
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
