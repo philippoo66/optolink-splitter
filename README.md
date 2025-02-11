@@ -122,6 +122,8 @@ The startup sequence for this device is not critical, as it will automatically r
 ## :receipt: Command Syntax: MQTT & TCP/IP
 For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
 
+
+
   - read ambient temperature, scaled with sign:
     - cmnd = read;0x0800;2;0.1;true
     - resp: 1;2048;8.2
@@ -134,11 +136,8 @@ For more details on the command syntax, see the [Wiki | Command Syntax Overview]
     - cmnd = write;0x6300;1;45
     - resp: 1;25344;45
 
-<br>
-
-**important:**
-
-When using PuTTY or some like that, the session must be closed by sending `exit` (as string), because PuTTY seems not to send the FIN-Flag on getting closed.
+**Important Note for TCP/IP Connections:**  
+When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
@@ -159,4 +158,5 @@ When using PuTTY or some like that, the session must be closed by sending `exit`
 
 ref. https://github.com/philippoo66/optolink-splitter/discussions/67
 
+![0b87f133-3285-4cb5-871c-87c66598d42d](https://github.com/user-attachments/assets/596c2f3d-24c3-406a-854b-4679ce0643d7)
 
