@@ -48,7 +48,7 @@ _**Use this software at your own risk.**_
 📖 **Extended Setup Tutorial (German):** [Rustimation Blog](https://www.rustimation.eu/index.php/category/iot/viessmann-ohne-api/)
 
 ## :file_folder: Software Requirements
-- Python (versio >= 3.9):
+- Python (version >= 3.9):
   - pyserial: `pip install pyserial`
   - MQTT (version >= 2.0): `pip install paho-mqtt` 
 - Virtual environments recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
@@ -134,6 +134,11 @@ For more details on the command syntax, see the [Wiki | Command Syntax Overview]
     - cmnd = write;0x6300;1;45
     - resp: 1;25344;45
 
+<br>
+
+**important:**
+
+When using PuTTY or some like that, the session must be closed by sending `exit` (as string), because PuTTY seems not to send the FIN-Flag on getting closed.
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
