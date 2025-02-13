@@ -25,7 +25,7 @@ _**Use this software at your own risk.**_
 - [Installation](#hammer_and_wrench-installation)
 - [Getting Started](#rocket-getting-started)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
-- [Smart Home Integration (e.g. Home Assistant)}(
+- [Smart Home Integration (e.g. Home Assistant)](#smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [Printable Case](#printable-raspberry-pi-case--usb-ttl-case)
 - [Additional Images](#camera_flash-additional-images-mqtt-home-assistant)
