@@ -3,7 +3,7 @@
 #
 # Important Note:
 # Home Assistant will ignore MQTT discovery messages if the Optolink-Splitter is offline (LWT != 'online').
-# This means that new entities will not be created, and existing ones may not update correctly.
+# This means that new entities will not be created, and existing ones may not be updated correctly.
 #
 # MQTT publishing in Homeassistant:
 # --------------------------------------------------
@@ -26,173 +26,353 @@ import time
 import sys
 import paho.mqtt.client as paho
 import settings_ini
+import c_polllist
 
 # Global MQTT Client
 mqtt_client = None
 
-def connect_mqtt():
-    # Connects to the MQTT broker using credentials from settings_ini.py
+def connect_mqtt(retries=3, delay=5):
+    """ Global MQTT Client for this script """
     global mqtt_client
 
     if mqtt_client is None:
-        print(f"\nInitializing MQTT Client for Home Assistant entity creation...")
-        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "ha_entities_" + str(int(time.time()*1000)))  # Unique ID
+        print("\nInitializing MQTT Client for Home Assistant entity creation...")
+        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "ha_entities_" + str(int(time.time()*1000)))
 
     if mqtt_client.is_connected():
-        print(f" MQTT client is already connected. Skipping reconnection.")
-        return
+        print(" MQTT client is already connected. Skipping reconnection.")
+        return True
 
     try:
         mqtt_credentials = settings_ini.mqtt.split(':')
         if len(mqtt_credentials) != 2:
             raise ValueError(" MQTT settings must be in the format 'host:port'")
+
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
 
-        # Extract username and password
         mqtt_user_pass = settings_ini.mqtt_user
         if mqtt_user_pass and mqtt_user_pass.lower() != "none":
             mqtt_user, mqtt_password = mqtt_user_pass.split(":")
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
-            print(f" Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER} on port {MQTT_PORT} for Home Assistant entity creation...")
+            print(f" Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
         else:
-            print(f" Connecting anonymously to MQTT broker {MQTT_BROKER} on port {MQTT_PORT} for Home Assistant entity creation...")
+            print(f" Connecting anonymously to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
 
-        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-        mqtt_client.loop_start()
-        print(f" MQTT connected successfully.")
-        
+        for attempt in range(retries):
+            try:
+                mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
+                mqtt_client.loop_start()
+                print(" MQTT connected successfully.")
+                return True
+            except Exception as retry_error:
+                print(f" ERROR: MQTT connection failed (Attempt {attempt+1}/{retries}): {retry_error}")
+                time.sleep(delay)
+
+        print(" ERROR: Could not establish an MQTT connection after multiple retries.")
+        return False
+
     except Exception as e:
         print(f" ERROR connecting to MQTT broker: {e}")
-        return False
+        return False  # Explicitly return failure
+
 
 def verify_mqtt_optolink_lwt(timeout=10):
-    # Checks the availability of the Optolink-Splitter by subscribing to the Last Will and Testament (LWT) topic.
-    with open("homeassistant_entities.json") as json_file:
-        ha_ent = json.load(json_file)
+    """ Verifies the availability of the Optolink-Splitter via LWT topic. """
+    global mqtt_client
 
-    mqtt_optolink_base_topic = ha_ent.get("mqtt_optolink_base_topic", "")
-    LWT_TOPIC = f"{mqtt_optolink_base_topic}LWT"
-
-    try:
-        mqtt_credentials = settings_ini.mqtt.split(":")
-        if len(mqtt_credentials) != 2:
-            raise ValueError("MQTT settings must be in the format 'host:port'")
-        MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
-    except Exception as e:
-        print(f"ERROR in MQTT settings: {e}")
+    if mqtt_client is None:
+        print(" ERROR: MQTT client is not initialized.")
         return False
 
-    def on_message(client, userdata, message):
-        if message.payload.decode() == "online":
-            print(f" MQTT is connected. Optolink-Splitter LWT reports 'online'.")
-            client.loop_stop()
-            client.disconnect()
-            userdata["status"] = True
+    try:
+        with open("homeassistant_entities.json") as json_file:
+            ha_ent = json.load(json_file)
 
-    mqtt_lwt_client = paho.Client(paho.CallbackAPIVersion.VERSION2)
-    mqtt_lwt_client.user_data_set({"status": False})
+        mqtt_optolink_base_topic = ha_ent.get("mqtt_optolink_base_topic", "")
+        LWT_TOPIC = f"{mqtt_optolink_base_topic}LWT"
+
+        lwt_status = {"online": False}  # Dictionary to store LWT status
+
+        def on_message(client, userdata, message):
+            payload = message.payload.decode()
+            if payload == "online":
+                print(f" MQTT is connected. Optolink-Splitter LWT reports 'online'.")
+                lwt_status["online"] = True
+
+        mqtt_client.on_message = on_message # Assign the callback to the existing mqtt_client
+        print(f" Subscribing to {LWT_TOPIC}...")
+        mqtt_client.subscribe(LWT_TOPIC)
+
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if lwt_status["online"]:
+                return True
+            time.sleep(1)
+
+        print(" ERROR: Optolink-Splitter LWT did not report 'online'.")
+        print(" Ensure optolinkvs2_switch.py (or the corresponding service) is running.")
+        return False
+
+    except Exception as e:
+        print(f" ERROR verifying MQTT Optolink LWT: {e}")
+        return False  # Return failure instead of exiting
+
+def read_poll_list_datapoints():
+    """ Reads the poll_list either from settings_ini.py or poll_list.py using c_polllist. """
     
-    print(f"\nSubscribing to {LWT_TOPIC} to check the Optolink-Splitter's availability and verify the MQTT connection...")
-    mqtt_lwt_client.on_message = on_message
-    mqtt_lwt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=10)
-    mqtt_lwt_client.subscribe(LWT_TOPIC)
-    mqtt_lwt_client.loop_start()
+    poll_list_datapoints = []
 
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if mqtt_lwt_client._userdata["status"]:
-            return True
-        time.sleep(3)
+    try:
+        poll_items = c_polllist.poll_list.items
+        print(f"Reading poll_list from poll_list.py or settings_ini.py")
+        for item in poll_items:
+            if len(item) > 1:
+                # Checks if the first value is PollCycle (an integer). If so, it takes the next value as the name.
+                if isinstance(item[0], int):
+                    name = item[1]
+                else:
+                    name = item[0]  # If first value is not an integer, it's the name
 
-    print(f" ERROR: Optolink-Splitter LWT did not report 'online'. This means that Home Assistant will ignore MQTT discovery messages, and entities will not be created or updated.")
-    print(" Make sure that optolinkvs2_switch.py (or the corresponding service) is running, then try again.")
-    mqtt_lwt_client.loop_stop()
-    mqtt_lwt_client.disconnect()
-    return False
+                poll_list_datapoints.append(name)
+    except Exception as e:
+        print(f"Error reading poll list datapoints: {e}")
 
-def publish_homeassistant_entities():
-    # Reads entity definitions from homeassistant_entities.json and publishes MQTT discovery messages to Home Assistant.
-    with open("homeassistant_entities.json") as json_file:
-        ha_ent = json.load(json_file)
+    return poll_list_datapoints
 
-    if "datapoints" not in ha_ent:
-        print("ERROR: 'datapoints' missing in homeassistant_entities.json")
-        return
 
-    mqtt_optolink_base_topic = ha_ent.get("mqtt_optolink_base_topic", "")
-    mqtt_ha_discovery_prefix = ha_ent.get("mqtt_ha_discovery_prefix", "")
-    mqtt_ha_node_id = ha_ent.get("mqtt_ha_node_id", "")
-    dp_prefix = ha_ent.get("dp_prefix", "")
+def read_homeassistant_entities():
+    """ Reads the entities to be created in Home Assistant from homeassistant_entities.json. """
+    try:
+        print("Reading homeassistant_entities from homeassistant_entities.json")
+        with open("homeassistant_entities.json") as json_file:
+            return json.load(json_file)
+    except FileNotFoundError:
+        print(" ERROR: homeassistant_entities.json not found.")
+    except json.JSONDecodeError:
+        print(" ERROR: homeassistant_entities.json contains invalid JSON.")
+    except Exception as e:
+        print(f" ERROR: Unexpected issue while reading homeassistant_entities.json: {e}")
+    
+    return None
 
-    print("\nMQTT Topic & Publishing Settings:\n" + f" mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" + f" mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" + f" mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" + f" dp_prefix:\t\t\t{dp_prefix}")
+def transform_and_check_datapoints(homeassistant_entities, poll_list):
+    """ Transforms the entities into generated datapoints (e.g., removing special characters and converting to lowercase). """
 
-    print("\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):")
+    if homeassistant_entities is None:
+        print(" ERROR: No Home Assistant entities available. Cannot proceed with transformation.")
+        return None, None, None  # Return empty values so the script does not continue with invalid data
+
+    print("\n\nList of generated datapoint IDs (settings_ini), created from HA entities (homeassistant_entities.json):\n")
+
     entity_count_per_domain = {}
-    
-    for entity in ha_ent["datapoints"]:
-        entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
-        entity_domain = entity.get("domain", "unknown")  # Default to 'unknown' if missing
-        print(f"  DP-ID: {entity_id} | HA-Entity: {entity['name']} | Domain: {entity_domain}")
-        
-        # Count entities per domain
-        if entity_domain in entity_count_per_domain:
-            entity_count_per_domain[entity_domain] += 1
-        else:
-            entity_count_per_domain[entity_domain] = 1
+    entity_data = []
 
-    # Ensure MQTT connection is established before publishing
-    connect_mqtt()
+    # Convert poll_list to a set for faster lookup
+    poll_list_set = set(poll_list)
 
-    # Check if Optolink-Splitter is online
-    if not verify_mqtt_optolink_lwt():
-        print(f"\nExiting script to prevent MQTT discovery issues.\n")
-        sys.exit(1)
-
-    print(f"\nPublishing entities now...\n")
-    for entity in ha_ent["datapoints"]:
+    # Collect entity data
+    for entity in homeassistant_entities.get("datapoints", []):
         entity_id = re.sub(r"[^0-9a-zA-Z]+", "_", entity["name"]).lower()
         entity_domain = entity.get("domain", "unknown")
 
+        # Check if the generated datapoint exists in the poll list
+        found_in_poll_list = "Yes" if entity_id in poll_list_set else "No"
+
+        # Track entity counts per domain
+        entity_count_per_domain[entity_domain] = entity_count_per_domain.get(entity_domain, 0) + 1
+
+        # Store entity data
+        entity_data.append((entity["name"], entity_domain, entity_id, found_in_poll_list, ""))
+
+    check_entities_and_print_entity_table(entity_data)
+
+    return homeassistant_entities, entity_count_per_domain, entity_data
+
+
+def check_entities_and_print_entity_table(entity_data):
+    """ Checks if entities from homeassistant_entities.json are found in poll_items and prints a summary table of all entities. 
+        A warning is thrown if any entities are not found in poll_items. """
+        
+    # Sort entity data by Domain for grouping
+    entity_data.sort(key=lambda x: x[1])  # x[1] is the Domain column
+
+    # Count entities per domain
+    domain_counts = {}
+    for _, entity_domain, _, _, _ in entity_data:
+        domain_counts[entity_domain] = domain_counts.get(entity_domain, 0) + 1
+
+    # Check if any entity was not found in poll_list
+    missing_poll_items = any(found == "No" for _, _, _, found, _ in entity_data)
+
+    # Determine column widths dynamically
+    max_domain_length = max(len("Domain"), max(len(e[1]) for e in entity_data))  # Keep header width
+    max_name_length = max(len("HA-Entity from json"), max(len(e[0]) for e in entity_data))  # HA-Entity from JSON
+    max_id_length = max(len("Datapoint (DP)"), max(len(e[2]) for e in entity_data))  # Generated Datapoint
+    max_poll_length = max(len("in poll_list?"), len("Yes"))  # Static length for the second row header
+
+    # Set proper spacing for headers (first row)
+    header_1 = (
+        " " * max_domain_length + " | "
+        + " " * max_name_length + " | "
+        + "Generated".ljust(max_id_length) + " | "
+        + "DP found".ljust(max_poll_length)
+    )
+
+    # Second row of headers (column names)
+    header_2 = (
+        "Domain".ljust(max_domain_length) + " | "
+        + "HA-Entity from json".ljust(max_name_length) + " | "
+        + "Datapoint (DP)".ljust(max_id_length) + " | "
+        + "in poll_list?".ljust(max_poll_length)
+    )
+
+    # Print table headers
+    print(header_1)
+    print(header_2)
+
+    # Track the current domain to group entities
+    current_domain = None
+    total_entities = 0
+
+    # Print each entity row with correct column order
+    for entity_name, entity_domain, entity_id, found_in_poll_list, _ in entity_data:
+        # If a new domain starts, add a compact inline domain header
+        if entity_domain != current_domain:
+            current_domain = entity_domain  # Update current domain
+            
+            # Print domain header inline with the divider
+            domain_header = f"{entity_domain} ({domain_counts[entity_domain]}) "
+            divider_length = (
+                max_domain_length + max_name_length + max_id_length + max_poll_length + 9 - len(domain_header)
+            )
+            print(domain_header + "-" * divider_length)
+
+        # Empty domain value in rows
+        print(
+            f"{' '.ljust(max_domain_length)} | "
+            f"{entity_name.ljust(max_name_length)} | "
+            f"{entity_id.ljust(max_id_length)} | "
+            f"{found_in_poll_list.ljust(max_poll_length)}"
+        )
+
+        total_entities += 1
+
+    # Final divider and total count
+    print("-" * (max_domain_length + max_name_length + max_id_length + max_poll_length + 9))
+    print(f"TOTAL ENTITIES: {total_entities}\n")
+
+    # Display a warning if any generated datapoint (DP) does not exist in poll_items.
+    if missing_poll_items:
+        print("\n" * 4 + "!!! WARNING !!!")
+        print("One or more entities from your homeassistant_entities.json were not found in your poll_items (settings_ini.py or poll_list.py).")
+
+        print("\nPossible causes:")
+        print(" - Thermostats consist of multiple values with no direct counterpart in poll_items.")
+        print(" - Switches consist of multiple values with no direct counterpart in poll_items.")
+        print(' - "Cmnd" refers to commands sent from Home Assistant to the Optolink-Splitter, and therefore has no direct counterpart in poll_items.')
+        print(' - "Resp" is the response to commands sent by the Optolink-Splitter, and therefore has no direct counterpart in poll_items.\n')
+
+
+        print("For other entities, especially SENSORs, this could be critical, as they will not attach to a value and will not be displayed in Home Assistant.")
+        print("To prevent this issue, PLEASE CHECK SPELLING AND ENSURE THAT POLL_ITEMS ARE IN LOWERCASE.\n")
+
+        print("PLEASE ENSURE ALL MQTT-RELATED VALUES (E.G., POLL_ITEMS AND MQTT_OPTOLINK_BASE_TOPIC) ARE IN LOWERCASE!\n")
+
+        print("\n" * 4 + "Continuing script...")
+
+    time.sleep(3)
+
+def publish_homeassistant_entities():
+    """ Assembles MQTT topics and values, then publishes MQTT messages to Home Assistant Discovery. """
+    
+def publish_homeassistant_entities():
+    """ Assembles MQTT topics and values, then publishes MQTT messages to Home Assistant Discovery. """
+
+    # Read Home Assistant entities
+    homeassistant_entities = read_homeassistant_entities()
+    if homeassistant_entities is None:
+        print(" ERROR: Could not load homeassistant_entities.json. Exiting script to prevent invalid MQTT discovery messages.")
+        sys.exit(1)  # Exit cleanly to avoid undefined behavior
+
+    # Fetch poll_list
+    poll_list = read_poll_list_datapoints()
+    if poll_list is None:
+        print(" ERROR: Poll list could not be loaded. Exiting script to prevent invalid MQTT discovery messages.")
+        sys.exit(1)
+
+    # Prepare and validate entities
+    homeassistant_entities, entity_count_per_domain, entity_data = transform_and_check_datapoints(homeassistant_entities, poll_list)
+
+    # Ensure MQTT connection is established before publishing
+    if not connect_mqtt():
+        print(" ERROR: Unable to establish MQTT connection. Exiting.")
+        sys.exit(1)
+
+    # Check if Optolink-Splitter is online before proceeding
+    if not verify_mqtt_optolink_lwt():
+        print(" ERROR: Optolink-Splitter is offline. Exiting script to prevent MQTT discovery issues.")
+        sys.exit(1)
+
+    print("\nPublishing entities now...\n")
+
+    # Extract necessary MQTT parameters
+    mqtt_optolink_base_topic = homeassistant_entities.get("mqtt_optolink_base_topic", "")
+    mqtt_ha_discovery_prefix = homeassistant_entities.get("mqtt_ha_discovery_prefix", "")
+    mqtt_ha_node_id = homeassistant_entities.get("mqtt_ha_node_id", "")
+    dp_prefix = homeassistant_entities.get("dp_prefix", "")
+
+    # Print summary of found entities
+    print("MQTT Topic & Publishing Settings:\n" +
+          f" mqtt_optolink_base_topic:\t{mqtt_optolink_base_topic}\n" +
+          f" mqtt_ha_discovery_prefix:\t{mqtt_ha_discovery_prefix}\n" +
+          f" mqtt_ha_node_id:\t\t{mqtt_ha_node_id}\n" +
+          f" dp_prefix:\t\t\t{dp_prefix}\n")
+
+    # Initialize publishing counter
+    total_entities = len(entity_data)
+
+    # Iterate over all entities and count while publishing
+    for count, (entity_name, entity_domain, entity_id, _, _) in enumerate(entity_data, start=1):
+        # Construct MQTT discovery message payload
         config = {
-            "object_id": ha_ent["dp_prefix"] + entity_id,
-            "unique_id": ha_ent["dp_prefix"] + entity_id,
-            "device": ha_ent["device"],
-            "availability_topic": ha_ent['mqtt_optolink_base_topic'] + "LWT"
+            "object_id": dp_prefix + entity_id,
+            "unique_id": dp_prefix + entity_id,
+            "device": homeassistant_entities["device"],
+            "availability_topic": mqtt_optolink_base_topic + "LWT"
         }
 
+        # Ensure the correct state topic
         if entity_domain != "climate":
-            config["state_topic"] = ha_ent["mqtt_optolink_base_topic"] + entity_id
+            config["state_topic"] = mqtt_optolink_base_topic + entity_id
 
-        for key, value in entity.items():
-            if key != "domain":
-                if key.endswith("_topic"):
-                    config[key] = ha_ent["mqtt_optolink_base_topic"] + value
-                else:
-                    config[key] = value
+        # Find the correct entity in homeassistant_entities["datapoints"]
+        current_entity = next((e for e in homeassistant_entities["datapoints"] if re.sub(r"[^0-9a-zA-Z]+", "_", e["name"]).lower() == entity_id), None)
 
-        mqtt_client.publish(
-            f"{mqtt_ha_discovery_prefix}/{entity_domain}/{ha_ent['mqtt_ha_node_id']}{entity_id}/config",
-            json.dumps(config),
-            retain=True,
-        )
-        time.sleep(0.5)  # Short delay to allow Home Assistant to process each discovery message before sending the next one.
+        if current_entity:
+            for key, value in current_entity.items():
+                if key != "domain":
+                    if key.endswith("_topic"):
+                        config[key] = mqtt_optolink_base_topic + value
+                    else:
+                        config[key] = value
 
-        print(f"Published entity: {entity['name']}")
-        print(f"   {mqtt_ha_discovery_prefix}/{entity_domain}/{ha_ent['mqtt_ha_node_id']}{entity_id}/config")
-        print(json.dumps(config) + "\n")
+        # Publish MQTT message
+        topic = f"{mqtt_ha_discovery_prefix}/{entity_domain}/{mqtt_ha_node_id}{entity_id}/config"
+        mqtt_client.publish(topic, json.dumps(config), retain=True)
 
-    # Print Summary
-    print("Domain".ljust(20) + "| Entities Published")
-    print("-" * (20 + 20))
-    total_entities = sum(entity_count_per_domain.values())
-    for domain, count in sorted(entity_count_per_domain.items()):
-        print(f"{domain.ljust(20)}| {str(count).rjust(17)}")
-    print("-" * (20 + 20))
-    print("Total".ljust(20) + f"| {str(total_entities).rjust(17)}\n")
+        # Short delay to allow Home Assistant to process each discovery message
+        time.sleep(0.5)
 
+        # Compact progress output
+        print(f"\r[{count}/{total_entities}]", end="", flush=True)
 
+        # Commented-out debugging details
+        #print(f"\nPublished entity: {entity_name} ({entity_id})")
+        #print(f"   Topic: {topic}")
+        #print(f"   Payload: {json.dumps(config)}\n")
 
 
 if __name__ == "__main__":
     print("\nStarting Home Assistant Entity Creation...\n")
     publish_homeassistant_entities()
+    print("\n\nFinished Home Assistant Entity Creation.\n")
