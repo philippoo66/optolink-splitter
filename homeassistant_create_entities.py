@@ -80,6 +80,7 @@ def connect_mqtt(retries=3, delay=5):
 
 def verify_mqtt_optolink_lwt(timeout=10):
     """ Verifies the availability of the Optolink-Splitter via LWT topic. """
+
     global mqtt_client
 
     if mqtt_client is None:
@@ -144,6 +145,7 @@ def read_poll_list_datapoints():
 
 def read_homeassistant_entities():
     """ Reads the entities to be created in Home Assistant from homeassistant_entities.json. """
+
     try:
         print("Reading homeassistant_entities from homeassistant_entities.json")
         with open("homeassistant_entities.json") as json_file:
@@ -283,9 +285,6 @@ def check_entities_and_print_entity_table(entity_data):
         print("\n" * 4 + "Continuing script...")
 
     time.sleep(3)
-
-def publish_homeassistant_entities():
-    """ Assembles MQTT topics and values, then publishes MQTT messages to Home Assistant Discovery. """
     
 def publish_homeassistant_entities():
     """ Assembles MQTT topics and values, then publishes MQTT messages to Home Assistant Discovery. """
