@@ -32,7 +32,9 @@ import c_polllist
 mqtt_client = None
 
 def connect_mqtt(retries=3, delay=5):
-    """ Global MQTT Client for this script """
+    """ Global MQTT Client for this script. 
+        Connects to the MQTT broker using credentials from settings_ini.py """
+
     global mqtt_client
 
     if mqtt_client is None:
