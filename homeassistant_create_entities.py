@@ -273,10 +273,10 @@ def check_entities_and_print_entity_table(entity_data):
         print(' - "Resp" is the response to commands sent by the Optolink-Splitter, and therefore has no direct counterpart in poll_items.\n')
 
 
-        print("For other entities, especially SENSORs, this could be critical, as they will not attach to a value and will not be displayed in Home Assistant.")
-        print("To prevent this issue, PLEASE CHECK SPELLING AND ENSURE THAT POLL_ITEMS ARE IN LOWERCASE.\n")
-
-        print("PLEASE ENSURE ALL MQTT-RELATED VALUES (E.G., POLL_ITEMS AND MQTT_OPTOLINK_BASE_TOPIC) ARE IN LOWERCASE!\n")
+        print("For other entities, especially SENSORs, this could be critical, as they will not attach to a value and will not be displayed in Home Assistant.\n")
+        
+        print("To prevent this issue, PLEASE CHECK SPELLING AND ENSURE THAT POLL_ITEMS ARE IN LOWERCASE.")
+        print("Recommendation: Keep all MQTT-related values (e.g. mqtt_topic) in lowercase!\n")
 
         print("\n" * 4 + "Continuing script...")
 
@@ -310,7 +310,7 @@ def publish_homeassistant_entities():
 
     # Check if Optolink-Splitter is online before proceeding
     if not verify_mqtt_optolink_lwt():
-        print(" ERROR: Optolink-Splitter is offline. Exiting script to prevent MQTT discovery issues.")
+        print("ERROR: Optolink-Splitter is offline. Exiting script to prevent MQTT discovery issues.")
         sys.exit(1)
 
     print("\nPublishing entities now...\n")
@@ -352,6 +352,7 @@ def publish_homeassistant_entities():
             for key, value in current_entity.items():
                 if key != "domain":
                     if key.endswith("_topic"):
+                        config[key] = mqtt_optolink_base_topic + value
                         config[key] = mqtt_optolink_base_topic + value
                     else:
                         config[key] = value
