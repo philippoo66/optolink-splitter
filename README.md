@@ -25,6 +25,7 @@ _**Use this software at your own risk.**_
 - [Installation](#hammer_and_wrench-installation)
 - [Getting Started](#rocket-getting-started)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
+- [Smart Home Integration (e.g. Home Assistant)](#smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [Printable Case](#printable-raspberry-pi-case--usb-ttl-case)
 - [Additional Images](#camera_flash-additional-images-mqtt-home-assistant)
@@ -138,6 +139,10 @@ For more details on the command syntax, see the [Wiki | Command Syntax Overview]
 
 **Important Note for TCP/IP Connections:**  
 When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
+
+## Smart Home Integration (e.g. Home Assistant)
+
+Bla 
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
