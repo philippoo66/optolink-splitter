@@ -28,7 +28,7 @@ _**Use this software at your own risk.**_
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-connectivity-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#house-smart-home-connectivity-eg-home-assistant)
-- [Additional Images](#camera_flash-additional-images-mqtt-home-assistant)
+- [Additional Images](#camera_flash-additional-images-mqtt-visualization)
 
 
 ## :package: System Architecture
@@ -163,7 +163,7 @@ A compact and practical 3D-printable case designed for Raspberry Pi 2 & 3 includ
 
 [Raspberry Pi 2/3 Case with CP2102 UART Board Holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall)  
 
-## :camera_flash: Additional Images (MQTT, Home Assistant)
+## :camera_flash: Additional Images (MQTT, Visualization)
 ### Datapoints in settings_ini.py & MQTT Explorer monitoring
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
  
