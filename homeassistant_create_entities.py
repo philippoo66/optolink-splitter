@@ -38,7 +38,6 @@ def connect_mqtt(retries=3, delay=5):
     global mqtt_client
 
     if mqtt_client is None:
-        print("\nInitializing MQTT Client for Home Assistant entity creation...")
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "ha_entities_" + str(int(time.time()*1000)))
 
     if mqtt_client.is_connected():
@@ -48,7 +47,7 @@ def connect_mqtt(retries=3, delay=5):
     try:
         mqtt_credentials = settings_ini.mqtt.split(':')
         if len(mqtt_credentials) != 2:
-            raise ValueError(" MQTT settings must be in the format 'host:port'")
+            raise ValueError("ERROR: MQTT settings must be in the format 'host:port'")
 
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
 
@@ -56,9 +55,9 @@ def connect_mqtt(retries=3, delay=5):
         if mqtt_user_pass and mqtt_user_pass.lower() != "none":
             mqtt_user, mqtt_password = mqtt_user_pass.split(":")
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
-            print(f" Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
+            print(f"Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
         else:
-            print(f" Connecting anonymously to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
+            print(f"Connecting anonymously to MQTT broker {MQTT_BROKER} on port {MQTT_PORT}...")
 
         for attempt in range(retries):
             try:
@@ -103,7 +102,7 @@ def verify_mqtt_optolink_lwt(timeout=10):
                 lwt_status["online"] = True
 
         mqtt_client.on_message = on_message # Assign the callback to the existing mqtt_client
-        print(f" Subscribing to {LWT_TOPIC}...")
+        print(f"Subscribing to {LWT_TOPIC}...")
         mqtt_client.subscribe(LWT_TOPIC)
 
         start_time = time.time()
@@ -282,7 +281,7 @@ def check_entities_and_print_entity_table(entity_data):
         print("To prevent this issue, PLEASE CHECK SPELLING AND ENSURE THAT POLL_ITEMS ARE IN LOWERCASE.")
         print("Recommendation: Keep all MQTT-related values (e.g. mqtt_topic) in lowercase!\n")
 
-        print("\n" * 4 + "Continuing script...")
+        print("\n" * 4 + "Continuing script...\n")
 
     time.sleep(3)
     
