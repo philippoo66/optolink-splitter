@@ -281,7 +281,7 @@ def check_entities_and_print_entity_table(entity_data):
         print("To prevent this issue, PLEASE CHECK SPELLING AND ENSURE THAT POLL_ITEMS ARE IN LOWERCASE.")
         print("Recommendation: Keep all MQTT-related values (e.g. mqtt_topic) in lowercase!\n")
 
-        print("\n" * 4 + "Continuing script...")
+        print("\n" * 4 + "Continuing script...\n")
 
     time.sleep(3)
     
