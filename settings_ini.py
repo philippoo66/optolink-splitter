@@ -25,7 +25,7 @@ mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:
 mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
 
 # MQTT Topics ++++++++++++++++++++
-# Best practice recommendation: Always use lowercase for consistency and compatibility.
+# Best practices recommendation: Always use lowercase for consistency and compatibility.
 mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
@@ -66,10 +66,10 @@ w1sensors = {
 
 # Datapoint Polling List+++++++++
 poll_interval = 30              # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
-poll_items = [                  # datapoints defined here will be polled, ignored if poll_list.py found in working dir
+poll_items = [                  # Datapoints defined here will be polled; ignored if poll_list.py is found in the working directory
     # ([PollCycle,] Name, DpAddr, Length [, Scale/Type [, Signed]),
        # PollCycle:   Optional entry to allow the item to be polled only every x-th cycle
-       # Name:        Datapoint name, published to MQTT as {dpname}
+       # Name:        Datapoint name, published to MQTT as {dpname}; Best practices recommendation: Always use lowercase Names for consistency and compatibility.
        # DpAddr:      Address used to read the datapoint value (hex with '0x' or decimal)
        # Length:      Number of bytes to read
        # Scale/Type:  Optional; if omitted, value returns as a hex byte string without '0x'. See Wiki for details
