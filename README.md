@@ -27,7 +27,7 @@ _**Use this software at your own risk.**_
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-connectivity-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
-- [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#house-smart-home-connectivity-eg-home-assistant)
+- [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#house-smart-home-integration-eg-home-assistant)
 - [Additional Images](#camera_flash-additional-images-mqtt-visualization)
 
 
@@ -139,7 +139,7 @@ Optolink Splitter can connect to an **MQTT Broker** for sending commands and rec
 **Important Note for TCP/IP Connections:**  
 When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
 
-## :house: Smart Home Connectivity (e.g. Home Assistant)
+## :house: Smart Home Integration (e.g. Home Assistant)
 Optolink Splitter seamlessly integrates into your smart home setup via **MQTT**, allowing you to monitor and control your Viessmann heating system using platforms like **Home Assistant**, **ioBroker**, or **Node-RED**. All available heating system data can be visualized in dashboards, automated with custom rules, and integrated into broader smart home routines. With Optolink Splitter’s command-sending capability, you can locally adjust heating modes, temperature setpoints, or pump states directly from your favorite smart home system.
 
 For detailed **Home Assistant integration instructions**, see the [Wiki | Home Assistant Integration of Optolink‐Splitter](https://github.com/philippoo66/optolink-splitter/wiki/210-Home-Assistant-Integration-of-Optolink%E2%80%90Splitter).  
