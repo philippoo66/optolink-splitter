@@ -35,9 +35,9 @@ _**Use this software at your own risk.**_
 ### How it Works
 - Enables both **local monitoring/control** and **Viessmann's cloud services** in parallel.
 - Data accessible via **MQTT** or TCP/IP for smart home integration (e.g. Home Assistant).
-- Supports **VS2 and VS1/KW protocols** with different branches.
-  - branch [vs1test](https://github.com/philippoo66/optolink-splitter/tree/vs1test) works as with VS1/KW protocol but only _without_ Vitoconnect.
-  - for VS1/KW _with_ Vitoconnect there is the [viconn-listener](https://github.com/philippoo66/viconn-listener) available (beta state).
+- Supports **VS2 and VS1/KW protocols** with different branches.  
+  - The [vs1test branch](https://github.com/philippoo66/optolink-splitter/tree/vs1test) enables **VS1/KW protocol support** but works **only without** Vitoconnect.  
+  - For **VS1/KW with Vitoconnect**, the [viconn-listener](https://github.com/philippoo66/viconn-listener) is available (currently in beta).  
 
 
 ### Overview
