@@ -24,7 +24,7 @@ def get_int(v) -> int:
 def to_number(v):
     s = str(v)
     try:
-        return int(s)
+        return int(s, 0)
     except ValueError:
         try:
             return float(s)
