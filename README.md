@@ -3,7 +3,7 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 
  
 #### Disclaimer
-_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal and ViCare etc refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners._ <br>
+_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal, ViCare, etc. refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners._ <br>
 _**Use this software at your own risk.**_
 
 ## :white_check_mark: Key Benefits 
@@ -25,9 +25,9 @@ _**Use this software at your own risk.**_
 - [Installation](#hammer_and_wrench-installation)
 - [Getting Started](#rocket-getting-started)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
-- [Smart Home Integration (e.g. Home Assistant)](#smart-home-integration-eg-home-assistant)
+- [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
-- [Printable Case](#printable-raspberry-pi-case--usb-ttl-case)
+- [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#printer-3d-printable-case-for-raspberry-pi--usb-ttl-adapter)
 - [Additional Images](#camera_flash-additional-images-mqtt-home-assistant)
 
 
@@ -121,8 +121,7 @@ To ensure proper communication with the system, follow the power-on sequence exa
 The startup sequence for this device is not critical, as it will automatically reconnect without issues.
 
 ## :receipt: Command Syntax: MQTT & TCP/IP
-For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
-
+Optolink Splitter can connect to an **MQTT Broker** for sending commands and receiving responses. Alternatively, a direct **TCP/IP connection** (e.g., using PuTTY) can be established to interact with the application directly. For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
 
 
   - read ambient temperature, scaled with sign:
@@ -140,16 +139,29 @@ For more details on the command syntax, see the [Wiki | Command Syntax Overview]
 **Important Note for TCP/IP Connections:**  
 When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
 
-## Smart Home Integration (e.g. Home Assistant)
+## :house: Smart Home Connectivity (e.g. Home Assistant)
+Optolink Splitter seamlessly integrates into your smart home setup via **MQTT**, allowing you to monitor and control your Viessmann heating system using platforms like **Home Assistant**, **ioBroker**, or **Node-RED**. All available heating system data can be visualized in dashboards, automated with custom rules, and integrated into broader smart home routines. With Optolink Splitter’s command-sending capability, you can locally adjust heating modes, temperature setpoints, or pump states directly from your favorite smart home system.
 
-Bla 
+For detailed **Home Assistant integration instructions**, see the [Wiki | Home Assistant Integration of Optolink‐Splitter](https://github.com/philippoo66/optolink-splitter/wiki/210-Home-Assistant-Integration-of-Optolink%E2%80%90Splitter).  
+
+Below are examples of how this integration looks in different smart home environments:
+
+### Heating System Overview in Home Assistant (Built with a Picture Entity Card)
+![grafik](https://github.com/user-attachments/assets/28901428-5cec-4135-aada-795302d58811)
+
+[Details](https://github.com/philippoo66/optolink-splitter/discussions/67)
+
+### Another Heating System Overview in Home Assistant & Command Buttons
+![0b87f133-3285-4cb5-871c-87c66598d42d](https://github.com/user-attachments/assets/596c2f3d-24c3-406a-854b-4679ce0643d7)
 
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
 - Bug reports: [GitHub Issues](https://github.com/philippoo66/optolink-splitter/issues)
 
-## Printable Raspberry Pi Case / USB-TTL Case 
-[Raspberry Pi2 and Pi3 case with CP board holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall) (Possibly for Pi 4 in future). Thanks to [Kristian](https://github.com/kristian)!
+## :printer: 3D-Printable Case for Raspberry Pi & USB-TTL Adapter
+A compact and practical 3D-printable case designed for Raspberry Pi 2 & 3 including a CP2102 USB-TTL adapter mount.  A version for **Raspberry Pi 4** may be available in the future. Special thanks to [Kristian](https://github.com/kristian)!  
+
+[Raspberry Pi 2/3 Case with CP2102 UART Board Holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall)  
 
 ## :camera_flash: Additional Images (MQTT, Home Assistant)
 ### Datapoints in settings_ini.py & MQTT Explorer monitoring
@@ -157,11 +169,4 @@ Bla
  
 ### Data visualisation
 ![grafik](https://github.com/user-attachments/assets/fee2151f-7d99-45a0-a85a-897b54085289)
-
-### Heating System Overview implemented in Home Assistant
-![grafik](https://github.com/user-attachments/assets/28901428-5cec-4135-aada-795302d58811)
-
-ref. https://github.com/philippoo66/optolink-splitter/discussions/67
-
-![0b87f133-3285-4cb5-871c-87c66598d42d](https://github.com/user-attachments/assets/596c2f3d-24c3-406a-854b-4679ce0643d7)
 
