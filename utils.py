@@ -19,7 +19,9 @@ import settings_ini
 
 # utils +++++++++++++++++++++++++++++
 def get_int(v) -> int:
-    return int(v, 0)  # Automatische Erkennung von Dezimal-, Hex-, Oktal- und Binärzahlen
+    if type(v) is int:
+        return v
+    return int(str(v), 0)
 
 def to_number(v):
     s = str(v)
@@ -49,8 +51,10 @@ def bytesval(data, scale=1, signd=False):
 
 
 def bbbstr(data):
-    return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
-
+    try:
+        return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
+    except:
+        return "(not iterable)"
 
 def arr2hexstr(data):
     return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])
