@@ -27,7 +27,7 @@ _**Use this software at your own risk.**_
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
-- [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#house-smart-home-integration-eg-home-assistant)
+- [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#printer-3d-printable-case-for-raspberry-pi--usb-ttl-adapter)
 - [Additional Images](#camera_flash-additional-images-mqtt-visualization)
 
 
