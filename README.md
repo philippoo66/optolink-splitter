@@ -23,6 +23,8 @@ _**Use this software at your own risk.**_
 - [Software Requirements](#file_folder-software-requirements)
 - [Hardware Requirements](#desktop_computerhardware-requirements)
 - [Installation](#hammer_and_wrench-installation)
+- [Getting Started](#rocket-getting-started)
+- [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#printer-3d-printable-case-for-raspberry-pi--usb-ttl-adapter)
@@ -64,7 +66,78 @@ _**Use this software at your own risk.**_
   - **Raspberry Pi UART voltage = 3.3V** → Set jumper accordingly!
 
 ## :hammer_and_wrench: Installation
-For detailed information on Installation & Configuration, please visit the [Wiki](Wiki).
+### 1. Clone the Repository
+```sh
+git clone https://github.com/philippoo66/optolink-splitter.git
+cd optolink-splitter
+```
+
+### 2. Create Virtual Environment & Install Dependencies
+
+Using a virtual environment is recommended to keep dependencies isolated and avoid conflicts with system-wide packages. More details can be found in [this guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv).
+
+#### 2.1. Create & activate the virtual environment:
+```sh
+python3 -m venv myvenv
+python3 source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
+```
+
+#### 2.2. Install required dependencies:
+```sh
+pip install pyserial
+pip install paho-mqtt  # Only if MQTT is used
+```
+*NOTE:* After installation, the environment must be activated before running the script.
+
+### 3. Configure the Settings
+Modify `settings_ini.py` according to your heating (/ datapoints):
+- Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
+- Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
+
+### 4. Run the Script
+```sh
+python3 source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
+python3 optolinkvs2_switch.py
+```
+For automatic startup, set up a service. See the [Wiki Guide](https://github.com/philippoo66/optolink-splitter/wiki/120-optolinkvs2_switch-automatisch-starten).
+
+## :rocket: Getting Started
+### Parallel use with Vitoconnect / ViCare App
+- Ensure the **serial port is enabled** and **serial console is disabled** ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/050-Prepare:-enable-serial-port,-disable-serial-console)).
+- **CP2102 Interface:**
+  - Cross **RX/TX** lines.
+  - Set voltage jumper to **3.3V**.
+  - Use `ttyAMA0` instead of `ttyS0` for Raspberry Pi 3+ ([Details](https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument'))).
+
+### Vitoconnect Interfaces
+#### **Vitoconnect 100 OPTO1**
+To ensure proper communication with the system, follow the power-on sequence exactly:
+1. **Connect all wires and plugs** to the Raspberry Pi and Vitoconnect.
+2. **Power on the Raspberry Pi**.
+3. Run the script and wait for the prompt: `awaiting VS2...`.
+4. **Power on Vitoconnect 100 OPTO1**.
+
+#### **Vitoconnect OPTO2**
+The startup sequence for this device is not critical, as it will automatically reconnect without issues.
+
+## :receipt: Command Syntax: MQTT & TCP/IP
+Optolink Splitter can connect to an **MQTT Broker** for sending commands and receiving responses. Alternatively, a direct **TCP/IP connection** (e.g. using PuTTY) can be established to interact with the application directly. For more details on the command syntax, see the [Wiki | Command Syntax Overview](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax) or go directly to the section on [MQTT and TCP/IP requests](https://github.com/philippoo66/optolink-splitter/wiki/010-Command-Syntax#command-syntax-for-requests-via-mqtt-and-tcpip).
+
+
+  - read ambient temperature, scaled with sign:
+    - cmnd = read;0x0800;2;0.1;true
+    - resp: 1;2048;8.2
+
+  - read DeviceIdent as raw:
+    - cmnd = read;0xf8;8
+    - resp: 1;248;20CB1FC900000114
+
+  - write hotwater temperature setpoint:
+    - cmnd = write;0x6300;1;45
+    - resp: 1;25344;45
+
+**Important Note for TCP/IP Connections:**  
+When using PuTTY or similar software for a TCP/IP connection, the session must be closed by sending `exit` as a string, as PuTTY does not appear to send the FIN flag to properly terminate the session when closing.
 
 ## :house: Smart Home Integration (e.g. Home Assistant)
 Optolink Splitter seamlessly integrates into your smart home setup via **MQTT**, allowing you to monitor and control your Viessmann heating system using platforms like **Home Assistant**, **ioBroker**, or **Node-RED**. All available heating system data can be visualized in dashboards, automated with custom rules, and integrated into broader smart home routines. With Optolink Splitter’s command-sending capability, you can locally adjust heating modes, temperature setpoints, or pump states directly from your favorite smart home system.
