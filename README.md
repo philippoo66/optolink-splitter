@@ -85,6 +85,11 @@ Below are examples of how this integration looks in different smart home environ
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
 - Bug reports: [GitHub Issues](https://github.com/philippoo66/optolink-splitter/issues)
 
+## :printer: 3D-Printable Case for Raspberry Pi & USB-TTL Adapter
+A compact and practical 3D-printable case designed for Raspberry Pi 2 & 3 including a CP2102 USB-TTL adapter mount.  A version for **Raspberry Pi 4** may be available in the future. Special thanks to [Kristian](https://github.com/kristian)!  
+
+[Raspberry Pi 2/3 Case with CP2102 UART Board Holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall)  
+
 ## :camera_flash: Additional Images (MQTT, Visualization)
 ### Datapoints in settings_ini.py & MQTT Explorer monitoring
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
