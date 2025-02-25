@@ -347,8 +347,8 @@ def publish_homeassistant_entities():
             config["state_topic"] = mqtt_optolink_base_topic + entity_id
 
         # Find the correct entity in homeassistant_entities["datapoints"]
-        current_entity = next((e for e in homeassistant_entities["datapoints"] if re.sub(r"[^0-9a-zA-Z]+", "_", e["name"]).lower() == entity_id), None)
-
+        current_entity = next((e for e in homeassistant_entities["datapoints"] if re.sub(r"[^0-9a-zA-Z]+", "_", e["name"]).lower() == entity_id and e["domain"] == entity_domain), None)
+        
         if current_entity:
             for key, value in current_entity.items():
                 if key != "domain":
