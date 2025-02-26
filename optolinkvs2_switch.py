@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.3.0.0"
+version = "1.3.0.1"
 
 import serial
 import time
@@ -147,6 +147,7 @@ def vicon_thread_func(serViCon, serViDev):
     """
     Thread to receive Vitoconnect requests
     """
+    global restart_event  # sollte nicht notwendig sein
     print("awaiting VS2...")
     if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
         raise Exception("VS2 protocol not detected within timeout")
@@ -156,6 +157,7 @@ def vicon_thread_func(serViCon, serViDev):
         viconn_util.listen_to_Vitoconnect(serViCon)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
+        c_logging.vitolog.do_log([], msg)
         print(msg, "re-init")
         mqtt_debug(msg)
         restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
@@ -174,7 +176,7 @@ def mqtt_debug(msg:str):
 # Main
 # ------------------------
 def main():
-    global restart_event  #, shutdown_event
+    global restart_event  # sollte nicht notwendig sein
     global mod_mqtt_util
     global poll_pointer, poll_cycle
 
