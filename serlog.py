@@ -38,8 +38,7 @@ def bbbstr(data_buffer):
 def main():
     # Konfiguration der seriellen Schnittstellen
     # Vitoconnect  (älter: /dev/ttyAMA0)
-    #ser1 = serial.Serial('/dev/ttyS0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyS0'
-    ser1 = serial.Serial('/dev/ttyS0',
+    ser1 = serial.Serial('/dev/ttyS0',   # please adjust in case!!
             baudrate=4800,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
@@ -48,8 +47,7 @@ def main():
             exclusive=True)
 
     # Optolink Kopf
-    #ser2 = serial.Serial('/dev/ttyUSB0', baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0)  # '/dev/ttyUSB0'
-    ser2 = serial.Serial('/dev/ttyUSB0',
+    ser2 = serial.Serial('/dev/ttyUSB0',   # please adjust in case!!
             baudrate=4800,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
