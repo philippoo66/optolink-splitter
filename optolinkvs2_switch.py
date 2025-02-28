@@ -237,8 +237,10 @@ def main():
 
                 # detect/init VS2 Protokol ++++++++++++
                 print("awaiting VS2...")
+                c_logging.vitolog.do_log("detect_vs2...")
                 if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
                     raise Exception("VS2 protocol not detected within timeout")
+                c_logging.vitolog.do_log("VS2 protocol detected")           
                 print("VS2 detected")
 
                 # listen to vicon ++++++++++++
