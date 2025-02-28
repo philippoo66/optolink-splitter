@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.3.1.2"
+version = "1.3.1.3"
 
 import serial
 import time
@@ -176,7 +176,8 @@ def main():
 
     excptn = None
 
-    #print(f"Version {version}")
+    print(f"Version {version}")
+    #c_logging.vitolog.open_log()
 
     try:
         poll_data = [None] * c_polllist.poll_list.num_items
