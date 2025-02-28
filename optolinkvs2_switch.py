@@ -152,7 +152,7 @@ def vicon_thread_func(serViCon, serViDev):
         viconn_util.listen_to_Vitoconnect(serViCon)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
-        c_logging.vitolog.do_log([], msg)
+        c_logging.vitolog.do_log(msg)
         print(msg, "re-init")
         mqtt_debug(msg)
         restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
@@ -239,7 +239,7 @@ def main():
                 print("awaiting VS2...")
                 if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
                     raise Exception("VS2 protocol not detected within timeout")
-                c_logging.vitolog.do_log([],"VS2 protocol detected")           
+                c_logging.vitolog.do_log("VS2 protocol detected")           
                 print("VS2 detected")
 
                 # listen to vicon ++++++++++++

@@ -54,7 +54,7 @@ def bbbstr(data):
     try:
         return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
     except:
-        return "(not iterable)"
+        return data
 
 def arr2hexstr(data):
     return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])
