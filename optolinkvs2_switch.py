@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.3.0.1"
+version = "1.3.1.0"
 
 import serial
 import time
@@ -147,12 +147,7 @@ def vicon_thread_func(serViCon, serViDev):
     """
     Thread to receive Vitoconnect requests
     """
-    global restart_event  # sollte nicht notwendig sein
-    print("awaiting VS2...")
-    if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
-        raise Exception("VS2 protocol not detected within timeout")
-
-    print("VS2 detected, starting Vitoconnect listener...")
+    print("running Vitoconnect listener")
     try:
         viconn_util.listen_to_Vitoconnect(serViCon)
     except Exception as e:
@@ -176,15 +171,15 @@ def mqtt_debug(msg:str):
 # Main
 # ------------------------
 def main():
-    global restart_event  # sollte nicht notwendig sein
     global mod_mqtt_util
     global poll_pointer, poll_cycle
 
     excptn = None
 
+    #print(f"Version {version}")
+
     try:
         poll_data = [None] * c_polllist.poll_list.num_items
-
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
         serViDev = None  # Viessmann Device (Slave)
@@ -232,12 +227,22 @@ def main():
         while(True):  #not shutdown_event.is_set():
             # run VS2 connection ------------------
             if(serViCon is not None):
+                # reset vicon_request buffer
+                viconn_util.vicon_request = bytearray()
+
                 # Vitoconncet logging
                 if(settings_ini.log_vitoconnect):
                     if(c_logging.vitolog.log_handle is None):
                         c_logging.vitolog.open_log()
 
-                # detect VS2 Protokol
+                # detect/init VS2 Protokol ++++++++++++
+                print("awaiting VS2...")
+                if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
+                    raise Exception("VS2 protocol not detected within timeout")
+                print("VS2 detected")
+
+                # listen to vicon ++++++++++++
+                # run reception thread
                 restart_event.clear()
                 vicon_thread = threading.Thread(target=vicon_thread_func, args=(serViCon, serViDev), daemon=True)
                 vicon_thread.start()
@@ -254,7 +259,7 @@ def main():
                 startPollTimer(settings_ini.poll_interval)
 
             # ------------------------
-            # Main Loop starten und Sachen abarbeiten
+            # Main Loop starten und Sachen abarbeiten ++++++++++++
             # ------------------------
             request_pointer = 0
             while not restart_event.is_set():  #and not shutdown_event.is_set():

@@ -85,6 +85,8 @@ def listen_to_Vitoconnect(servicon:serial):
             c_logging.vitolog.do_log(data, f"TO {timeout}")
         else:
             c_logging.vitolog.do_log(data, f"X {succ:02x}")
+            # protocol reset request as preparation for the new VS2 detection (kommt wahscheinlich nicht durch, aber ...)
+            vicon_request = bytearray([0x04])
             raise Exception(f"Error {succ:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")
 
 
