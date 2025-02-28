@@ -36,7 +36,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 
     timestart = time.time()
 
-    c_logging.vitolog.do_log("detect_vs2...")
+    c_logging.vitolog.do_log([],"detect_vs2...")
 
     while True:
         # Lesen von Daten von beiden seriellen Schnittstellen
