@@ -82,7 +82,7 @@ def listen_to_Vitoconnect(servicon:serial):
         if(succ == 1):
             vicon_request = data
             timeout = 0
-        elif(succ == 0xff) and (timeout < 2):
+        elif(succ == 0xff) and (timeout < 1):
             timeout += 1
             c_logging.vitolog.do_log(data, f"TO {timeout}")
         else:
