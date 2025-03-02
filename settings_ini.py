@@ -27,7 +27,7 @@ mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vit
 mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
-mqtt_retain = True               # Publish MQTT message with retain set
+mqtt_retain = False              # Publish MQTT message with retain set
 
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
