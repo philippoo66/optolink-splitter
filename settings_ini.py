@@ -30,6 +30,7 @@ mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{d
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
 
 
 # TCP/IP ++++++++++++++++++++++++++
