@@ -17,7 +17,6 @@
 # Serial Ports +++++++++++++++++++
 port_optolink = '/dev/ttyUSB0'   # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
 port_vitoconnect = '/dev/ttyS0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyS0', older Raspberry Pi models: '/dev/ttyAMA0', set None if no Vitoconnect)
-
 vs2timeout = 120                 # Timeout (seconds) for VS2 protocol detection (default: 120)
 
 # MQTT Connection ++++++++++++++++
