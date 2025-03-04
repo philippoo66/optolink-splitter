@@ -85,10 +85,7 @@ def perform_bytebit_filter(data, item):
         if(scal is not None):
             scal = float(scal)
             if(scal != 1.0):
-                #print("H round called")
-                #print(f"{type(uvalue)} {uvalue} {type(scal)} {scal}")
                 uvalue = round(uvalue * scal, int(settings_ini.max_decimals))
-                #print("H round done")
         return uvalue
 
 def get_retstr(retcode, addr, val) -> str:

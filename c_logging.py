@@ -31,7 +31,7 @@ class cLogging:
         """
         try:
             self.log_handle = open(self.log_file, 'a')
-            self.do_log([], "Log file opened.")
+            self.do_log("Log file opened.")
         except Exception as e:
             print(f"Error opening log file: {e}")
 
@@ -40,11 +40,11 @@ class cLogging:
         Schließt die Logdatei.
         """
         if self.log_handle:
-            self.do_log([], "Log file closed.")
+            self.do_log("Log file closed.")
             self.log_handle.close()
             self.log_handle = None
 
-    def do_log(self, data, pre):
+    def do_log(self, data, pre="i"):
         """
         Schreibt einen Logeintrag in die Logdatei mit Zeitstempel.
         """
@@ -52,7 +52,10 @@ class cLogging:
             # timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             # log_entry = f"[{timestamp}] {message}\n"
             # self.log_handle.write(log_entry)
-            sd = utils.bbbstr(data)
+            if(isinstance(data,str)):
+                sd = data
+            else:
+                sd = utils.bbbstr(data)
             self.log_handle.write(f"{pre}\t{int(time.time()*1000)}\t{sd}\n")
         # else:
         #     print("Log file is not open. Cannot write log entry.")
@@ -74,5 +77,5 @@ vitolog = cLogging('vitolog.txt')
 if __name__ == "__main__":
     logger = cLogging("my_app.log")
     logger.open_log()
-    logger.do_log([], "This is a test log entry.")
+    logger.do_log("This is a test log entry.")
     logger.close_log()

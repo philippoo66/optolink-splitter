@@ -21,13 +21,12 @@ import settings_ini
 def get_int(v) -> int:
     if type(v) is int:
         return v
-    else:
-        return int(eval(str(v)))
+    return int(str(v), 0)
 
 def to_number(v):
     s = str(v)
     try:
-        return int(s)
+        return int(s, 0)
     except ValueError:
         try:
             return float(s)
@@ -52,8 +51,10 @@ def bytesval(data, scale=1, signd=False):
 
 
 def bbbstr(data):
-    return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
-
+    try:
+        return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
+    except:
+        return data
 
 def arr2hexstr(data):
     return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])

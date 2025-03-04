@@ -36,6 +36,8 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 
     timestart = time.time()
 
+    c_logging.vitolog.do_log("detect_vs2...")
+
     while True:
         # Lesen von Daten von beiden seriellen Schnittstellen
         dataVicon = serVicon.read()
@@ -74,12 +76,21 @@ vicon_request = bytearray()
 
 def listen_to_Vitoconnect(servicon:serial):
     global vicon_request
+    timeout = 0
     while(True):
         succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)  # contains sleep(0.005)
         if(succ == 1):
             vicon_request = data
-        elif(data):
-            c_logging.vitolog.do_log(data, "X")
+            timeout = 0
+        elif(succ == 0xff) and (timeout < 1):
+            timeout += 1
+            c_logging.vitolog.do_log(data, f"TO {timeout}")
+        else:
+            c_logging.vitolog.do_log(data, f"X {succ:02x}")
+            # protocol reset request as preparation for the new VS2 detection (kommt wahscheinlich nicht durch, aber ...)
+            vicon_request = bytearray([0x04])
+            raise Exception(f"Error {succ:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")
+
 
 def get_vicon_request() -> bytearray:
     global vicon_request

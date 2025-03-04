@@ -32,7 +32,6 @@ mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "V
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
 mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
 
-
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
 
