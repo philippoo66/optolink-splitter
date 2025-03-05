@@ -17,16 +17,19 @@
 # Serial Ports +++++++++++++++++++
 port_optolink = '/dev/ttyUSB0'   # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
 port_vitoconnect = '/dev/ttyS0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyS0', older Raspberry Pi models: '/dev/ttyAMA0', set None if no Vitoconnect)
-
 vs2timeout = 120                 # Timeout (seconds) for VS2 protocol detection (default: 120)
 
-# MQTT +++++++++++++++++++++++++++
+# MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
 mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
-mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
+
+# MQTT Topics ++++++++++++++++++++
+# Best practices recommendation: Always use lowercase for consistency and compatibility.
 mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
+mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
 
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
@@ -62,10 +65,10 @@ w1sensors = {
 
 # Datapoint Polling List+++++++++
 poll_interval = 30              # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
-poll_items = [                  # datapoints defined here will be polled, ignored if poll_list.py found in working dir
+poll_items = [                  # Datapoints defined here will be polled; ignored if poll_list.py is found in the working directory
     # ([PollCycle,] Name, DpAddr, Length [, Scale/Type [, Signed]),
        # PollCycle:   Optional entry to allow the item to be polled only every x-th cycle
-       # Name:        Datapoint name, published to MQTT as {dpname}
+       # Name:        Datapoint name, published to MQTT as {dpname}; Best practices recommendation: Always use lowercase Names for consistency and compatibility.
        # DpAddr:      Address used to read the datapoint value (hex with '0x' or decimal)
        # Length:      Number of bytes to read
        # Scale/Type:  Optional; if omitted, value returns as a hex byte string without '0x'. See Wiki for details

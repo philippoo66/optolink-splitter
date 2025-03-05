@@ -88,7 +88,7 @@ def publish_read(name, addr, value):
     if(mqtt_client != None):
         publishStr = settings_ini.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
-        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value)    
+        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value, retain=settings_ini.mqtt_retain)    
         if(verbose): print(ret)
 
 def publish_response(resp:str):
