@@ -1,47 +1,37 @@
 # Optolink Switch/Splitter
 Make your Viessmann heating locally available via MQTT and TCP/IP while keeping Optolink/ViCare App & more!
 
- 
-#### Disclaimer
-_This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal, ViCare, etc. refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners._ <br>
-_**Use this software at your own risk.**_
-
-## :white_check_mark: Key Benefits 
-- **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
-- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal and most other Optolink featured devices.
-- **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
-
+![System Architecture](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)<br>
+**Use this software at your own risk.**
 
 ## 🎉 Announcements
-- **Version 1.2.0.0 is out!** Check the [changelog](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1200) for details.
+- **Version 1.3.0.0 is out!** Check the [changelog](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1200) for details.
 - Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
 - Explore other feature branches, there might be something useful for you! 😉
 
-
 ## 📌 Table of Contents
-- [System Architecture](#package-system-architecture)
+- [Introduction](#rocket-introduction)
 - [Software Requirements](#file_folder-software-requirements)
 - [Hardware Requirements](#desktop_computerhardware-requirements)
 - [Installation](#hammer_and_wrench-installation)
-- [Getting Started](#rocket-getting-started)
+- [Connecting Optolink & Vitoconnect](electric_plug-connecting-optolink--vitoconnect)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#printer-3d-printable-case-for-raspberry-pi--usb-ttl-adapter)
 - [Additional Images](#camera_flash-additional-images-mqtt-visualization)
+- [Disclaimer](#memo-disclaimer)
 
 
-## :package: System Architecture
-### How it Works
-- Enables both **local monitoring/control** and **Viessmann's cloud services** in parallel.
-- Data accessible via **MQTT** or TCP/IP for smart home integration (e.g. Home Assistant).
+## :rocket: Introduction
+
+### Key Benefits 
+- **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
+- **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal and most other Optolink featured devices.
+- **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
 - Supports **VS2 and VS1/KW protocols** with different branches.  
   - The [vs1test branch](https://github.com/philippoo66/optolink-splitter/tree/vs1test) enables **VS1/KW protocol support** but works **only without** Vitoconnect.  
   - For **VS1/KW with Vitoconnect**, the [viconn-listener](https://github.com/philippoo66/viconn-listener) is available (currently in beta).  
-
-
-### Overview
-![System Architecture](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
 
 ### Videos
 🎥 **Introduction Video (German):** [Watch on YouTube](https://youtu.be/95WIPFBxMsc)
@@ -101,7 +91,7 @@ python3 optolinkvs2_switch.py
 ```
 For automatic startup, set up a service. See the [Wiki Guide](https://github.com/philippoo66/optolink-splitter/wiki/120-optolinkvs2_switch-automatisch-starten).
 
-## :rocket: Getting Started
+## :electric_plug: Connecting Optolink & Vitoconnect
 ### Parallel use with Vitoconnect / ViCare App
 - Ensure the **serial port is enabled** and **serial console is disabled** ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/050-Prepare:-enable-serial-port,-disable-serial-console)).
 - **CP2102 Interface:**
@@ -169,4 +159,8 @@ A compact and practical 3D-printable case designed for Raspberry Pi 2 & 3 includ
  
 ### Data visualisation
 ![grafik](https://github.com/user-attachments/assets/fee2151f-7d99-45a0-a85a-897b54085289)
+
+## :memo: Disclaimer
+This software is **not affiliated with, endorsed by, or associated with Viessmann** in any way. The terms Vitoconnect, Optolink, Vitocal, ViCare, etc. refer to Viessmann products and technologies. All product and brand names mentioned belong to their respective owners.<br>
+It is provided **as-is**, without any warranties or guarantees. The authors assume no liability for any issues arising from its use. 
 
