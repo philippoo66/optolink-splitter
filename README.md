@@ -1,7 +1,8 @@
 # Optolink Switch/Splitter
 Make your Viessmann heating locally available via MQTT and TCP/IP while keeping Optolink/ViCare App & more!
 
-![System Architecture](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)<br>
+![System Architecture](https://github.com/philippoo66/optolink-splitter/assets/122479122/10185cc5-0eed-4bc3-a8d7-b385c4e73aaf)
+
 **Use this software at your own risk.**
 
 ## 🎉 Announcements
@@ -14,7 +15,7 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 - [Software Requirements](#file_folder-software-requirements)
 - [Hardware Requirements](#desktop_computerhardware-requirements)
 - [Installation](#hammer_and_wrench-installation)
-- [Connecting Optolink & Vitoconnect](electric_plug-connecting-optolink--vitoconnect)
+- [Connecting Optolink & Vitoconnect](#electric_plug-connecting-optolink--vitoconnect)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
