@@ -37,8 +37,8 @@ def get_value(data, frmat, signd:bool) -> any:
             return utils.arr2hexstr(data)
 
 def perform_bytebit_filter(data, item):
-    # item is poll list entry:    (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
-    # may also be read request: ("read; DpAddr; Len; 'b:startbyte:lastbyte:bitmask:endian'; Scale; Signed)
+    # item is poll list entry:  (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
+    # may also be read request: "read; DpAddr; Len; b:startbyte:lastbyte:bitmask:endian; Scale; Signed"
 
     bparts = item[3].split(':')
 
@@ -66,14 +66,12 @@ def perform_bytebit_filter(data, item):
         if(bparts[4] != ''):
             endian = bparts[4]
     
+    scal = None
     if(len(item) > 4):
-        scal = item[4]
-        if(scal == 'raw'):
-            endian = 'raw'
-    else:
-        scal = None
+        if(item[4] != 'raw'):  # only for backward compatibility
+            scal = float(item[4])
 
-    if(endian == 'raw'):
+    if(scal is None) or (endian == 'raw'):  # backward compatibility
         return utils.arr2hexstr(udata)
     else:
         signd = False
@@ -82,11 +80,11 @@ def perform_bytebit_filter(data, item):
 
         uvalue = int.from_bytes(udata, byteorder=endian, signed=signd)
 
-        if(scal is not None):
-            scal = float(scal)
-            if(scal != 1.0):
-                uvalue = round(uvalue * scal, int(settings_ini.max_decimals))
+        if(scal != 1.0):
+            uvalue = round(uvalue * scal, int(settings_ini.max_decimals))
+
         return uvalue
+
 
 def get_retstr(retcode, addr, val) -> str:
     prefix = ''

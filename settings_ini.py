@@ -15,9 +15,9 @@
 '''
 
 # Serial Ports +++++++++++++++++++
-port_optolink = '/dev/ttyUSB0'   # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
-port_vitoconnect = '/dev/ttyS0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyS0', older Raspberry Pi models: '/dev/ttyAMA0', set None if no Vitoconnect)
-vs2timeout = 120                 # Timeout (seconds) for VS2 protocol detection (default: 120)
+port_optolink = '/dev/ttyUSB0'     # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
+port_vitoconnect = '/dev/ttyAMA0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyAMA0', set None if no Vitoconnect) Pls check https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')
+vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detection (default: 120)
 
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
@@ -25,7 +25,7 @@ mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (defaul
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
-mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative: "{dpaddr:04X}_{dpname}")
+mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
@@ -46,7 +46,7 @@ show_opto_rx = True             # Display received Optolink data (default: True,
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
 data_hex_format = '02x'         # Hexadecimal formatting (set '02X' for uppercase formatting, default: '02x')
-resp_addr_format = 'd'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, '04X' for 4-digit hex, default: 'd')
+resp_addr_format = 'x'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, e.g. '04X' for 4-digit hex, default: 'x')
 
 # Viessdata Utilities +++++++++++
 write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: False)
