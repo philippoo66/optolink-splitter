@@ -38,13 +38,17 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
-        print("MQTT recd:", msg.topic, msg.payload)  # ErrMsg oder so?
+        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         cmnd_queue.append(rec) 
+    else:
+        # Ausgabe anderer eingehenden MQTT-Nachrichten
+        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
+
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     # Since we subscribed only for a single channel, reason_code_list contains
