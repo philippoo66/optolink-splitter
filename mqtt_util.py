@@ -54,6 +54,10 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
     else:
         print(f"Broker granted the following QoS: {reason_code_list[0].value}")
 
+def on_log(client, userdata, level, buf):
+    print("MQTT Log:", buf)
+
+
 def connect_mqtt():
     global mqtt_client
     try:
@@ -68,6 +72,10 @@ def connect_mqtt():
         mqtt_client.will_set(settings_ini.mqtt_topic + "/LWT", "offline", qos=0,  retain=True)
         if(settings_ini.mqtt_listen != None):
             mqtt_client.on_subscribe = on_subscribe
+        if(settings_ini.mqtt_logging):
+            mqtt_client.on_log = on_log
+            mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
+            mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
         mlst = settings_ini.mqtt.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
