@@ -190,7 +190,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
             bval = ival.to_bytes(int(parts[2]), 'little', signed=(ival < 0))
             retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
-                val = int.from_bytes(bval, 'little')
+                val = int.from_bytes(bval, 'little', signed=(ival < 0))
             elif(data):
                 # probably error message
                 val = utils.arr2hexstr(data)  #f"{int.from_bytes(data, 'little')} ({utils.bbbstr(data)})"
