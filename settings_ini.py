@@ -22,6 +22,7 @@ vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detectio
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
 mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
+mqtt_logging = False             # dis/enables logging of paho.mqtt (default: False)
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.

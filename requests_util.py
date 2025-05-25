@@ -26,12 +26,23 @@ def get_value(data, frmat, signd:bool) -> any:
         return utils.bytesval(data, scale, signd)
     else:
         #TODO hier evtl weitere Formate umsetzen
+        frmat = str(frmat)
         if(frmat == 'vdatetime'):
             return utils.vdatetime2str(data)
         elif(frmat == 'unixtime'):
             return utils.unixtime2str(data)
         elif(frmat == 'utf8'):
             return utils.utf82str(data)
+        elif(frmat == 'bool'):
+            return str(utils.bytesval(data) != 0)
+        elif(frmat == 'onoff'):
+            return 'ON' if(utils.bytesval(data) != 0) else 'OFF'
+        elif(frmat == 'bin'):
+            ffrmt = f"0{len(data)*8}b"
+            return f"{utils.bytesval(data):{ffrmt}}"
+        elif(frmat.startswith('f:')):
+            ffrmt = frmat[2:]
+            return f"{utils.bytesval(data):{ffrmt}}"
         else:
             #return raw
             return utils.arr2hexstr(data)
@@ -49,41 +60,43 @@ def perform_bytebit_filter(data, item):
             bend = int(bparts[2])
 
     udata = data[bstart:(bend+1)]
- 
+    dlen = bend - bstart + 1
+
     # first apply mask if given
     if(len(bparts) > 3):
         if(bparts[3] != ''):
             smask = str(bparts[3]).strip()
             imask = utils.get_int(smask)
-            dlen = bend - bstart + 1
             amask = bytearray(imask.to_bytes(dlen, 'big'))
             # now apply the mask byte for byte
             for i in range(dlen):
                 udata[i] = udata[i] & amask[i]
 
-    endian = 'little'    # € ['little, 'big', 'raw'] 
-    if(len(bparts) > 4):
-        if(bparts[4] != ''):
-            endian = bparts[4]
-    
-    scal = None
-    if(len(item) > 4):
-        if(item[4] != 'raw'):  # only for backward compatibility
-            scal = float(item[4])
-
-    if(scal is None) or (endian == 'raw'):  # backward compatibility
-        return utils.arr2hexstr(udata)
-    else:
+    # evaluate endian if given
+    if(len(bparts) > 4) and (bparts[4] == 'big'):
+        # convert to int
+        ival = int.from_bytes(udata, byteorder='big')
+        # convert to bytearray to get evaluated in response_to_request()
+        return bytearray(ival.to_bytes(dlen, byteorder='little'))
+    else:  # also covers 'raw' for backward compatibility
+        return udata
+ 
+def perform_bytebit_filter_and_evaluate(data, parts):
+    # parts: ['valname/read', addr, len, 'b:...', fact, signd]   min up to 'b:...'
+    valdata = perform_bytebit_filter(data, parts)
+    numelms = len(parts)
+    if(numelms > 4):
+        # factor is parts[4]
+        # eval signed
         signd = False
-        if(len(item) > 5):
-            signd = utils.get_bool(item[5])
-
-        uvalue = int.from_bytes(udata, byteorder=endian, signed=signd)
-
-        if(scal != 1.0):
-            uvalue = round(uvalue * scal, int(settings_ini.max_decimals))
-
-        return uvalue
+        if(numelms > 5):
+            signd = utils.get_bool(parts[5])
+        # now get value 
+        val = get_value(valdata, parts[4], signd)
+    else:
+        # return raw
+        val = utils.arr2hexstr(valdata)
+    return val
 
 
 def get_retstr(retcode, addr, val) -> str:
@@ -150,15 +163,18 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
                 if(retcode==1):
                     if(numelms > 3):
                         if(str(parts[3]).startswith('b:')):
-                            #print(f"H perform_bytebit_filter, ispollitem {ispollitem}")
-                            val = perform_bytebit_filter(data, parts)
+                            # parts: ['valname/read', addr, len, 'b:...', fact, signd]
+                            val = perform_bytebit_filter_and_evaluate(data, parts)
                         else:
+                            # factor is parts[3]
+                            # eval signed
                             signd = False
                             if(numelms > 4):
                                 signd = utils.get_bool(parts[4])
+                            # now get value 
                             val = get_value(data, parts[3], signd)
                     else:
-                        #return raw
+                        # return raw
                         val = utils.arr2hexstr(data)
                 elif(data):
                     # probably error message
@@ -170,7 +186,8 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
         elif(cmnd in ["write", "w"]):  # "write;0x6300;1;48"
             # write +++++++++++++++++++
             #raise Exception("write noch nicht fertig") #TODO scaling und so
-            bval = (utils.get_int(parts[3])).to_bytes(int(parts[2]), 'little')
+            ival = utils.get_int(parts[3])
+            bval = ival.to_bytes(int(parts[2]), 'little', signed=(ival < 0))
             retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
                 val = int.from_bytes(bval, 'little')

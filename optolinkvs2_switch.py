@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.4.0.0"
+version = "1.4.2.2"
 
 import serial
 import time
@@ -64,7 +64,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     val = "?"
 
     while(True):
-        # handle PollCycle option
+        # handle PollCycle option +++++++++++++++++++++++
         item = c_polllist.poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
         if(len(item) > 1 and type(item[0]) is int):
             if(poll_cycle % item[0] != 0):
@@ -110,7 +110,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                     
                     # if next address same AND next len same AND next type starts with 'b:'
                     if((len(next_item) > 3) and (next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
-                        next_val = requests_util.perform_bytebit_filter(data, next_item)
+                        next_val = requests_util.perform_bytebit_filter_and_evaluate(data, next_item)
 
                         # save val in buffer for csv
                         poll_data[next_idx] = next_val

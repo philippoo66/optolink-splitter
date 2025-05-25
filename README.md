@@ -6,12 +6,15 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 **Use this software at your own risk.**
 
 ## 🎉 Announcements
-- **Version 1.4.0.0** ATTENTION: ByteBit Filter made congruent. Now returns raw/hex by default if no scale is given. So set scale to 1 to achieve the same result as in earlier versions without scale.<br>
+- [**Version 1.4.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1410) New nice format specifiers available. Can get used in combination with ByteBit Filter
+
+- [**Version 1.4.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1400) ATTENTION: ByteBit Filter made congruent. Now returns raw/hex by default if no scale is given. So set scale to 1 to achieve the same result as in earlier versions without scale.<br>
 now `("MyDatapoint", 0x1234, 3, 'b:2:2', 1),` resturns same result as `("MyDatapoint", 0x1234, 3, 'b:2:2'),` before.<br>
 now `("MyDatapoint", 0x1234, 3, 'b:2:2'),` resturns same result as `("MyDatapoint", 0x1234, 3, 'b:2:2::raw'),` before.<br>
 If you use like `("MySensorVal", 0x1234, 3, 'b:0:1', 0.1),` nothing needs to be done.
 
-- **Version 1.3.0.0** If an issue occurs with Viconnect communication, the main loop gets stopped and everything starts again (protocoll init -> run Viconn reception thread -> main loop).
+- [**Version 1.3.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1313) If an issue occurs with Viconnect communication, the main loop gets stopped and everything starts again (protocoll init -> run Viconn reception thread -> main loop).
+
 - Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
 - Explore other feature branches, there might be something useful for you! 😉
 
@@ -103,6 +106,8 @@ If you want to update your installation to a new version, the recommended way is
 - make a backup copy of your current installation (folder)
 - from the new version repo, clone **all files except settings_ini.py** into your original folder (replace existing files)
 - check the [version log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log) for added or changed entries in the settings_ini and apply (only) those changes to your existing settings_ini.py 
+
+Alternatively you might clone all files and apply your original settings to the new settings_ini afterwards. 
 
 Even though I promise to note required changes carefully in the version log from now on, after an update it is always a good practice to start the splitter once in the console (`python optolinkvs2_switch.py`, remember to run your virtual environment) since in the console you get quite detailed error messages _if_ some would be wrong or missing.  
 

@@ -38,13 +38,17 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
-        print("MQTT recd:", msg.topic, msg.payload)  # ErrMsg oder so?
+        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         cmnd_queue.append(rec) 
+    else:
+        # Ausgabe anderer eingehenden MQTT-Nachrichten
+        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
+
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     # Since we subscribed only for a single channel, reason_code_list contains
@@ -53,6 +57,10 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
         print(f"Broker rejected you subscription: {reason_code_list[0]}")
     else:
         print(f"Broker granted the following QoS: {reason_code_list[0].value}")
+
+def on_log(client, userdata, level, buf):
+    print("MQTT Log:", buf)
+
 
 def connect_mqtt():
     global mqtt_client
@@ -68,6 +76,10 @@ def connect_mqtt():
         mqtt_client.will_set(settings_ini.mqtt_topic + "/LWT", "offline", qos=0,  retain=True)
         if(settings_ini.mqtt_listen != None):
             mqtt_client.on_subscribe = on_subscribe
+        if(settings_ini.mqtt_logging):
+            mqtt_client.on_log = on_log
+            mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
+            mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
         mlst = settings_ini.mqtt.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
