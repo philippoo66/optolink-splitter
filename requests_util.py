@@ -24,11 +24,7 @@ import settings_ini
 w1values: dict[int, c_w1value.W1Value] = {}
 
 def init_w1_values_check():
-    print("H init_w1_values_check")
-    print("h0", settings_ini.w1sensors)
     for addr,info in settings_ini.w1sensors.items():  # Addr: ('<w1_folder/sn>', '<slave_type>')
-        print("h1", addr, info)
-        print("h2",info[1])
         if info[1] == 'ds18b20':
             # scalar value, check max_change
             w1val = c_w1value.W1Value(addr, max_change=10.0, max_ignore=3)
@@ -37,7 +33,6 @@ def init_w1_values_check():
             w1val = c_w1value.W1Value(addr, max_change=-1)        
         # add to dict
         w1values[addr] = w1val
-    print("H init_w1_values_check done")
 
 
 def get_value(data, frmat, signd:bool) -> any:
