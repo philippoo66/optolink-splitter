@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.4.2.2"
+version = "1.4.3.0"
 
 import serial
 import time
@@ -220,6 +220,10 @@ def main():
             tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
             tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
             tcp_thread.start()
+
+
+        # one wire value check init
+        requests_util.init_w1_values_check()
 
 
         # ------------------------
