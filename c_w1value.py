@@ -24,7 +24,7 @@ class W1Value:
                 self.ignored += 1
             else:
                 self.value = newval
-                self.ignored = 0
+                #self.ignored = 0
         else:
             self.value = newval
             self.inited = True
