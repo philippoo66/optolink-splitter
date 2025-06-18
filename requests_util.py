@@ -25,7 +25,7 @@ w1values: dict[int, c_w1value.W1Value] = {}
 
 def init_w1_values_check():
     for addr,info in settings_ini.w1sensors.items():  # Addr: ('<w1_folder/sn>', '<slave_type>')
-        if info[1] == 'ds18b20':
+        if info[1].lower() == 'ds18b20':
             # scalar value, check max_change
             w1val = c_w1value.W1Value(addr, max_change=10.0, max_ignore=3)
         else:
