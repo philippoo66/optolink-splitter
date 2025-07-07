@@ -18,6 +18,12 @@ If you use like `("MySensorVal", 0x1234, 3, 'b:0:1', 0.1),` nothing needs to be 
 - Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
 - Explore other feature branches, there might be something useful for you! 😉
 
+- minimal Optolink Adapter confirmed:
+
+![grafik](https://github.com/user-attachments/assets/e2566c68-b461-403b-918e-fa5774c71b5d)
+
+
+
 ## 📌 Table of Contents
 - [Introduction](#rocket-introduction)
 - [Software Requirements](#file_folder-software-requirements)
