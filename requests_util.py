@@ -48,6 +48,8 @@ def get_value(data, frmat, signd:bool) -> any:
             return utils.unixtime2str(data)
         elif(frmat == 'utf8'):
             return utils.utf82str(data)
+        elif(frmat == 'utf16'):
+            return utils.utf162str(data)
         elif(frmat == 'bool'):
             return str(utils.bytesval(data) != 0)
         elif(frmat == 'onoff'):
