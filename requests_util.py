@@ -44,6 +44,8 @@ def get_value(data, frmat, signd:bool) -> any:
         frmat = str(frmat)
         if(frmat == 'vdatetime'):
             return utils.vdatetime2str(data)
+        elif(frmat == 'vcaldatetime'):
+            return utils.vdatetime2str(data, 0)
         elif(frmat == 'unixtime'):
             return utils.unixtime2str(data)
         elif(frmat == 'utf8'):
