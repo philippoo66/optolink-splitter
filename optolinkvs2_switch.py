@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.4.4.0"
+version = "1.4.5.0"
 
 import serial
 import time
@@ -67,7 +67,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
         # handle PollCycle option +++++++++++++++++++++++
         item = c_polllist.poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
         if(len(item) > 1 and type(item[0]) is int):
-            if(poll_cycle % item[0] != 0):
+            if(item[0] != 0) and (poll_cycle % item[0] != 0):
                 # do not poll this item this time
                 if(poll_pointer > 0):
                     # apply previous value for csv
@@ -125,6 +125,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     else:
         print(f"Error do_poll_item {poll_pointer}, Addr {item[1]:04X}, RetCode {retcode}, Data {val}")
     return retcode
+
 
 # poll timer    
 def on_polltimer():
@@ -260,8 +261,7 @@ def main():
                     raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
             # Polling Mechanismus --------
-            len_polllist = c_polllist.poll_list.num_items
-            if(settings_ini.poll_interval > 0) and (len_polllist > 0):
+            if(settings_ini.poll_interval > 0) and (c_polllist.poll_list.num_items > 0):
                 startPollTimer(settings_ini.poll_interval)
 
             # ------------------------
@@ -292,12 +292,14 @@ def main():
                 if(request_pointer == 0):              
                     if(settings_ini.poll_interval < 0):
                         request_pointer += 1
-                    elif(poll_pointer < len_polllist):
+                    elif(poll_pointer < c_polllist.poll_list.num_items):
                         retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
 
                         poll_pointer += 1
 
-                        if(poll_pointer >= len_polllist):
+                        if(poll_pointer >= c_polllist.poll_list.num_items):
+                            if(poll_cycle == 0):
+                                c_polllist.poll_list.remove_once_onlies()
                             poll_cycle += 1
                             if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                                 poll_cycle = 0
@@ -375,7 +377,7 @@ def main():
         if(serViDev is not None):
             if(serViDev.is_open and (not isinstance(excptn, OSError))):
                 print("reset protocol")
-                serViDev.write([0x04])
+                serViDev.write(bytes([0x04]))
             print("closing serViDev")
             serViDev.close()
         if(mod_mqtt_util is not None):

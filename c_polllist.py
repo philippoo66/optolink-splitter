@@ -27,6 +27,7 @@ class cPollList:
         """
         self.items = []
         self.num_items = 0
+        self.onceonlies_removed = False
 
         if(os.path.exists("poll_list.py")):
             mylist = importlib.import_module('poll_list')
@@ -35,6 +36,14 @@ class cPollList:
             self.items = settings_ini.poll_items
         self.num_items = len(self.items)
         print(f"poll_list made, {self.num_items} items")  #TEMP
+
+    def remove_once_onlies(self):
+        if self.onceonlies_removed: 
+            return
+        filtered = [item for item in self.items if not (isinstance(item[0], int) and item[0] == 0)]
+        self.items = filtered
+        self.num_items = len(self.items)
+        self.onceonlies_removed = True
 
 
 # for global use
