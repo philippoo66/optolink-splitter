@@ -17,7 +17,22 @@
 import utils
 import optolinkvs2
 import onewire_util
+import c_w1value
 import settings_ini
+
+# onewire util
+w1values: dict[int, c_w1value.W1Value] = {}
+
+def init_w1_values_check():
+    for addr,info in settings_ini.w1sensors.items():  # Addr: ('<w1_folder/sn>', '<slave_type>')
+        if info[1].lower() == 'ds18b20':
+            # scalar value, check max_change
+            w1val = c_w1value.W1Value(addr, max_change=10.0, max_ignore=3)
+        else:
+            # accept objects, no check
+            w1val = c_w1value.W1Value(addr, max_change=-1)        
+        # add to dict
+        w1values[addr] = w1val
 
 
 def get_value(data, frmat, signd:bool) -> any:
@@ -29,10 +44,14 @@ def get_value(data, frmat, signd:bool) -> any:
         frmat = str(frmat)
         if(frmat == 'vdatetime'):
             return utils.vdatetime2str(data)
+        elif(frmat == 'vcaldatetime'):
+            return utils.vdatetime2str(data, 0)
         elif(frmat == 'unixtime'):
             return utils.unixtime2str(data)
         elif(frmat == 'utf8'):
             return utils.utf82str(data)
+        elif(frmat == 'utf16'):
+            return utils.utf162str(data)
         elif(frmat == 'bool'):
             return str(utils.bytesval(data) != 0)
         elif(frmat == 'onoff'):
@@ -154,9 +173,10 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:  
         elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False" or "r;0x2500;22;'b:0:1';0.1"
             # read +++++++++++++++++++
             addr = utils.get_int(parts[1])
-            if(addr in settings_ini.w1sensors): 
+            if(addr in settings_ini.w1sensors):
                 # 1wire sensor
                 retcode, val = onewire_util.read_w1sensor(addr)
+                val = w1values[addr].checked(val)
             else:
                 # Optolink item
                 retcode, addr, data = optolinkvs2.read_datapoint_ext(addr, int(parts[2]), serViDev)

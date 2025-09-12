@@ -240,14 +240,9 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
 
 def calc_crc(telegram) -> int:
     # CRC, a modulo-256 addition of bytes from Block Length and the additional bytes.
-    CRCsum = 0
-    telestart = 1
-    teleend = telegram[1] + 1  # len payload + len byte itself
-
-    for i in range(telestart, teleend + 1):
-        CRCsum += telegram[i]
-
-    return CRCsum % 0x100
+    firstbyte = 1  # ignore leading STX 0x41
+    lastbyte = telegram[1] + 1  # len payload + len byte itself
+    return sum(telegram[firstbyte:lastbyte+1]) % 0x100
 
 
 

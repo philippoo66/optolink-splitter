@@ -100,10 +100,10 @@ def str2bstr(normal_str:str) -> bytes:
 #     else:
 #         raise TypeError("Unsupported data type")
 
-def vdatetime2str(data:bytes) -> str:
+def vdatetime2str(data:bytes, fdowidx:int=1) -> str:
     try:
         weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
-        wkd = weekdays[int(data[4]) - 1]
+        wkd = weekdays[int(data[4]) - fdowidx]
         dt = f"{data[3]:02x}.{data[2]:02x}.{data[0]:02x}{data[1]:02x}"
         tm = f"{data[5]:02x}:{data[6]:02x}:{data[7]:02x}"
         return f"{wkd} {dt} {tm}"
@@ -112,6 +112,10 @@ def vdatetime2str(data:bytes) -> str:
 
 def utf82str(data:bytes) -> str:
     ret = data.decode("utf-8")
+    return ret.replace('\x00', '')
+
+def utf162str(data:bytes) -> str:
+    ret = data.decode("utf-16")
     return ret.replace('\x00', '')
 
 def unixtime2str(data) -> str:
