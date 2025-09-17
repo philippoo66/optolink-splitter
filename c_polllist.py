@@ -42,7 +42,10 @@ class cPollList:
             return
         filtered = [item for item in self.items if not (isinstance(item[0], int) and item[0] == 0)]
         self.items = filtered
-        self.num_items = len(self.items)
+        newlen = len(self.items)
+        if(self.num_items != newlen):
+            self.num_items = newlen
+            print(f"poll_list shrinked to {self.num_items} items")
         self.onceonlies_removed = True
 
 

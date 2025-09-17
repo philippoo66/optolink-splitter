@@ -68,7 +68,7 @@ def get_value(data, frmat, signd:bool) -> any:
 
 def perform_bytebit_filter(data, item):
     # item is poll list entry:  (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
-    # may also be read request: "read; DpAddr; Len; b:startbyte:lastbyte:bitmask:endian; Scale; Signed"
+    # may also be read request: "read; DpAddr; Len; 'b:startbyte:lastbyte:bitmask:endian'; Scale; Signed"
 
     bparts = item[3].split(':')
 

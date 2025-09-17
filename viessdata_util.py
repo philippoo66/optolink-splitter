@@ -27,7 +27,7 @@ def get_filename() -> str:
     yr, cw, _ = now.isocalendar()
     return "{0:04d}_KW{1:02d}_data.csv".format(yr, cw)
 
-def get_headline(self) -> str:
+def get_headline() -> str:
     now = datetime.datetime.now()
     dt =  "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
     cols = []
