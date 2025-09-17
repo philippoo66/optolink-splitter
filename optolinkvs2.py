@@ -31,7 +31,7 @@ def init_vs2(ser:serial.Serial) -> bool:
     ser.reset_input_buffer()
 
     # then an EOT (0x04) is send
-    ser.write([0x04])
+    ser.write(bytes([0x04]))
 
     # and for 30x100ms waited for an ENQ (0x05)
     i = 0
@@ -51,7 +51,7 @@ def init_vs2(ser:serial.Serial) -> bool:
     ser.reset_input_buffer()
 
     # after which a VS2_START_VS2, 0, 0 (0x16,0x00,0x00) is send
-    ser.write([0x16,0x00,0x00])
+    ser.write(bytes([0x16,0x00,0x00]))
 
     # and within 30x100ms an VS2_ACK (0x06) is expected.
     i = 0
@@ -137,8 +137,9 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         try:
             inbytes = ser.read_all()
         except: return 0xAA, 0, retdata
-        inbuff += inbytes
-        alldata += inbytes
+        if(inbytes):
+            inbuff += inbytes
+            alldata += inbytes
 
         # ggf. gleich durchleiten 
         if(ser2 is not None):

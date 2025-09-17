@@ -74,7 +74,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 # viconn request mechanism -------------
 vicon_request = bytearray()
 
-def listen_to_Vitoconnect(servicon:serial):
+def listen_to_Vitoconnect(servicon:serial.Serial):
     global vicon_request
     timeout = 0
     while(True):
