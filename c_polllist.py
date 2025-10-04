@@ -35,7 +35,7 @@ class cPollList:
         else:
             self.items = settings_ini.poll_items
         self.num_items = len(self.items)
-        print(f"poll_list made, {self.num_items} items")  #TEMP
+        print(f"poll_list made, {self.num_items} items")
 
     def remove_once_onlies(self):
         if self.onceonlies_removed: 

@@ -20,6 +20,7 @@ import onewire_util
 import c_w1value
 import settings_ini
 
+
 # onewire util
 w1values: dict[int, c_w1value.W1Value] = {}
 
@@ -35,7 +36,7 @@ def init_w1_values_check():
         w1values[addr] = w1val
 
 
-def get_value(data, frmat, signd:bool) -> any:
+def get_value(data, frmat, signd:bool):
     scale = utils.to_number(frmat)
     if(scale is not None):
         return utils.bytesval(data, scale, signd)

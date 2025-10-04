@@ -74,11 +74,11 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 # viconn request mechanism -------------
 vicon_request = bytearray()
 
-def listen_to_Vitoconnect(servicon:serial.Serial):
+def listen_to_Vitoconnect(servicon:serial.Serial, pubcallback = None):
     global vicon_request
     timeout = 0
     while(True):
-        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon)  # contains sleep(0.005)
+        succ, _, data = optolinkvs2.receive_vs2telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
         if(succ == 1):
             vicon_request = data
             timeout = 0

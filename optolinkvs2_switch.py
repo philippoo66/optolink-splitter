@@ -14,12 +14,13 @@
    limitations under the License.
 '''
 
-version = "1.4.5.1"
+version = "1.5.0.0"
 
 import serial
 import time
 import threading
 import importlib
+import json
 
 import settings_ini
 import optolinkvs2
@@ -29,6 +30,7 @@ import tcpip_util
 import requests_util
 import c_logging
 import c_polllist
+import utils
 
 #global_exit_flag = False
 
@@ -155,7 +157,8 @@ def vicon_thread_func(serViCon, serViDev):
     """
     print("running Vitoconnect listener")
     try:
-        viconn_util.listen_to_Vitoconnect(serViCon)
+        callback = publish_viconn if settings_ini.viconn_to_mqtt else None
+        viconn_util.listen_to_Vitoconnect(serViCon, callback)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
         c_logging.vitolog.do_log(msg)
@@ -173,6 +176,32 @@ def mqtt_debug(msg:str):
             mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
 
 
+def publish_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
+    if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
+            if addr:
+                topic = settings_ini.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
+                jdata = {"retcode" : get_retcode(retcd),
+                         "fctcode" : get_fctcode(fctcd),
+                         "datalen" : dlen,
+                         "data" : f"0x{utils.arr2hexstr(data)}" if data else "none"}
+                mod_mqtt_util.mqtt_client.publish(topic, json.dumps(jdata))
+
+def get_msgid(val):
+    if(val == 0): return "Vicon"
+    elif(val in (1, 3)): return "Opto"
+    else: return f"0x{val:02X}"
+
+def get_retcode(val):
+    if(val == 1) : return "ok"
+    elif(val == 3) : return "err"
+    else: return f"0x{val:02X}"
+
+def get_fctcode(val):
+    if(val == 1) : return "virt_read"
+    elif(val == 2) : return "virt_write"
+    else: return f"{val}"
+
+
 # ------------------------
 # Main
 # ------------------------
@@ -180,12 +209,16 @@ def main():
     global mod_mqtt_util
     global poll_pointer, poll_cycle
 
+    # #temp!!
+    # optolinkvs2.temp_callback = publish_viconn
+
     excptn = None
 
     print(f"Version {version}")
     #c_logging.vitolog.open_log()
 
     try:
+    #if True:
         poll_data = [None] * c_polllist.poll_list.num_items
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
@@ -265,6 +298,9 @@ def main():
                     print("init_vs2 failed")
                     raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
+            # publish viconn or not
+            callback = publish_viconn if settings_ini.viconn_to_mqtt else None
+
             # Polling Mechanismus --------
             if(settings_ini.poll_interval > 0) and (c_polllist.poll_list.num_items > 0):
                 startPollTimer(settings_ini.poll_interval)
@@ -285,7 +321,7 @@ def main():
                         c_logging.vitolog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode,_, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon)
+                        retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, callback)
                         c_logging.vitolog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         tookbreath = True

@@ -26,10 +26,10 @@ mqtt_logging = False             # dis/enables logging of paho.mqtt (default: Fa
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
-mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
 
 # TCP/IP ++++++++++++++++++++++++++
@@ -43,6 +43,7 @@ olbreath = 0.1                  # Pause (seconds) after a request-response cycle
 # Optolink Logging ++++++++++++++
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
+viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
