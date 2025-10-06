@@ -411,7 +411,6 @@ def main():
                                     else:
                                         # read current day
                                         retcode = wo1c_energy.read_energy(serViDev)
-                            #### end: everything to be done after poll cycle completed ++++++++++
                             if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                                 poll_cycle = 0
                             poll_pointer += 1  #??
