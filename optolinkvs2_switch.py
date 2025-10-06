@@ -401,7 +401,7 @@ def main():
                             if(settings_ini.write_viessdata_csv):
                                 viessdata_util.buffer_csv_line(poll_data)
                             if(settings_ini.wo1c_energy > 0):
-                                if (poll_cycle % settings_ini.wo1c_energy) == wo1c_day_to_read:
+                                if (poll_cycle % settings_ini.wo1c_energy == 0) or (wo1c_day_to_read > 0) :
                                     olbreath(retcode)
                                     if(settings_ini.wo1c_e_whole_week):
                                         retcode = wo1c_energy.read_energy(serViDev, wo1c_day_to_read)
