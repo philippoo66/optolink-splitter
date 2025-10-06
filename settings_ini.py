@@ -31,6 +31,7 @@ mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "V
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
 mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
+mqtt_no_redundant = False        # if True, no previously published unchanged messages 
 
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
@@ -55,6 +56,10 @@ write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: Fals
 viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "")
 buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
 dec_separator = ","             # Decimal separator for CSV output (default: ",")
+
+# special for wo1c: read weekly energy statistics
+wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
+whole_week = True
 
 # 1-Wire Sensors +++++++++++++++
 # A typical sensor for temperature could be DS18B20; please mind that GPIO must be enabled for 1-Wire sensors (see Optolink-Splitter Wiki)

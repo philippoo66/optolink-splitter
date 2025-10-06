@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.5.0.0"
+version = "1.5.0.1"
 
 import serial
 import time
@@ -158,33 +158,33 @@ def vicon_thread_func(serViCon, serViDev):
     print("running Vitoconnect listener")
     try:
         callback = publish_viconn if settings_ini.viconn_to_mqtt else None
+        viconn_util.exit_flag = False
         viconn_util.listen_to_Vitoconnect(serViCon, callback)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
         c_logging.vitolog.do_log(msg)
         print(msg, "re-init")
         mqtt_debug(msg)
+        viconn_util.exit_flag = True
         restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
         return  # Thread wird beendet
 
 
 # utils +++++++++++++++++++++++++++++
 def mqtt_debug(msg:str):
-    global mod_mqtt_util
-    if(mod_mqtt_util is not None):
-        if(mod_mqtt_util.mqtt_client.is_connected):
-            mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
+    if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
+        mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
 
 
 def publish_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
-            if addr:
-                topic = settings_ini.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
-                jdata = {"retcode" : get_retcode(retcd),
-                         "fctcode" : get_fctcode(fctcd),
-                         "datalen" : dlen,
-                         "data" : f"0x{utils.arr2hexstr(data)}" if data else "none"}
-                mod_mqtt_util.mqtt_client.publish(topic, json.dumps(jdata))
+        if addr:
+            topic = settings_ini.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
+            jdata = {"retcode" : get_retcode(retcd),
+                    "fctcode" : get_fctcode(fctcd),
+                    "datalen" : dlen,
+                    "data" : f"0x{utils.arr2hexstr(data)}" if data else "none"}
+            mod_mqtt_util.publish_smart(topic, json.dumps(jdata))
 
 def get_msgid(val):
     if(val == 0): return "Vicon"
@@ -197,10 +197,63 @@ def get_retcode(val):
     else: return f"0x{val:02X}"
 
 def get_fctcode(val):
-    if(val == 1) : return "virt_read"
-    elif(val == 2) : return "virt_write"
+    strg = dicFunctionCodes.get(val) 
+    if strg: return strg
     else: return f"{val}"
 
+dicFunctionCodes = {
+    0 : "undefined",
+    1 : "Virtual_READ",
+    2 : "Virtual_WRITE",
+    3 : "Physical_READ",
+    4 : "Physical_WRITE",
+    5 : "EEPROM_READ",
+    6 : "EEPROM_WRITE",
+    7 : "Remote_Procedure_Call",
+    # 5 bits!?
+    # 33 : "Virtual_MBUS",
+    # 34 : "Virtual_MarktManager_READ",
+    # 35 : "Virtual_MarktManager_WRITE",
+    # 36 : "Virtual_WILO_READ",
+    # 37 : "Virtual_WILO_WRITE",
+    # 49 : "XRAM_READ",
+    # 50 : "XRAM_WRITE",
+    # 51 : "Port_READ",
+    # 52 : "Port_WRITE",
+    # 53 : "BE_READ",
+    # 54 : "BE_WRITE",
+    # 65 : "KMBUS_RAM_READ",
+    # 67 : "KMBUS_EEPROM_READ",
+    # 81 : "KBUS_DATAELEMENT_READ",
+    # 82 : "KBUS_DATAELEMENT_WRITE",
+    # 83 : "KBUS_DATABLOCK_READ",
+    # 84 : "KBUS_DATABLOCK_WRITE",
+    # 85 : "KBUS_TRANSPARENT_READ",
+    # 86 : "KBUS_TRANSPARENT_WRITE",
+    # 87 : "KBUS_INITIALISATION_READ",
+    # 88 : "KBUS_INITIALISATION_WRITE",
+    # 89 : "KBUS_EEPROM_LT_READ",
+    # 90 : "KBUS_EEPROM_LT_WRITE",
+    # 91 : "KBUS_CONTROL_WRITE",
+    # 93 : "KBUS_MEMBERLIST_READ",
+    # 94 : "KBUS_MEMBERLIST_WRITE",
+    # 95 : "KBUS_VIRTUAL_READ",
+    # 96 : "KBUS_VIRTUAL_WRITE",
+    # 97 : "KBUS_DIRECT_READ",
+    # 98 : "KBUS_DIRECT_WRITE",
+    # 99 : "KBUS_INDIRECT_READ",
+    # 100 : "KBUS_INDIRECT_WRITE",
+    # 101 : "KBUS_GATEWAY_READ",
+    # 102 : "KBUS_GATEWAY_WRITE",
+    # 120 : "PROZESS_WRITE",
+    # 123 : "PROZESS_READ",
+    # 180 : "OT_Physical_Read",
+    # 181 : "OT_Virtual_Read",
+    # 182 : "OT_Physical_Write",
+    # 183 : "OT_Virtual_Write",
+    # 201 : "GFA_READ",
+    # 202 : "GFA_WRITE",
+}
 
 # ------------------------
 # Main
@@ -411,6 +464,7 @@ def main():
         print("cancel poll timer ") 
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
+        viconn_util.exit_flag = True
         #tcp_thread.join()  #TODO ??
         if(serViCon is not None):
             print("closing serViCon")

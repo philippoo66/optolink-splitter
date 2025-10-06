@@ -24,6 +24,12 @@ verbose = False
 
 mqtt_client = None
 cmnd_queue = []   # command queue to serialize bus traffic
+publ_queue = []   # stuff to get published
+
+recent_posts = {}
+reset_recent = False
+_sentinel = object()  # eindeutiger Wert für "nicht vorhanden"
+
 
 def on_connect(client, userdata, flags, reason_code, properties):
     if settings_ini.mqtt_listen != None:
@@ -36,6 +42,7 @@ def on_disconnect(client, userdata, flags, reason_code, properties):
     mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
 
 def on_message(client, userdata, msg):
+    global reset_recent
     #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
         print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
@@ -44,7 +51,10 @@ def on_message(client, userdata, msg):
     if topic == settings_ini.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
-        cmnd_queue.append(rec) 
+        if(rec.lower() in ('reset', 'resetrecent')):
+            reset_recent = True
+        else:
+            cmnd_queue.append(rec) 
     else:
         # Ausgabe anderer eingehenden MQTT-Nachrichten
         print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
@@ -96,18 +106,35 @@ def get_mqtt_request() -> str:
         ret = cmnd_queue.pop(0)
     return ret
 
-def publish_read(name, addr, value):  
+def publish_read(name, addr, value):
     if(mqtt_client != None):
         publishStr = settings_ini.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
-        ret = mqtt_client.publish(settings_ini.mqtt_topic + "/" + publishStr, value, retain=settings_ini.mqtt_retain)    
+        ret = publish_smart(settings_ini.mqtt_topic + "/" + publishStr, value, retain=settings_ini.mqtt_retain)    
         if(verbose): print(ret)
 
 def publish_response(resp:str):
     if(mqtt_client != None):
+        # always publish responses
         ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)    
         if(verbose): print(ret)
-                
+
+
+def publish_smart(topic, value, qos=0, retain=False):
+    global reset_recent
+    if(mqtt_client != None):
+        if(settings_ini.mqtt_no_redundant):
+            if(reset_recent):
+                recent_posts.clear()
+                reset_recent = False
+            # Publish only if the value changed
+            last = recent_posts.get(topic, _sentinel)
+            if last == value:
+                return
+            recent_posts[topic] = value
+        ret = mqtt_client.publish(topic, value, qos=qos, retain=retain)
+        if(verbose): print(ret)
+
 
 def exit_mqtt():
     if(mqtt_client != None):
