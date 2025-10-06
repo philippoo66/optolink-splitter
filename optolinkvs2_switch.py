@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.5.0.1"
+version = "1.5.0.2"
 
 import serial
 import time
@@ -31,10 +31,12 @@ import requests_util
 import c_logging
 import c_polllist
 import utils
+import wo1c_energy
 
 #global_exit_flag = False
 
 mod_mqtt_util = None
+#mod_wo1c_energy = None
 
 # Threading-Events zur Steuerung des Neustarts
 restart_event = threading.Event()
@@ -62,7 +64,6 @@ poll_cycle = 0
 
 def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
-    global poll_cycle
     val = "?"
     item = "?"
 
@@ -266,6 +267,7 @@ def main():
     # optolinkvs2.temp_callback = publish_viconn
 
     excptn = None
+    wo1c_day_to_read = 0
 
     print(f"Version {version}")
     #c_logging.vitolog.open_log()
@@ -392,16 +394,31 @@ def main():
                         poll_pointer += 1
 
                         if(poll_pointer >= c_polllist.poll_list.num_items):
+                            #### everything to be done after poll cycle completed ++++++++++
                             if(poll_cycle == 0):
                                 c_polllist.poll_list.remove_once_onlies()
                             poll_cycle += 1
-                            if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
-                                poll_cycle = 0
                             if(settings_ini.write_viessdata_csv):
                                 viessdata_util.buffer_csv_line(poll_data)
-                            poll_pointer += 1
+                            if(settings_ini.wo1c_energy > 0):
+                                if (poll_cycle % settings_ini.wo1c_energy) == wo1c_day_to_read:
+                                    olbreath(retcode)
+                                    if(settings_ini.wo1c_e_whole_week):
+                                        retcode = wo1c_energy.read_energy(serViDev, wo1c_day_to_read)
+                                        wo1c_day_to_read += 1
+                                        if(wo1c_day_to_read >= 7): 
+                                            wo1c_day_to_read = 0
+                                    else:
+                                        # read current day
+                                        retcode = wo1c_energy.read_energy(serViDev)
+                            #### end: everything to be done after poll cycle completed ++++++++++
+                            if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
+                                poll_cycle = 0
+                            poll_pointer += 1  #??
                             if(settings_ini.poll_interval == 0):
-                                poll_pointer = 0
+                                poll_pointer = 0  # else: poll_pointer gets reset by timer
+                            
+                        # take a breath if not already done
                         olbreath(retcode)
                         tookbreath = True
                     else:

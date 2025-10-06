@@ -127,6 +127,7 @@ def publish_smart(topic, value, qos=0, retain=False):
             if(reset_recent):
                 recent_posts.clear()
                 reset_recent = False
+                publish_response("previous values cleared")
             # Publish only if the value changed
             last = recent_posts.get(topic, _sentinel)
             if last == value:
