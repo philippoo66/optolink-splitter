@@ -53,7 +53,7 @@ def listen_tcpip(client:socket):
     global fverbose
     global recdata
 
-    logger.info("enter listen loop")
+    logger.info("enter TCP listen loop")
     while(not exit_flag):
         try:
             data = client.recv(1024)
