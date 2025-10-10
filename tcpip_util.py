@@ -64,7 +64,6 @@ def listen_tcpip(client:socket):
                     m = msg.lower() 
                     if(m == "exit"):
                         logger.info("TCP Connection exit")
-                        time.sleep(0.5)
                         break
                     elif(m == "flushcsv"):
                         viessdata_util.buffer_csv_line([], True)
@@ -86,6 +85,7 @@ def tcpip4ever(port:int, verbose = True):
     # loop buiding connection (if lost) and receiving
     while(not exit_flag):
         tcp_client.close()
+        time.sleep(1)
         tcp_client = run_tcpip('0.0.0.0', port)
         listen_tcpip(tcp_client) 
     # Schließe den Client-Socket, wenn der Hauptthread beendet wird
