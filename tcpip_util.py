@@ -38,11 +38,11 @@ def run_tcpip(host, port) -> socket:
     server_socket.bind((host, port))
     # Listen for incoming connections
     if(not exit_flag):
-        print(f"Server listening on {host}:{port}")  #if(fverbose): 
+        logger.info(f"Server listening on {host}:{port}")  #if(fverbose): 
         server_socket.listen(1)
         # Wait for a connection
         client_socket, client_address = server_socket.accept()
-        print(f"Connection from {client_address}")  #if(fverbose): 
+        logger.info(f"Connection from {client_address}")  #if(fverbose): 
         # Schließe den Server-Socket, da er nicht mehr benötigt wird
         server_socket.close()
         return client_socket
@@ -53,7 +53,7 @@ def listen_tcpip(client:socket):
     global fverbose
     global recdata
 
-    if(fverbose): print("enter listen loop")
+    logger.info("enter listen loop")
     while(not exit_flag):
         try:
             data = client.recv(1024)
@@ -63,7 +63,7 @@ def listen_tcpip(client:socket):
                 if(msg):
                     m = msg.lower() 
                     if(m == "exit"):
-                        print("Connection exit")
+                        logger.info("TCP Connection exit")
                         time.sleep(0.5)
                         break
                     elif(m == "flushcsv"):
@@ -71,10 +71,10 @@ def listen_tcpip(client:socket):
                     else:
                         recdata = msg
         except ConnectionError:
-            print("Connection lost")
+            logger.warning("TCP Connection lost")
             break
         except Exception as e:
-            print(e)
+            logger.error(e)
 
 
 def tcpip4ever(port:int, verbose = True):
