@@ -38,11 +38,11 @@ def run_tcpip(host, port) -> socket:
     server_socket.bind((host, port))
     # Listen for incoming connections
     if(not exit_flag):
-        logger.info(f"Server listening on {host}:{port}")  #if(fverbose): 
+        logger.info(f"TCP Server listening on {host}:{port}")  #if(fverbose): 
         server_socket.listen(1)
         # Wait for a connection
         client_socket, client_address = server_socket.accept()
-        logger.info(f"Connection from {client_address}")  #if(fverbose): 
+        logger.info(f"TCP Connection from {client_address}")  #if(fverbose): 
         # Schließe den Server-Socket, da er nicht mehr benötigt wird
         server_socket.close()
         return client_socket
