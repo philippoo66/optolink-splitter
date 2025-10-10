@@ -19,6 +19,8 @@ import socket
 import time
 
 import viessdata_util
+from logger_util import logger
+
 
 tcp_client = socket.socket()  #None  # None, bis der Client-Socket erstellt wird
 recdata = bytes()
@@ -110,7 +112,7 @@ def send_tcpip(data):
     
 
 def exit_tcpip():
-    print("exiting TCP/IP client")
+    logger.info("exiting TCP/IP client")
     global exit_flag
     exit_flag = True
 

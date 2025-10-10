@@ -18,6 +18,7 @@ import os
 import importlib
 
 import settings_ini
+from logger_util import logger
 
 
 class cPollList:
@@ -35,7 +36,7 @@ class cPollList:
         else:
             self.items = settings_ini.poll_items
         self.num_items = len(self.items)
-        print(f"poll_list made, {self.num_items} items")
+        logger.info(f"poll_list made, {self.num_items} items")
 
     def remove_once_onlies(self):
         if self.onceonlies_removed: 
@@ -45,7 +46,7 @@ class cPollList:
         newlen = len(self.items)
         if(self.num_items != newlen):
             self.num_items = newlen
-            print(f"poll_list shrinked to {self.num_items} items")
+            logger.info(f"poll_list shrinked to {self.num_items} items")
         self.onceonlies_removed = True
 
 

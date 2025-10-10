@@ -14,13 +14,14 @@
    limitations under the License.
 '''
 
-version = "1.5.0.2"
+version = "1.5.0.3"
 
 import serial
 import time
 import threading
 import importlib
 import json
+import signal
 
 import settings_ini
 import optolinkvs2
@@ -32,6 +33,7 @@ import c_logging
 import c_polllist
 import utils
 import wo1c_energy
+from logger_util import logger
 
 #global_exit_flag = False
 
@@ -193,14 +195,26 @@ def get_msgid(val):
     else: return f"0x{val:02X}"
 
 def get_retcode(val):
-    if(val == 1) : return "ok"
-    elif(val == 3) : return "err"
+    strg = dicRetCodes.get(val) 
+    if strg: return strg
     else: return f"0x{val:02X}"
 
 def get_fctcode(val):
     strg = dicFunctionCodes.get(val) 
     if strg: return strg
     else: return f"{val}"
+
+dicRetCodes = {
+    0x01 : "success", 
+    0x03 : "ErrMsg", 
+    0x15 : "NACK", 
+    0x20 : "UnknB0_Err", 
+    0x41 : "STX_Err", 
+    0xAA : "HandleLost", 
+    0xFD : "PlLen_Err", 
+    0xFE : "CRC_Err", 
+    0xFF : "TimeOut"
+}
 
 dicFunctionCodes = {
     0 : "undefined",
@@ -256,6 +270,13 @@ dicFunctionCodes = {
     # 202 : "GFA_WRITE",
 }
 
+
+# signal handling
+def handle_exit(sig, frame):
+    logger.info(f"received signal {sig}")
+    raise(SystemExit)
+
+
 # ------------------------
 # Main
 # ------------------------
@@ -263,14 +284,17 @@ def main():
     global mod_mqtt_util
     global poll_pointer, poll_cycle
 
+    # Signale abfangen für sauberes Beenden
+    signal.signal(signal.SIGTERM, handle_exit)
+    signal.signal(signal.SIGINT, handle_exit)
+
+
     # #temp!!
     # optolinkvs2.temp_callback = publish_viconn
 
     excptn = None
-    wo1c_day_to_read = 0
 
-    print(f"Version {version}")
-    #c_logging.vitolog.open_log()
+    logger.info(f"Version {version}")
 
     try:
     #if True:
@@ -335,11 +359,11 @@ def main():
                         c_logging.vitolog.open_log()
 
                 # detect/init VS2 Protokol ++++++++++++
-                print("awaiting VS2...")
+                logger.info("awaiting VS2...")
                 if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
                     raise Exception("VS2 protocol not detected within timeout")
                 c_logging.vitolog.do_log("VS2 protocol detected")           
-                print("VS2 detected")
+                logger.info("VS2 detected")
 
                 # listen to vicon ++++++++++++
                 # run reception thread
@@ -350,7 +374,7 @@ def main():
             else:
                 # VS2 Protokoll am Slave initialisieren
                 if(not optolinkvs2.init_vs2(serViDev)):
-                    print("init_vs2 failed")
+                    #logger.error("init_vs2 failed")
                     raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
 
             # publish viconn or not
@@ -363,6 +387,7 @@ def main():
             # ------------------------
             # Main Loop starten und Sachen abarbeiten ++++++++++++
             # ------------------------
+            logger.info("enter main loop")
             request_pointer = 0
             while not restart_event.is_set():  #and not shutdown_event.is_set():
                 tookbreath = False
@@ -381,7 +406,7 @@ def main():
                         olbreath(retcode)
                         tookbreath = True
 
-                # secondary requests ------------------
+                ### secondary requests ------------------
                 #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
 
                 # polling list --------
@@ -400,17 +425,9 @@ def main():
                             poll_cycle += 1
                             if(settings_ini.write_viessdata_csv):
                                 viessdata_util.buffer_csv_line(poll_data)
-                            if(settings_ini.wo1c_energy > 0):
-                                if (poll_cycle % settings_ini.wo1c_energy == 0) or (wo1c_day_to_read > 0) :
-                                    olbreath(retcode)
-                                    if(settings_ini.wo1c_e_whole_week):
-                                        retcode = wo1c_energy.read_energy(serViDev, wo1c_day_to_read)
-                                        wo1c_day_to_read += 1
-                                        if(wo1c_day_to_read >= 7): 
-                                            wo1c_day_to_read = 0
-                                    else:
-                                        # read current day
-                                        retcode = wo1c_energy.read_energy(serViDev)
+                            if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
+                                olbreath(retcode)
+                                retcode = wo1c_energy.read_energy(serViDev)
                             if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                                 poll_cycle = 0
                             poll_pointer += 1  #??
@@ -437,7 +454,7 @@ def main():
                                 tookbreath = True
                             except Exception as e:
                                 mod_mqtt_util.publish_response(f"Error: {e}")
-                                print("Error handling MQTT request:", e)
+                                logger.warning("Error handling MQTT request:", e)
                         else:
                             request_pointer += 1
 
@@ -469,32 +486,29 @@ def main():
 
     except Exception as e:
         excptn = e
-        if(isinstance(excptn, KeyboardInterrupt)):
-            print("Abbruch durch Benutzer.")
-        else:
-            print(excptn)
+        logger.error(excptn)
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
-        print("exit close...")
-        print("cancel poll timer ") 
+        logger.info("exit close...")
+        logger.info("cancel poll timer ") 
         timer_pollinterval.cancel()
         tcpip_util.exit_tcpip()
         viconn_util.exit_flag = True
         #tcp_thread.join()  #TODO ??
         if(serViCon is not None):
-            print("closing serViCon")
+            logger.info("closing serViCon")
             serViCon.close()
         if(serViDev is not None):
             if(serViDev.is_open and (not isinstance(excptn, OSError))):
-                print("reset protocol")
+                logger.info("reset Optolink protocol")
                 serViDev.write(bytes([0x04]))
-            print("closing serViDev")
+            logger.info("closing serViDev")
             serViDev.close()
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
         if(c_logging.vitolog.log_handle is not None):
-            print("closing vitolog")
+            logger.info("closing vitolog")
             c_logging.vitolog.close_log()
 
  

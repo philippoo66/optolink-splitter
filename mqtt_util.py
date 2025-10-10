@@ -19,6 +19,8 @@ import paho.mqtt.client as paho
 
 import utils
 import settings_ini
+from logger_util import logger
+
 
 verbose = False
 
@@ -139,7 +141,7 @@ def publish_smart(topic, value, qos=0, retain=False):
 
 def exit_mqtt():
     if(mqtt_client != None):
-        print("disconnect MQTT client")
+        logger.info("disconnect MQTT client")
         if(mqtt_client.is_connected):
             mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
         mqtt_client.disconnect()
