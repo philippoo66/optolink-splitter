@@ -19,6 +19,8 @@ import socket
 import time
 
 import viessdata_util
+from logger_util import logger
+
 
 tcp_client = socket.socket()  #None  # None, bis der Client-Socket erstellt wird
 recdata = bytes()
@@ -36,11 +38,11 @@ def run_tcpip(host, port) -> socket:
     server_socket.bind((host, port))
     # Listen for incoming connections
     if(not exit_flag):
-        print(f"Server listening on {host}:{port}")  #if(fverbose): 
+        logger.info(f"TCP Server listening on {host}:{port}")  #if(fverbose): 
         server_socket.listen(1)
         # Wait for a connection
         client_socket, client_address = server_socket.accept()
-        print(f"Connection from {client_address}")  #if(fverbose): 
+        logger.info(f"TCP Connection from {client_address}")  #if(fverbose): 
         # Schließe den Server-Socket, da er nicht mehr benötigt wird
         server_socket.close()
         return client_socket
@@ -51,7 +53,7 @@ def listen_tcpip(client:socket):
     global fverbose
     global recdata
 
-    if(fverbose): print("enter listen loop")
+    logger.info("enter TCP listen loop")
     while(not exit_flag):
         try:
             data = client.recv(1024)
@@ -61,18 +63,17 @@ def listen_tcpip(client:socket):
                 if(msg):
                     m = msg.lower() 
                     if(m == "exit"):
-                        print("Connection exit")
-                        time.sleep(0.5)
+                        logger.info("TCP Connection exit")
                         break
                     elif(m == "flushcsv"):
                         viessdata_util.buffer_csv_line([], True)
                     else:
                         recdata = msg
         except ConnectionError:
-            print("Connection lost")
+            logger.warning("TCP Connection lost")
             break
         except Exception as e:
-            print(e)
+            logger.error(e)
 
 
 def tcpip4ever(port:int, verbose = True):
@@ -84,6 +85,7 @@ def tcpip4ever(port:int, verbose = True):
     # loop buiding connection (if lost) and receiving
     while(not exit_flag):
         tcp_client.close()
+        time.sleep(1)
         tcp_client = run_tcpip('0.0.0.0', port)
         listen_tcpip(tcp_client) 
     # Schließe den Client-Socket, wenn der Hauptthread beendet wird
@@ -110,7 +112,7 @@ def send_tcpip(data):
     
 
 def exit_tcpip():
-    print("exiting TCP/IP client")
+    logger.info("exiting TCP/IP client")
     global exit_flag
     exit_flag = True
 

@@ -43,9 +43,9 @@ def get_bool(v) -> bool:
         return False
 
 
-def bytesval(data, scale=1, signd=False):
+def bytesval(data, scale=1.0, signd=False):
     val = int.from_bytes(data, byteorder='little', signed=signd)
-    if(scale != 1):
+    if(scale != 1.0):
         val = round(val * scale, settings_ini.max_decimals)
     return val
 

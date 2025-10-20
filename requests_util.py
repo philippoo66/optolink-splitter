@@ -14,11 +14,14 @@
    limitations under the License.
 '''
 
+from typing import Any
+
 import utils
 import optolinkvs2
 import onewire_util
 import c_w1value
 import settings_ini
+
 
 # onewire util
 w1values: dict[int, c_w1value.W1Value] = {}
@@ -35,7 +38,7 @@ def init_w1_values_check():
         w1values[addr] = w1val
 
 
-def get_value(data, frmat, signd:bool) -> any:
+def get_value(data, frmat, signd:bool):
     scale = utils.to_number(frmat)
     if(scale is not None):
         return utils.bytesval(data, scale, signd)
@@ -128,7 +131,7 @@ def get_retstr(retcode, addr, val) -> str:
 
 
 # 'main' functions +++++++++++++++++++++++++++++
-def response_to_request(request, serViDev) -> tuple[int, bytearray, any, str]:   # retcode, data, value, string_to_pass 
+def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:   # retcode, data, value, string_to_pass 
     ispollitem = False
     if(isinstance(request, str)):
         # TCP, MQTT requests

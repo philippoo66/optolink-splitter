@@ -26,11 +26,12 @@ mqtt_logging = False             # dis/enables logging of paho.mqtt (default: Fa
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
-mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
 mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
 mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
+mqtt_no_redundant = False        # if True, no previously published unchanged messages 
 
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
@@ -43,6 +44,7 @@ olbreath = 0.1                  # Pause (seconds) after a request-response cycle
 # Optolink Logging ++++++++++++++
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
+viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
@@ -54,6 +56,9 @@ write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: Fals
 viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "")
 buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
 dec_separator = ","             # Decimal separator for CSV output (default: ",")
+
+# special for wo1c: read daily/weekly energy statistics +++++++++++
+wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
 
 # 1-Wire Sensors +++++++++++++++
 # A typical sensor for temperature could be DS18B20; please mind that GPIO must be enabled for 1-Wire sensors (see Optolink-Splitter Wiki)
