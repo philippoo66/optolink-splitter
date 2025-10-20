@@ -108,9 +108,11 @@ If you want to update your installation to a new version, the recommended way is
 - from the new version repo, clone **all files except settings_ini.py** into your original folder (replace existing files)
 - check the [version log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log) for added or changed entries in the settings_ini and apply (only) those changes to your existing settings_ini.py 
 
-Alternatively you might clone all files and apply your original settings to the new settings_ini afterwards. 
+Alternatively you might clone all files and apply your original settings to the new settings_ini afterwards.
 
-Even though I promise to note required changes carefully in the version log from now on, after an update it is always a good practice to start the splitter once in the console (`python optolinkvs2_switch.py`, remember to run your virtual environment) since in the console you get quite detailed error messages _if_ some would be wrong or missing.  
+Don't forget to restart the script / the service afterwards.
+
+Even though I promise to note required changes carefully in the version log from now on, after an update it is always a good practice to start the splitter once in the console (`python optolinkvs2_switch.py`, remember to run your virtual environment) since in the console you get quite detailed error messages _if_ some would be wrong or missing.
 
 ## :electric_plug: Connecting Optolink & Vitoconnect
 ### Parallel use with Vitoconnect / ViCare App
