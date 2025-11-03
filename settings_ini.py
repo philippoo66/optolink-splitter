@@ -159,11 +159,13 @@ poll_items = [                  # Datapoints defined here will be polled; ignore
 
     # # ByteBit filter examples
     # ("Frostgefahr, aktuelle RTS etc", 0x2500, 22, 'b:0:21::raw'),
-    # ("Frostgefahr", 0x2500, 22, 'b:16:16::raw'),
-    # ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, False),
+    # ("Frostgefahr", 0x2500, 22, 'b:16:16', 'bool'),
+    # ("RTS_akt", 0x2500, 22, 'b:12:13', 0.1, True),
+    # ("VL_Soll_M2", 0x3500, 22, 'b:17:18', 0.1, True),
     
     # # 1-wire
     # ("SpeicherTemp_oben", 0xFFFd),
     # ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
+
 
