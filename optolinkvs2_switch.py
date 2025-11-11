@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.0.0"
+version = "1.6.0.1"
 
 import serial
 import time
@@ -436,7 +436,7 @@ def main():
                                 poll_cycle += 1
                                 if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                                     poll_cycle = 0
-                                #poll_pointer += 1  #??
+                                poll_pointer += 1  #??
                                 if(settings_ini.poll_interval == 0):
                                     poll_pointer = 0  # else: poll_pointer gets reset by timer
                                 
