@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.5.0.5"
+version = "1.6.0.0"
 
 import serial
 import time
@@ -388,9 +388,11 @@ def main():
             # Main Loop starten und Sachen abarbeiten ++++++++++++
             # ------------------------
             logger.info("enter main loop")
+            num_tasks = 3
             request_pointer = 0
             while not restart_event.is_set():  #and not shutdown_event.is_set():
-                tookbreath = False
+                did_something = False
+                retcode = 1
 
                 if(serViCon is not None):
                     # first Vitoconnect request -------------------
@@ -404,84 +406,91 @@ def main():
                         retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, callback)
                         c_logging.vitolog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
-                        tookbreath = True
+                        did_something = True
 
                 ### secondary requests ------------------
                 #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
-
-                # polling list --------
-                if(request_pointer == 0):              
-                    if(settings_ini.poll_interval < 0):
-                        request_pointer += 1
-                    elif(poll_pointer < c_polllist.poll_list.num_items):
-                        retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
-
-                        poll_pointer += 1
-
-                        if(poll_pointer >= c_polllist.poll_list.num_items):
-                            #### everything to be done after poll cycle completed ++++++++++
-                            if(poll_cycle == 0):
-                                c_polllist.poll_list.remove_once_onlies()
-                            poll_cycle += 1
-                            if(settings_ini.write_viessdata_csv):
-                                viessdata_util.buffer_csv_line(poll_data)
-                            if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
-                                olbreath(retcode)
-                                retcode = wo1c_energy.read_energy(serViDev)
-                            if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
-                                poll_cycle = 0
-                            poll_pointer += 1  #??
-                            if(settings_ini.poll_interval == 0):
-                                poll_pointer = 0  # else: poll_pointer gets reset by timer
-                            
-                        # take a breath if not already done
-                        olbreath(retcode)
-                        tookbreath = True
-                    else:
-                        request_pointer += 1
-
-                # MQTT request --------
-                if(request_pointer == 1):
-                    if(mod_mqtt_util is None):
-                        request_pointer += 1
-                    else:
-                        msg = mod_mqtt_util.get_mqtt_request()
-                        if(msg):
-                            try:
-                                retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                                mod_mqtt_util.publish_response(resp)
-                                olbreath(retcode)
-                                tookbreath = True
-                            except Exception as e:
-                                mod_mqtt_util.publish_response(f"Error: {e}")
-                                logger.warning("Error handling MQTT request:", e)
-                        else:
-                            request_pointer += 1
-
-                # TCP/IP request --------
-                if(request_pointer == 2):
-                    if(settings_ini.tcpip_port is None):
-                        request_pointer += 1
-                    else:
-                        msg = tcpip_util.get_tcp_request()
-                        if(msg):
-                            try:
-                                retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                                tcpip_util.send_tcpip(resp)
-                                olbreath(retcode)
-                                tookbreath = True
-                            except Exception as e:
-                                print("Error handling TCP request:", e)
-                        else:
-                            request_pointer += 1
-
-                # request_pointer control --------
-                request_pointer += 1
-                if(request_pointer > 2):
-                    request_pointer = 0
                 
-                # let cpu take a breath
-                if(not tookbreath):
+                for i in range(num_tasks):
+                    now_on = (request_pointer + i) % num_tasks
+
+                    # polling list --------
+                    if(now_on == 0):              
+                        if(settings_ini.poll_interval < 0):
+                            continue
+                        elif(poll_pointer < c_polllist.poll_list.num_items):
+                            retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                            # increment poll pointer
+                            poll_pointer += 1
+
+                            if(poll_pointer >= c_polllist.poll_list.num_items):
+                                #### everything to be done after poll cycle completed ++++++++++
+                                if(poll_cycle == 0):
+                                    c_polllist.poll_list.remove_once_onlies()
+                                if(settings_ini.write_viessdata_csv):
+                                    viessdata_util.buffer_csv_line(poll_data)
+                                if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
+                                    olbreath(retcode)
+                                    retcode = wo1c_energy.read_energy(serViDev)
+                                # increment poll cycle counter
+                                poll_cycle += 1
+                                if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
+                                    poll_cycle = 0
+                                #poll_pointer += 1  #??
+                                if(settings_ini.poll_interval == 0):
+                                    poll_pointer = 0  # else: poll_pointer gets reset by timer
+                                
+                            #olbreath(retcode)
+                            did_something = True
+                        else:
+                            continue
+
+                    # MQTT request --------
+                    if(now_on == 1):
+                        if(mod_mqtt_util is None):
+                            continue
+                        else:
+                            msg = mod_mqtt_util.get_mqtt_request()
+                            if(msg):
+                                try:
+                                    retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                                    mod_mqtt_util.publish_response(resp)
+                                    #olbreath(retcode)
+                                except Exception as e:
+                                    mod_mqtt_util.publish_response(f"Error: {e}")
+                                    logger.warning("Error handling MQTT request:", e)
+                                    #time.sleep(settings_ini.olbreath)
+                                did_something = True
+                            else:
+                                continue
+
+                    # TCP/IP request --------
+                    if(now_on == 2):
+                        if(settings_ini.tcpip_port is None):
+                            continue
+                        else:
+                            msg = tcpip_util.get_tcp_request()
+                            if(msg):
+                                try:
+                                    retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                                    tcpip_util.send_tcpip(resp)
+                                    #olbreath(retcode)
+                                except Exception as e:
+                                    print("Error handling TCP request:", e)
+                                    #time.sleep(settings_ini.olbreath)
+                                did_something = True
+                            else:
+                                continue
+                            
+                    if (did_something):
+                        olbreath(retcode)
+                        break
+
+                # request_pointer control
+                request_pointer = (request_pointer + 1) % num_tasks
+                
+                # let cpu take a breath if there was nothing to do
+                if(not did_something):
                     time.sleep(0.005) 
 
     except Exception as e:
