@@ -21,6 +21,9 @@ import time
 import utils
 import settings_ini
 
+# #temp!!
+# temp_callback = None
+
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS2 / 300 Protocol, mainly virtual r/w datapoints
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -120,8 +123,55 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     return receive_vs2telegr(True, False, ser)
 
 
-def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
-    # returns: ReturnCode, Addr, Data
+def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
+    """
+    Empfängt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
+
+    Parameter:
+    ----------
+    resptelegr : bool
+        Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
+        Wenn False, wird ein reguläres Datentelegramm erwartet.
+    raw : bool
+        Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
+        True = Rohdatenmodus (keine Protokollauswertung),
+        False = dekodierte Protokolldaten.
+    ser : serial.Serial
+        Geöffnete serielle Schnittstelle (z. B. COM-Port), über die das Telegramm empfangen wird.
+    ser2 : serial.Serial, optional
+        Zweite serielle Schnittstelle (z. B. bei Weiterleitung oder Duplexbetrieb).
+        Standardwert ist None.
+    mqtt_publ_callback :
+        Funktion zum Publizieren der (Vitoconnect) Daten auf MQTT
+
+    Rückgabewerte:
+    ---------------
+    tuple[int, int, bytearray, int, int, int]
+        Enthält folgende Elemente:
+
+        1. **ReturnCode (int)**  
+           Statuscode des Empfangs:  
+           - 0x01 = Erfolg  
+           - 0x03 = Fehlermeldung  
+           - 0x15 = NACK  
+           - 0x20 = Unbekannter B0-Fehler  
+           - 0x41 = STX-Fehler  
+           - 0xAA = Handle verloren  
+           - 0xFD = Paketlängenfehler  
+           - 0xFE = CRC-Fehler  
+           - 0xFF = Timeout  
+
+        2. **Addr (int)**  
+           Adresse des Zielgeräts.
+
+        3. **Data (bytearray)**  
+           Nutzdaten des empfangenen Telegramms.
+
+    Hinweise:
+    ----------
+    Diese Funktion blockiert, bis das Telegramm vollständig empfangen oder ein Timeout erreicht wurde.
+    """
+    # returns: ReturnCode, Addr, Data, ProtocolId, MegSqNr, FunctCode
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
     i = 0
@@ -130,6 +180,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
     alldata = bytearray()
     retdata = bytearray()
     addr = 0
+    msgid = 0x100  # message type identifier, byte 2 (3. byte; 0 = Request Message, 1 = Response Message, 2 = UNACKD Message, 3 = Error Message) 
+    msqn = 0x100   # message sequence number, top 3 bits of byte 3
+    fctcd = 0x100  # function code, low 5 bis of byte 3 (https://github.com/sarnau/InsideViessmannVitosoft/blob/main/VitosoftCommunication.md#defined-commandsfunction-codes)
+    dlen = -1
+
+    # #temp!!
+    # mqtt_publ_callback = temp_callback
 
     # for up 30x100ms serial data is read. (we do 600x5ms)
     while(True):
@@ -156,11 +213,17 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
                         print("NACK Error")
-                        if(raw): retdata = alldata
+                        retdata = alldata
+                        if(mqtt_publ_callback):
+                            mqtt_publ_callback(0x15, addr, retdata, msgid, msqn, fctcd, dlen)
+                        #if(raw): retdata = alldata
                         return 0x15, 0, retdata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
                         print("unknown first byte Error")
-                        if(raw): retdata = alldata
+                        retdata = alldata
+                        if(mqtt_publ_callback):
+                            mqtt_publ_callback(0x20, addr, retdata, msgid, msqn, fctcd, dlen)
+                        #if(raw): retdata = alldata
                         return 0x20, 0, retdata
                     # erstes Byte abtrennen
                     inbuff = inbuff[1:]
@@ -172,40 +235,59 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
                     print("STX Error", format(inbuff[0], settings_ini.data_hex_format))
-                    if(raw): retdata = alldata
+                    retdata = alldata
+                    if(mqtt_publ_callback):
+                        mqtt_publ_callback(0x41, addr, retdata, msgid, msqn, fctcd, dlen)
+                    #if(raw): retdata = alldata
                     return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
 
         if(state == 2):
             if(len(inbuff) > 1):  # STX, Len
                 pllen = inbuff[1]
-                if(pllen < 5):  # FnctCode + MsgId + AddrHi + AddrLo + BlkLen
+                if(pllen < 5):  # protocol_Id + MsgId|FnctCode + AddrHi + AddrLo + BlkLen
                     print("rx", utils.bbbstr(inbuff))
                     print("Len Error", pllen)
-                    if(raw): retdata = alldata
-                    return 0xFD, 0, retdata
+                    retdata = alldata
+                    if(mqtt_publ_callback):
+                        mqtt_publ_callback(0xFD, addr, retdata, msgid, msqn, fctcd, dlen)
+                    #if(raw): retdata = alldata
+                    return 0xFD, 0, retdata  # alldata?!
                 if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
+                    # receive complete
                     if(settings_ini.show_opto_rx):
                         print("rx", utils.bbbstr(inbuff))
                     inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
+                    msgid = inbuff[2]
+                    msqn = (inbuff[3] & 0xE0) >> 5
+                    fctcd = inbuff[3] & 0x1F
                     addr = (inbuff[4] << 8) + inbuff[5]  # may be bullshit in case of raw
-                    retdata = inbuff[7:pllen+2]   # STX + Len + FnctCode + MsgId + AddrHi + AddrLo + BlkLen (+ Data) + CRC
+                    dlen = inbuff[6]
+                    retdata = inbuff[7:pllen+2]   # STX + Len + ProtId + MsgId|FnctCode + AddrHi + AddrLo + BlkLen (+ Data) + CRC
                     if(inbuff[-1] != calc_crc(inbuff)):
                         print("CRC Error")
+                        if(mqtt_publ_callback):
+                            mqtt_publ_callback(0xFE, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata
                         return 0xFE, addr, retdata
                     if(inbuff[2] & 0x0F == 0x03):
                         print("Error Message", utils.bbbstr(retdata))
+                        if(mqtt_publ_callback):
+                            mqtt_publ_callback(0x03, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata
                         return 0x03, addr, retdata
                     #success
+                    if(mqtt_publ_callback):
+                        mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
                     if(raw): retdata = alldata
-                    return 0x01, addr, retdata 
+                    return 0x01, addr, retdata
         # timout
         i+=1
         if(i > 600):
             if(settings_ini.show_opto_rx):
                 print("Timeout")
+            if(mqtt_publ_callback):
+                mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
             if(raw): retdata = alldata
             return 0xFF, addr, retdata
 
@@ -230,13 +312,13 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             # if data received and no further receive since more than eot_time
             if(settings_ini.show_opto_rx):
                 print("rx", utils.bbbstr(data_buffer))
-            return data_buffer
+            return bytearray(data_buffer)
 
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings_ini.show_opto_rx):
                 print("rx timeout", utils.bbbstr(data_buffer))
-            return data_buffer
+            return bytearray(data_buffer)
 
 
 def calc_crc(telegram) -> int:
@@ -322,7 +404,7 @@ def main():
         if ser.is_open:
             print("exit close")
             # re-init KW protocol
-            ser.write([0x04])
+            ser.write(bytes([0x04]))
             ser.close()
 
 
