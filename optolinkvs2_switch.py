@@ -77,7 +77,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                 if(item[0] != 0) and (poll_cycle % item[0] != 0):
                     # do not poll this item this time
                     if(poll_pointer > 0):
-                        # apply previous value for csv
+                        # apply previous value for csv - ?! das is aber doch der Wert des previous item!?!?
                         poll_data[poll_pointer] = poll_data[poll_pointer - 1]
                     else:
                         poll_data[poll_pointer] = 0
@@ -436,7 +436,7 @@ def main():
                                 poll_cycle += 1
                                 if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
                                     poll_cycle = 0
-                                poll_pointer += 1  #??
+                                poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > c_polllist.poll_list.num_items)
                                 if(settings_ini.poll_interval == 0):
                                     poll_pointer = 0  # else: poll_pointer gets reset by timer
                                 

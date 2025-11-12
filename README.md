@@ -6,6 +6,8 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 **Use this software at your own risk.**
 
 ## 🎉 Announcements
+- [**Version 1.6.0.1**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) More speed! Request task control fixed: alternating Vitoconnect / (poll or mqtt or tcp) ensured. Previously it was 2 Viconn request, 1 poll item. So now 30% faster poll list!
+
 - [**Version 1.5.0.5**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1505) New feature showing all the vitoconnect traffic on MQTT
 
 - [**Version 1.4.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1410) New nice format specifiers available. Can get used in combination with ByteBit Filter
