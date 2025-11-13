@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.0.1"
+version = "1.6.0.2"
 
 import serial
 import time
@@ -412,10 +412,10 @@ def main():
                 #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
                 
                 for i in range(num_tasks):
-                    now_on = (request_pointer + i) % num_tasks
+                    request_pointer = (request_pointer + i) % num_tasks
 
                     # polling list --------
-                    if(now_on == 0):              
+                    if(request_pointer == 0):              
                         if(settings_ini.poll_interval < 0):
                             continue
                         elif(poll_pointer < c_polllist.poll_list.num_items):
@@ -446,7 +446,7 @@ def main():
                             continue
 
                     # MQTT request --------
-                    if(now_on == 1):
+                    if(request_pointer == 1):
                         if(mod_mqtt_util is None):
                             continue
                         else:
@@ -465,7 +465,7 @@ def main():
                                 continue
 
                     # TCP/IP request --------
-                    if(now_on == 2):
+                    if(request_pointer == 2):
                         if(settings_ini.tcpip_port is None):
                             continue
                         else:
@@ -486,7 +486,7 @@ def main():
                         olbreath(retcode)
                         break
 
-                # request_pointer control
+                # next time start with cheching next task first  
                 request_pointer = (request_pointer + 1) % num_tasks
                 
                 # let cpu take a breath if there was nothing to do
