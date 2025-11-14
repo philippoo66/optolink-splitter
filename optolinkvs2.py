@@ -287,7 +287,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
             if(settings_ini.show_opto_rx):
                 print("Timeout")
             if(mqtt_publ_callback):
-                mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
+                mqtt_publ_callback(0xFF, addr, retdata, msgid, msqn, fctcd, dlen)
             if(raw): retdata = alldata
             return 0xFF, addr, retdata
 

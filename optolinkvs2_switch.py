@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.0.2"
+version = "1.6.0.3"
 
 import serial
 import time
@@ -335,8 +335,7 @@ def main():
 
         # TCP/IP connection --------
         if(settings_ini.tcpip_port is not None):
-            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False))
-            tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread - wichtig für Ctrl-C
+            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False), daemon=True)
             tcp_thread.start()
 
 
@@ -391,8 +390,10 @@ def main():
             num_tasks = 3
             request_pointer = 0
             while not restart_event.is_set():  #and not shutdown_event.is_set():
+                # inits
                 did_something = False
                 retcode = 1
+                is_on = request_pointer
 
                 if(serViCon is not None):
                     # first Vitoconnect request -------------------
@@ -412,10 +413,10 @@ def main():
                 #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
                 
                 for i in range(num_tasks):
-                    request_pointer = (request_pointer + i) % num_tasks
+                    is_on = (request_pointer + i) % num_tasks
 
                     # polling list --------
-                    if(request_pointer == 0):              
+                    if(is_on == 0):              
                         if(settings_ini.poll_interval < 0):
                             continue
                         elif(poll_pointer < c_polllist.poll_list.num_items):
@@ -446,7 +447,7 @@ def main():
                             continue
 
                     # MQTT request --------
-                    if(request_pointer == 1):
+                    if(is_on == 1):
                         if(mod_mqtt_util is None):
                             continue
                         else:
@@ -465,7 +466,7 @@ def main():
                                 continue
 
                     # TCP/IP request --------
-                    if(request_pointer == 2):
+                    if(is_on == 2):
                         if(settings_ini.tcpip_port is None):
                             continue
                         else:
@@ -476,7 +477,7 @@ def main():
                                     tcpip_util.send_tcpip(resp)
                                     #olbreath(retcode)
                                 except Exception as e:
-                                    print("Error handling TCP request:", e)
+                                    logger.warning("Error handling TCP request:", e)
                                     #time.sleep(settings_ini.olbreath)
                                 did_something = True
                             else:
@@ -487,7 +488,7 @@ def main():
                         break
 
                 # next time start with cheching next task first  
-                request_pointer = (request_pointer + 1) % num_tasks
+                request_pointer = (is_on + 1) % num_tasks
                 
                 # let cpu take a breath if there was nothing to do
                 if(not did_something):

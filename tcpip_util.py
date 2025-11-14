@@ -123,8 +123,7 @@ def exit_tcpip():
 def main():
     global exit_flag
 
-    tcp_thread = threading.Thread(target=tcpip4ever, args=(65234,True))
-    tcp_thread.daemon = True  # Setze den Thread als Hintergrundthread. WICHTIG für Ctrl+C etc!
+    tcp_thread = threading.Thread(target=tcpip4ever, args=(65234,True), daemon=True)
     tcp_thread.start()
 
     try:
