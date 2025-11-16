@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.0.3"
+version = "1.6.0.4"
 
 import serial
 import time
@@ -389,6 +389,8 @@ def main():
             logger.info("enter main loop")
             num_tasks = 3
             request_pointer = 0
+            #tprev = int(time.time()*10000)
+            
             while not restart_event.is_set():  #and not shutdown_event.is_set():
                 # inits
                 did_something = False
@@ -414,81 +416,68 @@ def main():
                 
                 for i in range(num_tasks):
                     is_on = (request_pointer + i) % num_tasks
+                    #print(f"{((tnow := int(time.time()*10000)) - tprev)} io {is_on}"); tprev = tnow
 
                     # polling list --------
                     if(is_on == 0):              
-                        if(settings_ini.poll_interval < 0):
-                            continue
-                        elif(poll_pointer < c_polllist.poll_list.num_items):
-                            retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
-                            # increment poll pointer
-                            poll_pointer += 1
+                        if(settings_ini.poll_interval >= 0):
+                            if(poll_pointer < c_polllist.poll_list.num_items):
+                                retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                                # increment poll pointer
+                                poll_pointer += 1
 
-                            if(poll_pointer >= c_polllist.poll_list.num_items):
-                                #### everything to be done after poll cycle completed ++++++++++
-                                if(poll_cycle == 0):
-                                    c_polllist.poll_list.remove_once_onlies()
-                                if(settings_ini.write_viessdata_csv):
-                                    viessdata_util.buffer_csv_line(poll_data)
-                                if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
-                                    olbreath(retcode)
-                                    retcode = wo1c_energy.read_energy(serViDev)
-                                # increment poll cycle counter
-                                poll_cycle += 1
-                                if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
-                                    poll_cycle = 0
-                                poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > c_polllist.poll_list.num_items)
-                                if(settings_ini.poll_interval == 0):
-                                    poll_pointer = 0  # else: poll_pointer gets reset by timer
-                                
-                            #olbreath(retcode)
-                            did_something = True
-                        else:
-                            continue
+                                if(poll_pointer >= c_polllist.poll_list.num_items):
+                                    #### everything to be done after poll cycle completed ++++++++++
+                                    if(poll_cycle == 0):
+                                        c_polllist.poll_list.remove_once_onlies()
+                                    if(settings_ini.write_viessdata_csv):
+                                        viessdata_util.buffer_csv_line(poll_data)
+                                    if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
+                                        olbreath(retcode)
+                                        retcode = wo1c_energy.read_energy(serViDev)
+                                    # increment poll cycle counter
+                                    poll_cycle += 1
+                                    if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
+                                        poll_cycle = 0
+                                    poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > c_polllist.poll_list.num_items)
+                                    if(settings_ini.poll_interval == 0):
+                                        poll_pointer = 0  # else: poll_pointer gets reset by timer
+                                did_something = True
 
                     # MQTT request --------
                     if(is_on == 1):
-                        if(mod_mqtt_util is None):
-                            continue
-                        else:
+                        if(mod_mqtt_util is not None):
                             msg = mod_mqtt_util.get_mqtt_request()
                             if(msg):
                                 try:
                                     retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
                                     mod_mqtt_util.publish_response(resp)
-                                    #olbreath(retcode)
                                 except Exception as e:
                                     mod_mqtt_util.publish_response(f"Error: {e}")
                                     logger.warning("Error handling MQTT request:", e)
-                                    #time.sleep(settings_ini.olbreath)
                                 did_something = True
-                            else:
-                                continue
 
                     # TCP/IP request --------
                     if(is_on == 2):
-                        if(settings_ini.tcpip_port is None):
-                            continue
-                        else:
+                        if(settings_ini.tcpip_port is not None):
                             msg = tcpip_util.get_tcp_request()
                             if(msg):
                                 try:
                                     retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
                                     tcpip_util.send_tcpip(resp)
-                                    #olbreath(retcode)
                                 except Exception as e:
                                     logger.warning("Error handling TCP request:", e)
-                                    #time.sleep(settings_ini.olbreath)
                                 did_something = True
-                            else:
-                                continue
+        
+                    #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_something}"); tprev = tnow
                             
                     if (did_something):
                         olbreath(retcode)
                         break
 
-                # next time start with cheching next task first  
+                # next time start with cheching next task first
                 request_pointer = (is_on + 1) % num_tasks
+                #print(f"{((tnow := int(time.time()*10000)) - tprev)} rp {request_pointer}"); tprev = tnow
                 
                 # let cpu take a breath if there was nothing to do
                 if(not did_something):
