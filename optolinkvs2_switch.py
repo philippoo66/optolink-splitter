@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.0.4"
+version = "1.6.0.5"
 
 import serial
 import time
@@ -393,7 +393,8 @@ def main():
             
             while not restart_event.is_set():  #and not shutdown_event.is_set():
                 # inits
-                did_something = False
+                did_vicon_request = False
+                did_secodary_request = False
                 retcode = 1
                 is_on = request_pointer
 
@@ -409,7 +410,7 @@ def main():
                         retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, callback)
                         c_logging.vitolog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
-                        did_something = True
+                        did_vicon_request = True
 
                 ### secondary requests ------------------
                 #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
@@ -442,7 +443,7 @@ def main():
                                     poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > c_polllist.poll_list.num_items)
                                     if(settings_ini.poll_interval == 0):
                                         poll_pointer = 0  # else: poll_pointer gets reset by timer
-                                did_something = True
+                                did_secodary_request = True
 
                     # MQTT request --------
                     if(is_on == 1):
@@ -455,7 +456,7 @@ def main():
                                 except Exception as e:
                                     mod_mqtt_util.publish_response(f"Error: {e}")
                                     logger.warning("Error handling MQTT request:", e)
-                                did_something = True
+                                did_secodary_request = True
 
                     # TCP/IP request --------
                     if(is_on == 2):
@@ -467,11 +468,11 @@ def main():
                                     tcpip_util.send_tcpip(resp)
                                 except Exception as e:
                                     logger.warning("Error handling TCP request:", e)
-                                did_something = True
+                                did_secodary_request = True
         
-                    #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_something}"); tprev = tnow
+                    #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_secodary_request}"); tprev = tnow
                             
-                    if (did_something):
+                    if (did_secodary_request):
                         olbreath(retcode)
                         break
 
@@ -480,7 +481,7 @@ def main():
                 #print(f"{((tnow := int(time.time()*10000)) - tprev)} rp {request_pointer}"); tprev = tnow
                 
                 # let cpu take a breath if there was nothing to do
-                if(not did_something):
+                if(not (did_vicon_request or did_secodary_request)):
                     time.sleep(0.005) 
 
     except Exception as e:
