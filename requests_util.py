@@ -57,8 +57,12 @@ def get_value(data, frmat, signd:bool):
             return utils.utf162str(data)
         elif(frmat == 'bool'):
             return str(utils.bytesval(data) != 0)
+        elif(frmat == 'boolinv'):
+            return str(utils.bytesval(data) == 0)
         elif(frmat == 'onoff'):
             return 'ON' if(utils.bytesval(data) != 0) else 'OFF'
+        elif(frmat == 'offon'):
+            return 'ON' if(utils.bytesval(data) == 0) else 'OFF'
         elif(frmat == 'bin'):
             ffrmt = f"0{len(data)*8}b"
             return f"{utils.bytesval(data):{ffrmt}}"
