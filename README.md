@@ -120,7 +120,7 @@ Even though I promise to note required changes carefully in the version log from
 ### Parallel use with Vitoconnect / ViCare App
 - Ensure the **serial port is enabled** and **serial console is disabled** ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/050-Prepare:-enable-serial-port,-disable-serial-console)).
 - **CP2102 Interface:**
-  - Cross **RX/TX** lines.
+  - **Cross RX/TX** lines.
   - Set voltage jumper to **3.3V**.
   - Use `ttyAMA0` instead of `ttyS0` for Raspberry Pi 3+ ([Details](https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument'))).
 
