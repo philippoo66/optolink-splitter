@@ -81,7 +81,7 @@ def perform_bytebit_filter(data, item):
 
     bstart = int(bparts[1])
     bend = bstart
-    if(len(bparts) > 1):
+    if(len(bparts) > 2):
         if(bparts[2] != ''):
             bend = int(bparts[2])
 

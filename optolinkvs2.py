@@ -18,6 +18,7 @@ import serial
 import sys
 import time
 
+from logger_util import logger
 import utils
 import settings_ini
 
@@ -48,7 +49,7 @@ def init_vs2(ser:serial.Serial) -> bool:
         i+=1
 
     if(i == 30):
-        print("init_vs2: Timeout waiting for 0x05")
+        logger.error("init_vs2: Timeout waiting for 0x05")
         return False
     
     ser.reset_input_buffer()
@@ -67,7 +68,7 @@ def init_vs2(ser:serial.Serial) -> bool:
         i+=1
 
     if(i == 30):
-        print("init_vs2: Timeout waiting for 0x06")
+        logger.error("init_vs2: Timeout waiting for 0x06")
         return False
 
     return True
@@ -212,14 +213,14 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                     if(inbuff[0] == 0x06): # VS2_ACK
                         state = 1
                     elif(inbuff[0] == 0x15): # VS2_NACK
-                        print("NACK Error")
+                        logger.error("VS2 NACK Error")
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x15, addr, retdata, msgid, msqn, fctcd, dlen)
                         #if(raw): retdata = alldata
                         return 0x15, 0, retdata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
-                        print("unknown first byte Error")
+                        logger.error("VS2 unknown first byte Error")
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x20, addr, retdata, msgid, msqn, fctcd, dlen)
@@ -234,7 +235,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
         if(state == 1):
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
-                    print("STX Error", format(inbuff[0], settings_ini.data_hex_format))
+                    logger.error("VS2 STX Error", format(inbuff[0], settings_ini.data_hex_format))
                     retdata = alldata
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0x41, addr, retdata, msgid, msqn, fctcd, dlen)
@@ -247,7 +248,7 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                 pllen = inbuff[1]
                 if(pllen < 5):  # protocol_Id + MsgId|FnctCode + AddrHi + AddrLo + BlkLen
                     print("rx", utils.bbbstr(inbuff))
-                    print("Len Error", pllen)
+                    logger.error("VS2 Len Error", pllen)
                     retdata = alldata
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0xFD, addr, retdata, msgid, msqn, fctcd, dlen)
@@ -265,13 +266,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                     dlen = inbuff[6]
                     retdata = inbuff[7:pllen+2]   # STX + Len + ProtId + MsgId|FnctCode + AddrHi + AddrLo + BlkLen (+ Data) + CRC
                     if(inbuff[-1] != calc_crc(inbuff)):
-                        print("CRC Error")
+                        logger.error("VS2 CRC Error")
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0xFE, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata
                         return 0xFE, addr, retdata
                     if(inbuff[2] & 0x0F == 0x03):
-                        print("Error Message", utils.bbbstr(retdata))
+                        #logger.info(f"Error Message {utils.bbbstr(retdata)} on 0x{addr:04x}")
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x03, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata

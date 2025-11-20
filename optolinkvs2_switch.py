@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.6.1.0"
+version = "1.7.0.0"
 
 import serial
 import time
@@ -23,22 +23,24 @@ import importlib
 import json
 import signal
 
+from logger_util import logger
 import settings_ini
 import optolinkvs2
 import viconn_util
 import viessdata_util
-import tcpip_util
+import c_tcpserver
 import requests_util
 import c_logging
 import c_polllist
 import utils
 import wo1c_energy
-from logger_util import logger
 
-#global_exit_flag = False
+# exit flag e.g. to stop endless loops
+progr_exit_flag = False
 
+# ether objects
 mod_mqtt_util = None
-#mod_wo1c_energy = None
+tcp_server = None
 
 # Threading-Events zur Steuerung des Neustarts
 restart_event = threading.Event()
@@ -173,6 +175,18 @@ def vicon_thread_func(serViCon, serViDev):
         return  # Thread wird beendet
 
 
+# TCP loop +++++++++++++++++++++++++++++
+def tcp_connection_loop():
+    global tcp_server
+    while(not progr_exit_flag):
+        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings_ini.tcpip_port) #, verbose=True)
+        tcp_server.run()
+        tcp_server = None
+        if progr_exit_flag: return
+        logger.info("TCP session closed, restart soon...")
+        time.sleep(1)
+
+
 # utils +++++++++++++++++++++++++++++
 def mqtt_debug(msg:str):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
@@ -283,6 +297,7 @@ def handle_exit(sig, frame):
 def main():
     global mod_mqtt_util
     global poll_pointer, poll_cycle
+    global progr_exit_flag
 
     # Signale abfangen für sauberes Beenden
     signal.signal(signal.SIGTERM, handle_exit)
@@ -335,7 +350,9 @@ def main():
 
         # TCP/IP connection --------
         if(settings_ini.tcpip_port is not None):
-            tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False), daemon=True)
+            # tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False), daemon=True)
+            # tcp_thread.start()
+            tcp_thread = threading.Thread(target=tcp_connection_loop, daemon=True)
             tcp_thread.start()
 
 
@@ -460,12 +477,14 @@ def main():
 
                     # TCP/IP request --------
                     if(is_on == 2):
-                        if(settings_ini.tcpip_port is not None):
-                            msg = tcpip_util.get_tcp_request()
+                        if(tcp_server is not None):
+                            msg = tcp_server.get_request()
                             if(msg):
+                                #print(f"recd tcp msg: {msg}")
                                 try:
                                     retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                                    tcpip_util.send_tcpip(resp)
+                                    #print(f"try to send tcp: {resp}")
+                                    tcp_server.send(resp)
                                 except Exception as e:
                                     logger.warning("Error handling TCP request:", e)
                                 did_secodary_request = True
@@ -489,13 +508,16 @@ def main():
         logger.error(excptn)
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
+        progr_exit_flag = True
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
         logger.info("exit close...")
         logger.info("cancel poll timer ") 
         timer_pollinterval.cancel()
-        tcpip_util.exit_tcpip()
-        viconn_util.exit_flag = True
+        #tcpip_util.exit_tcpip()
+        if(tcp_server is not None):
+            tcp_server.stop()
         #tcp_thread.join()  #TODO ??
+        viconn_util.exit_flag = True
         if(serViCon is not None):
             logger.info("closing serViCon")
             serViCon.close()
