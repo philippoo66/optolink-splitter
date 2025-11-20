@@ -65,7 +65,7 @@ class TcpServer:
 
                 # FIN-Flag -> Verbindung weg
                 if not data:
-                    logger.warning("TCP Connection ended (FIN)")
+                    logger.info("TCP Connection ended (FIN)")
                     #print("TCP Connection lost (FIN)")
                     break
 
