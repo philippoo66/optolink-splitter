@@ -56,7 +56,7 @@ class TcpServer:
     # BLOCKIERENDES Empfangen (Endlosschleife)
     # ---------------------------------------------------------
     def _listen_blocking(self):
-        logger.info("enter TCP listen loop")
+        #logger.info("enter TCP listen loop")
         #print("enter TCP listen loop")
 
         while not self.exit_flag:
@@ -65,7 +65,7 @@ class TcpServer:
 
                 # FIN-Flag -> Verbindung weg
                 if not data:
-                    logger.warning("TCP Connection lost (FIN)")
+                    logger.warning("TCP Connection ended (FIN)")
                     #print("TCP Connection lost (FIN)")
                     break
 
@@ -134,7 +134,7 @@ class TcpServer:
     # Schließt alles
     # ---------------------------------------------------------
     def stop(self):
-        logger.info("Stopping TCP Server")
+        logger.info("closing TCP Server")
         #print("Stopping TCP Server")
 
         self.exit_flag = True

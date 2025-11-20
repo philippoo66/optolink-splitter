@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.7.0.0"
+version = "1.7.1.0"
 
 import serial
 import time
@@ -132,10 +132,10 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                         else:
                             break
         else:
-            print(f"OL Error do_poll_item {poll_pointer}, Addr {item[1]:04X}, RetCode {retcode}, Data {val}")
+            logger.error(f"OL Error do_poll_item {poll_pointer}, Addr {item[1]:04X}, RetCode {retcode}, Data {val}")
         return retcode
     except Exception as e:
-        print(f"Error do_poll_item {poll_pointer}, {item}:")
+        logger.error(f"Error do_poll_item {poll_pointer}, {item}: {e}")
         raise
 
 
@@ -168,7 +168,7 @@ def vicon_thread_func(serViCon, serViDev):
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
         c_logging.vitolog.do_log(msg)
-        print(msg, "re-init")
+        logger.error(msg, "re-init")
         mqtt_debug(msg)
         viconn_util.exit_flag = True
         restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
@@ -183,7 +183,7 @@ def tcp_connection_loop():
         tcp_server.run()
         tcp_server = None
         if progr_exit_flag: return
-        logger.info("TCP session closed, restart soon...")
+        #logger.info("TCP session closed, restart soon...")
         time.sleep(1)
 
 
@@ -511,7 +511,7 @@ def main():
         progr_exit_flag = True
         # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
         logger.info("exit close...")
-        logger.info("cancel poll timer ") 
+        logger.info("cancel poll timer") 
         timer_pollinterval.cancel()
         #tcpip_util.exit_tcpip()
         if(tcp_server is not None):
