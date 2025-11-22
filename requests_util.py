@@ -57,8 +57,12 @@ def get_value(data, frmat, signd:bool):
             return utils.utf162str(data)
         elif(frmat == 'bool'):
             return str(utils.bytesval(data) != 0)
+        elif(frmat == 'boolinv'):
+            return str(utils.bytesval(data) == 0)
         elif(frmat == 'onoff'):
             return 'ON' if(utils.bytesval(data) != 0) else 'OFF'
+        elif(frmat == 'offon'):
+            return 'ON' if(utils.bytesval(data) == 0) else 'OFF'
         elif(frmat == 'bin'):
             ffrmt = f"0{len(data)*8}b"
             return f"{utils.bytesval(data):{ffrmt}}"
@@ -77,7 +81,7 @@ def perform_bytebit_filter(data, item):
 
     bstart = int(bparts[1])
     bend = bstart
-    if(len(bparts) > 1):
+    if(len(bparts) > 2):
         if(bparts[2] != ''):
             bend = int(bparts[2])
 

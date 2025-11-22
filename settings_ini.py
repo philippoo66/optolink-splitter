@@ -36,7 +36,7 @@ mqtt_no_redundant = False        # if True, no previously published unchanged me
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234               # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
 
-# Optolink Communication Timing +
+# Optolink Communication Timing ++++
 fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
 fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
 olbreath = 0.1                  # Pause (seconds) after a request-response cycle (default: 0.1)
@@ -45,6 +45,7 @@ olbreath = 0.1                  # Pause (seconds) after a request-response cycle
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
+no_logger_file = False          # if true the optolinksvs2_switch.log will not get written
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)

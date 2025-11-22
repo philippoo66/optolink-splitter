@@ -40,14 +40,14 @@ def on_connect(client, userdata, flags, reason_code, properties):
     
 def on_disconnect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
-        print('mqtt broker disconnected. reason_code = ' + str(reason_code))
+        logger.warning('mqtt broker disconnected. reason_code = ' + str(reason_code))
     mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
 
 def on_message(client, userdata, msg):
     global reset_recent
     #print("MQTT recd:", msg.topic, msg.payload)
     if(settings_ini.mqtt_listen is None):
-        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
+        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
     if topic == settings_ini.mqtt_listen:
@@ -59,16 +59,16 @@ def on_message(client, userdata, msg):
             cmnd_queue.append(rec) 
     else:
         # Ausgabe anderer eingehenden MQTT-Nachrichten
-        print(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
+        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
 
 
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     # Since we subscribed only for a single channel, reason_code_list contains
     # a single entry
     if reason_code_list[0].is_failure:
-        print(f"Broker rejected you subscription: {reason_code_list[0]}")
+        logger.error(f"MQTT Broker rejected you subscription: {reason_code_list[0]}")
     else:
-        print(f"Broker granted the following QoS: {reason_code_list[0].value}")
+        logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
 
 def on_log(client, userdata, level, buf):
     print("MQTT Log:", buf)
