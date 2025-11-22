@@ -5,12 +5,15 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 
 **Use this software at your own risk.**
 
+For latest developments always check the [Version-Log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log)
+
 ## 🎉 Announcements
+- [**Version 1.7.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1710) New TCP solution. Properly cleans up and releases all connections. Switch to disable writing of optolinkvs2_switch.log file (protects SD card). Inverse boolean format specifiers introduced.
+
 - [**Version 1.6.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) More speed if Vitoconnect in use! Request task control fixed: alternating Vitoconnect / (poll or mqtt or tcp) ensured. Previously it was 2 Viconn request, 1 poll item. So now 30% faster poll list!
 
 - [**Version 1.5.0.5**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1505) New feature showing all the vitoconnect traffic on MQTT
 
-- [**Version 1.4.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1410) New nice format specifiers available. Can get used in combination with ByteBit Filter
 
 - Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
 - Explore other feature branches, there might be something useful for you! 😉
@@ -44,7 +47,7 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 - **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
 - Supports **VS2 and VS1/KW protocols** with different branches.  
   - The [vs1test branch](https://github.com/philippoo66/optolink-splitter/tree/vs1test) enables **VS1/KW protocol support** but works **only without** Vitoconnect.  
-  - For **VS1/KW with Vitoconnect**, the [viconn-listener](https://github.com/philippoo66/viconn-listener) is available (currently in beta).  
+  - For **VS1/KW with Vitoconnect**, the [viconn-listener](https://github.com/philippoo66/viconn-listener) is available (currently in beta).
 
 ### Videos
 🎥 **Introduction Video (German):** [Watch on YouTube](https://youtu.be/95WIPFBxMsc)
