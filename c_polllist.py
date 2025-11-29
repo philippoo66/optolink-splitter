@@ -30,6 +30,7 @@ class cPollList:
         self.num_items = 0
         self.onceonlies_removed = False
 
+    def make_list(self):
         if(os.path.exists("poll_list.py")):
             mylist = importlib.import_module('poll_list')
             self.items = mylist.poll_items
@@ -38,17 +39,18 @@ class cPollList:
         self.num_items = len(self.items)
         logger.info(f"poll_list made, {self.num_items} items")
 
-    def remove_once_onlies(self):
+    def remove_once_onlies(self) -> bool:
         if self.onceonlies_removed: 
-            return
+            return False
         filtered = [item for item in self.items if not (isinstance(item[0], int) and item[0] == 0)]
         self.items = filtered
+        self.onceonlies_removed = True
         newlen = len(self.items)
         if(self.num_items != newlen):
             self.num_items = newlen
             logger.info(f"poll_list shrinked to {self.num_items} items")
-        self.onceonlies_removed = True
-
+            return True
+        return False
 
 # for global use
 poll_list = cPollList()

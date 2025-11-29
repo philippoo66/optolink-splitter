@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.7.1.0"
+version = "1.7.1.2"
 
 import serial
 import time
@@ -31,7 +31,7 @@ import viessdata_util
 import c_tcpserver
 import requests_util
 import c_logging
-import c_polllist
+from c_polllist import poll_list
 import utils
 import wo1c_energy
 
@@ -72,20 +72,25 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     item = "?"
 
     try:
-        while(True):
+        # loop though poll items until find one to be done this cycle
+        while(True):  
             # handle PollCycle option +++++++++++++++++++++++
-            item = c_polllist.poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
-            if(len(item) > 1 and type(item[0]) is int):
+            item = poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
+            if(len(item) > 1 and isinstance(item[0], int)):
                 if(item[0] != 0) and (poll_cycle % item[0] != 0):
-                    # do not poll this item this time
-                    if(poll_pointer > 0):
-                        # apply previous value for csv - ?! das is aber doch der Wert des previous item!?!?
-                        poll_data[poll_pointer] = poll_data[poll_pointer - 1]
-                    else:
-                        poll_data[poll_pointer] = 0
+                    # +++ do not poll this item this time +++
+
+                    # leave poll_data[poll_pointer] unchanged
+
+                    # wrong:
+                    #if(poll_pointer > 0):
+                    #    # apply value of previous item for csv
+                    #    poll_data[poll_pointer] = poll_data[poll_pointer - 1]
+                    #else:
+                    #    poll_data[poll_pointer] = 0
                     
                     poll_pointer += 1
-                    if(poll_pointer == c_polllist.poll_list.num_items):
+                    if(poll_pointer == poll_list.num_items):
                         # no further item this cycle                    
                         return 0xAB
                 else:
@@ -109,9 +114,9 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             if(len(item) > 3):
                 if(str(item[3]).lower().startswith('b:')):
                     # bytebit filter +++++++++
-                    while((poll_pointer + 1) < c_polllist.poll_list.num_items):
+                    while((poll_pointer + 1) < poll_list.num_items):
                         next_idx = poll_pointer + 1
-                        next_item = c_polllist.poll_list.items[next_idx]
+                        next_item = poll_list.items[next_idx]
 
                         # remove PollCycle in case
                         if(type(next_item[0]) is int):
@@ -142,7 +147,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
 # poll timer    
 def on_polltimer():
     global poll_pointer
-    if(poll_pointer > c_polllist.poll_list.num_items):
+    if(poll_pointer > poll_list.num_items):
         poll_pointer = 0
     startPollTimer(settings_ini.poll_interval)
 
@@ -162,14 +167,14 @@ def vicon_thread_func(serViCon, serViDev):
     """
     print("running Vitoconnect listener")
     try:
-        callback = publish_viconn if settings_ini.viconn_to_mqtt else None
+        callback = mqtt_publ_viconn if settings_ini.viconn_to_mqtt else None
         viconn_util.exit_flag = False
         viconn_util.listen_to_Vitoconnect(serViCon, callback)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
-        c_logging.vitolog.do_log(msg)
+        c_logging.viconnlog.do_log(msg)
         logger.error(msg, "re-init")
-        mqtt_debug(msg)
+        mqtt_publ_debug(msg)
         viconn_util.exit_flag = True
         restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
         return  # Thread wird beendet
@@ -188,12 +193,27 @@ def tcp_connection_loop():
 
 
 # utils +++++++++++++++++++++++++++++
-def mqtt_debug(msg:str):
+def do_special_command(cmnd:str) -> bool:
+
+    if cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
+        if tcp_server:
+            tcp_server.stop()
+    elif cmnd in ("flushcsv"):
+        if settings_ini.write_viessdata_csv:
+            viessdata_util.buffer_csv_line([], True)
+    elif cmnd in ('reset', 'resetrecent'):
+        if(mod_mqtt_util is not None):
+            mod_mqtt_util.reset_recent = True
+    else:
+        return False
+    return True
+
+def mqtt_publ_debug(msg:str):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
         mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
 
 
-def publish_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
+def mqtt_publ_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
         if addr:
             topic = settings_ini.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
@@ -313,7 +333,9 @@ def main():
 
     try:
     #if True:
-        poll_data = [None] * c_polllist.poll_list.num_items
+        poll_list.make_list()
+        # buffer for read data for writing viessdata.csv 
+        poll_data = [None] * poll_list.num_items
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
         serViDev = None  # Viessmann Device (Slave)
@@ -339,7 +361,7 @@ def main():
                         exclusive=True,
                         timeout=0)
 
-        # Empfangstask der sekundären Master starten (TcpIp, MQTT)
+        # Empfangstask der sekundären Master starten (TcpIp, MQTT) ++++++++++++++
 
         # MQTT --------
         if(settings_ini.mqtt is not None):
@@ -350,14 +372,17 @@ def main():
 
         # TCP/IP connection --------
         if(settings_ini.tcpip_port is not None):
-            # tcp_thread = threading.Thread(target=tcpip_util.tcpip4ever, args=(settings_ini.tcpip_port,False), daemon=True)
-            # tcp_thread.start()
             tcp_thread = threading.Thread(target=tcp_connection_loop, daemon=True)
             tcp_thread.start()
 
 
+        # some inits ++++++++++++++
+
         # one wire value check init
         requests_util.init_w1_values_check()
+
+        # publish viconn or not
+        vicon_publ_callback = mqtt_publ_viconn if settings_ini.viconn_to_mqtt else None
 
 
         # ------------------------
@@ -371,14 +396,14 @@ def main():
 
                 # Vitoconncet logging
                 if(settings_ini.log_vitoconnect):
-                    if(c_logging.vitolog.log_handle is None):
-                        c_logging.vitolog.open_log()
+                    if(c_logging.viconnlog.log_handle is None):
+                        c_logging.viconnlog.open_log()
 
                 # detect/init VS2 Protokol ++++++++++++
                 logger.info("awaiting VS2...")
                 if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
                     raise Exception("VS2 protocol not detected within timeout")
-                c_logging.vitolog.do_log("VS2 protocol detected")           
+                c_logging.viconnlog.do_log("VS2 protocol detected")           
                 logger.info("VS2 detected")
 
                 # listen to vicon ++++++++++++
@@ -392,12 +417,11 @@ def main():
                 if(not optolinkvs2.init_vs2(serViDev)):
                     #logger.error("init_vs2 failed")
                     raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
+                logger.info("VS2 initialized")
 
-            # publish viconn or not
-            callback = publish_viconn if settings_ini.viconn_to_mqtt else None
 
             # Polling Mechanismus --------
-            if(settings_ini.poll_interval > 0) and (c_polllist.poll_list.num_items > 0):
+            if(settings_ini.poll_interval > 0) and (poll_list.num_items > 0):
                 startPollTimer(settings_ini.poll_interval)
 
             # ------------------------
@@ -421,11 +445,11 @@ def main():
                     if(vidata):
                         serViDev.reset_input_buffer()
                         serViDev.write(vidata)
-                        c_logging.vitolog.do_log(vidata, "M")
+                        c_logging.viconnlog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, callback)
-                        c_logging.vitolog.do_log(redata, f"S {retcode:02x}")
+                        retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, vicon_publ_callback)
+                        c_logging.viconnlog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         did_vicon_request = True
 
@@ -439,31 +463,44 @@ def main():
                     # polling list --------
                     if(is_on == 0):              
                         if(settings_ini.poll_interval >= 0):
-                            if(poll_pointer < c_polllist.poll_list.num_items):
+                            if(poll_pointer < poll_list.num_items):
                                 retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
                                 # increment poll pointer
                                 poll_pointer += 1
 
-                                if(poll_pointer >= c_polllist.poll_list.num_items):
-                                    #### everything to be done after poll cycle completed ++++++++++
+                                #### everything to be done after poll cycle completed ++++++++++
+                                if(poll_pointer >= poll_list.num_items):
+                                    # remove once_onlies
+                                    items_removed = False
                                     if(poll_cycle == 0):
-                                        c_polllist.poll_list.remove_once_onlies()
-                                    if(settings_ini.write_viessdata_csv):
+                                        items_removed = poll_list.remove_once_onlies()
+                                    # Viessdata csv
+                                    if(items_removed):
+                                        # no csv line if once_onlies were present
+                                        # set up buffer according to remaining items
+                                        poll_data = [None] * poll_list.num_items
+                                    elif(settings_ini.write_viessdata_csv):
                                         viessdata_util.buffer_csv_line(poll_data)
+                                    # wo1c energy
                                     if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
                                         olbreath(retcode)
                                         retcode = wo1c_energy.read_energy(serViDev)
-                                    # increment poll cycle counter
+                                    # poll cycle control
                                     poll_cycle += 1
-                                    if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12
+                                    if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12 < 32 bits
                                         poll_cycle = 0
-                                    poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > c_polllist.poll_list.num_items)
+                                    # poll pointer control
+                                    poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > poll_list.num_items)
                                     if(settings_ini.poll_interval == 0):
                                         poll_pointer = 0  # else: poll_pointer gets reset by timer
+                                    # #TEMP test
+                                    # if(poll_cycle == 1):
+                                    #     tcp_server.stop()
+                                    # #TEMP test end
                                 did_secodary_request = True
 
                     # MQTT request --------
-                    if(is_on == 1):
+                    elif(is_on == 1):
                         if(mod_mqtt_util is not None):
                             msg = mod_mqtt_util.get_mqtt_request()
                             if(msg):
@@ -476,7 +513,7 @@ def main():
                                 did_secodary_request = True
 
                     # TCP/IP request --------
-                    if(is_on == 2):
+                    elif(is_on == 2):
                         if(tcp_server is not None):
                             msg = tcp_server.get_request()
                             if(msg):
@@ -513,7 +550,6 @@ def main():
         logger.info("exit close...")
         logger.info("cancel poll timer") 
         timer_pollinterval.cancel()
-        #tcpip_util.exit_tcpip()
         if(tcp_server is not None):
             tcp_server.stop()
         #tcp_thread.join()  #TODO ??
@@ -529,9 +565,9 @@ def main():
             serViDev.close()
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
-        if(c_logging.vitolog.log_handle is not None):
+        if(c_logging.viconnlog.log_handle is not None):
             logger.info("closing vitolog")
-            c_logging.vitolog.close_log()
+            c_logging.viconnlog.close_log()
 
  
 if __name__ == "__main__":

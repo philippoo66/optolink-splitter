@@ -37,7 +37,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 
     timestart = time.time()
 
-    c_logging.vitolog.do_log("detect_vs2...")
+    c_logging.viconnlog.do_log("detect_vs2...")
 
     while True:
         # Lesen von Daten von beiden seriellen Schnittstellen
@@ -48,7 +48,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_ringbuffer(bufferVicon, dataVicon)
-            c_logging.vitolog.do_log(dataVicon, "M")
+            c_logging.viconnlog.do_log(dataVicon, "M")
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
@@ -56,7 +56,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataOpto:
             serVicon.write(dataOpto)
             add_to_ringbuffer(bufferOpto, dataOpto)
-            c_logging.vitolog.do_log(dataOpto, "S")
+            c_logging.viconnlog.do_log(dataOpto, "S")
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
                 if(dataOpto == b'\x06'):
@@ -85,9 +85,9 @@ def listen_to_Vitoconnect(servicon:serial.Serial, pubcallback = None):
             timeout = 0
         elif(succ == 0xff) and (timeout < 1):
             timeout += 1
-            c_logging.vitolog.do_log(data, f"TO {timeout}")
+            c_logging.viconnlog.do_log(data, f"TO {timeout}")
         else:
-            c_logging.vitolog.do_log(data, f"X {succ:02x}")
+            c_logging.viconnlog.do_log(data, f"X {succ:02x}")
             # protocol reset request as preparation for the new VS2 detection (kommt wahscheinlich nicht durch, aber ...)
             vicon_request = bytearray([0x04])
             raise Exception(f"Error {succ:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")

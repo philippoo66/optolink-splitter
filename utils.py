@@ -100,6 +100,16 @@ def str2bstr(normal_str:str) -> bytes:
 #     else:
 #         raise TypeError("Unsupported data type")
 
+def clean_string(s:str) -> str:
+    return (
+            s.strip()
+            .replace("\0", "")
+            .replace("\r", "")
+            .replace("\n", "")
+            .replace('"', "")
+            .replace("'", "")
+        )
+
 def vdatetime2str(data:bytes, fdowidx:int=1) -> str:
     try:
         weekdays = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']

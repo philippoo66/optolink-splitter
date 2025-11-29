@@ -40,7 +40,7 @@ class cLogging:
         Schließt die Logdatei.
         """
         if self.log_handle:
-            self.do_log("Log file closed.")
+            self.do_log("closing log file...")
             self.log_handle.close()
             self.log_handle = None
 
@@ -68,7 +68,7 @@ class cLogging:
 
 
 # for global use
-vitolog = cLogging('vitolog.txt')
+viconnlog = cLogging('viconnlog.txt')
 
 
 

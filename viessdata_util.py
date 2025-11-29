@@ -33,7 +33,7 @@ def get_headline() -> str:
     cols = []
     for itm in c_polllist.poll_list.items:
         # get addr as column caption
-        if(type(itm[0]) is int):
+        if(isinstance(itm[0], int)):
             # PollCycle...
             cols.append(itm[2])
         else:
@@ -80,12 +80,9 @@ def buffer_csv_line(data, force_write=False):
         sline += formatted_timestamp() + ";"
 
         # decimal separator
-        if(settings_ini.dec_separator == ","):
-            tbreplaced = "."
-        else:
-            tbreplaced = ","
+        tbreplaced = "." if settings_ini.dec_separator == "," else ","
         for i in range(0, c_polllist.poll_list.num_items):
-            sval = str(data[i])
+            sval = str(data[i]) if data[i] else "0"  # wg. None wg. once_onlies.... alles Pfusch
             if(utils.to_number(data[i]) != None):
                 # format number, anything else left like it is
                 sval = sval.replace(tbreplaced, settings_ini.dec_separator) 

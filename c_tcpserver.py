@@ -19,7 +19,7 @@ class TcpServer:
         self.exit_flag = False
 
     # ---------------------------------------------------------
-    # Startet den Server, wartet auf Verbindung (BLOCKIEREND)
+    # Startet den Server
     # ---------------------------------------------------------
     def run(self):
         self.exit_flag = False
@@ -37,36 +37,58 @@ class TcpServer:
         logger.info(f"TCP Server listening on {self.host}:{self.port}")
         #print(f"TCP Server listening on {self.host}:{self.port}")
 
-        # BLOCKIEREND warten auf Client
-        self.client_socket, self.client_address = self.server_socket.accept()
-        logger.info(f"TCP Connection from {self.client_address}")
-        #print(f"TCP Connection from {self.client_address}")
+        # warten auf Client
+        self._wait_for_client()
+
+        if not self.server_socket: return
 
         # Server-Socket nicht mehr nötig
         self.server_socket.close()
         self.server_socket = None
 
-        # BLOCKIEREND empfangen, bis exit oder FIN
-        self._listen_blocking()
+        # empfangen, bis exit oder FIN
+        self._listen()
 
         # Nach Empfang -> alles schließen
         self.stop()
 
+    
     # ---------------------------------------------------------
-    # BLOCKIERENDES Empfangen (Endlosschleife)
+    # auf Verbindung warten (Endlosschleife)
     # ---------------------------------------------------------
-    def _listen_blocking(self):
-        #logger.info("enter TCP listen loop")
-        #print("enter TCP listen loop")
+    def _wait_for_client(self):
+        if not self.server_socket or self.exit_flag:
+            return
+        
+        self.server_socket.settimeout(0.5)   # akzeptiere max 0.5s blockierend
 
-        while not self.exit_flag:
+        while self.server_socket and not self.exit_flag:
+            try:
+                self.client_socket, self.client_address = self.server_socket.accept()
+                logger.info(f"TCP Connection from {self.client_address}")
+                break
+            except socket.timeout:
+                continue   # prüfe exit_flag, weiter warten
+            except OSError as e:
+                # falls socket von außen closed wurde -> abbrechen
+                logger.info(f"accept() aborted: {e}")
+                break
+
+    # ---------------------------------------------------------
+    # Empfangen (Endlosschleife)
+    # ---------------------------------------------------------
+    def _listen(self):
+        if not self.client_socket or self.exit_flag:
+            return
+        
+        self.client_socket.settimeout(0.5)
+
+        while self.client_socket and not self.exit_flag:
             try:
                 data = self.client_socket.recv(1024)
 
-                # FIN-Flag -> Verbindung weg
                 if not data:
                     logger.info("TCP Connection ended (FIN)")
-                    #print("TCP Connection lost (FIN)")
                     break
 
                 if self.verbose:
@@ -87,7 +109,6 @@ class TcpServer:
 
                     if m == "exit":
                         logger.info("TCP exit command received")
-                        #print("TCP exit command received")
                         break
 
                     elif m == "flushcsv":
@@ -96,16 +117,17 @@ class TcpServer:
 
                     else:
                         self.received_data = msg
-                        #temp
-                        #self.send(f"received: {msg}")
+
+            except socket.timeout:
+                # keine Daten → einfach exit_flag erneut prüfen
+                continue
 
             except ConnectionError:
                 logger.warning("TCP Connection lost")
-                #print("TCP Connection lost")
                 break
+
             except Exception as e:
                 logger.error(e)
-                #print(f"ERROR: {e}")
                 break
 
     # ---------------------------------------------------------
@@ -119,8 +141,8 @@ class TcpServer:
             self.client_socket.send(data)
             if self.verbose:
                 print("TCP sent:", data)
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"TCP send failed: {e}, data: {data}")
 
     # ---------------------------------------------------------
     # Holt gespeicherte Nachricht
@@ -134,8 +156,10 @@ class TcpServer:
     # Schließt alles
     # ---------------------------------------------------------
     def stop(self):
+        if self.exit_flag: 
+            return
+
         logger.info("closing TCP Server")
-        #print("Stopping TCP Server")
 
         self.exit_flag = True
 

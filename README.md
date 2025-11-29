@@ -58,7 +58,7 @@ For latest developments always check the [Version-Log](https://github.com/philip
 - Python (version >= 3.9):
   - pyserial: `pip install pyserial`
   - MQTT (version >= 2.0): `pip install paho-mqtt` 
-- Virtual environments recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
+- Virtual environment recommended ([Guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv)).
 
 ## :desktop_computer:	Hardware Requirements
 - Raspberry Pi or a suitable system.
