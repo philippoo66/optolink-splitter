@@ -17,7 +17,8 @@
 # Serial Ports +++++++++++++++++++
 port_optolink = '/dev/ttyUSB0'     # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
 port_vitoconnect = '/dev/ttyAMA0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyAMA0', set None if no Vitoconnect) Pls check https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')
-vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detection (default: 120)
+vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detection with Vitoconnect (default: 120)
+vs1protocol = False                # if True, VS1/KW protocol used
 
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)

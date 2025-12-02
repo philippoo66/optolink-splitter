@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.7.1.3"
+version = "1.8.0.0"
 
 import serial
 import time
@@ -25,12 +25,12 @@ import signal
 
 from logger_util import logger
 import settings_ini
-import optolinkvs2
+import vs12_adapter
 import viconn_util
 import viessdata_util
 import c_tcpserver
 import requests_util
-import c_logging
+from c_logging import viconnlog
 from c_polllist import poll_list
 import utils
 import wo1c_energy
@@ -46,20 +46,25 @@ tcp_server = None
 restart_event = threading.Event()
 #shutdown_event = threading.Event()
 
+last_vs1_comm = 0
+
 
 def olbreath(retcode:int):
     """
     give vitotrol some time after comm to do other things
     """
+    global last_vs1_comm
     if(retcode <= 0x03):
         # success, err msg
+        last_vs1_comm = time.time()
         time.sleep(settings_ini.olbreath)
     elif(retcode in [0xFF, 0xAA, 0xAB]):
         # timeout, err_handle, final item skipped in cycle
         pass
     else:
         # allow calming down
-        time.sleep(5 * settings_ini.olbreath)
+        last_vs1_comm = time.time()
+        time.sleep(3 * settings_ini.olbreath)
 
 
 # polling list +++++++++++++++++++++++++++++
@@ -165,7 +170,7 @@ def vicon_thread_func(serViCon, serViDev):
         viconn_util.listen_to_Vitoconnect(serViCon, callback)
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
-        c_logging.viconnlog.do_log(msg)
+        viconnlog.do_log(msg)
         logger.error(msg, "re-init")
         mqtt_publ_debug(msg)
         viconn_util.exit_flag = True
@@ -187,7 +192,6 @@ def tcp_connection_loop():
 
 # utils +++++++++++++++++++++++++++++
 def do_special_command(cmnd:str) -> bool:
-
     if cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
         if tcp_server:
             tcp_server.stop()
@@ -389,15 +393,16 @@ def main():
 
                 # Vitoconncet logging
                 if(settings_ini.log_vitoconnect):
-                    if(c_logging.viconnlog.log_handle is None):
-                        c_logging.viconnlog.open_log()
+                    if(viconnlog.log_handle is None):
+                        viconnlog.open_log()
 
                 # detect/init VS2 Protokol ++++++++++++
-                logger.info("awaiting VS2...")
-                if not viconn_util.detect_vs2(serViCon, serViDev, settings_ini.vs2timeout):
-                    raise Exception("VS2 protocol not detected within timeout")
-                c_logging.viconnlog.do_log("VS2 protocol detected")           
-                logger.info("VS2 detected")
+                logger.info("awaiting Vitoconnect being operational...")
+                if not vs12_adapter.wait_for_vicon(serViCon, serViDev, settings_ini.vs2timeout):
+                    raise Exception("Vitoconnect not detected operational within timeout")
+                msg = "Vitoconnect detected operational"
+                viconnlog.do_log(msg)           
+                logger.info(msg)
 
                 # listen to vicon ++++++++++++
                 # run reception thread
@@ -406,11 +411,11 @@ def main():
                 vicon_thread.start()
 
             else:
-                # VS2 Protokoll am Slave initialisieren
-                if(not optolinkvs2.init_vs2(serViDev)):
-                    #logger.error("init_vs2 failed")
-                    raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
-                logger.info("VS2 initialized")
+                # Protokoll/Kommunikation am Slave initialisieren
+                spr = "VS2/300" if not settings_ini.vs1protocol else "VS1/KW"
+                if(not vs12_adapter.init_protocol(serViDev)):
+                    raise Exception(f"init_protocol {spr} failed")  # schlecht für KW Protokoll
+                logger.info(f"{spr} protocol initialized")
 
 
             # Polling Mechanismus --------
@@ -438,11 +443,11 @@ def main():
                     if(vidata):
                         serViDev.reset_input_buffer()
                         serViDev.write(vidata)
-                        c_logging.viconnlog.do_log(vidata, "M")
+                        viconnlog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, vicon_publ_callback)
-                        c_logging.viconnlog.do_log(redata, f"S {retcode:02x}")
+                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serViDev, serViCon, vicon_publ_callback)
+                        viconnlog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         did_vicon_request = True
 
@@ -476,8 +481,12 @@ def main():
                                         viessdata_util.buffer_csv_line(poll_data)
                                     # wo1c energy
                                     if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
-                                        olbreath(retcode)
-                                        retcode = wo1c_energy.read_energy(serViDev)
+                                        if(not settings_ini.vs1protocol):
+                                            olbreath(retcode)
+                                            retcode = wo1c_energy.read_energy(serViDev)
+                                        else:
+                                            logger.warning("wo1c_energy not supported with VS1/KW protocol")
+                                            settings_ini.wo1c_energy = 0
                                     # poll cycle control
                                     poll_cycle += 1
                                     if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12 < 32 bits
@@ -510,10 +519,10 @@ def main():
                         if(tcp_server is not None):
                             msg = tcp_server.get_request()
                             if(msg):
-                                #print(f"recd tcp msg: {msg}")
+                                #print(f"recd tcp msg: {msg}")  #temp
                                 try:
                                     retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
-                                    #print(f"try to send tcp: {resp}")
+                                    #print(f"retcode {retcode}, try to send tcp: {resp}")  #temp
                                     tcp_server.send(resp)
                                 except Exception as e:
                                     logger.warning("Error handling TCP request:", e)
@@ -528,9 +537,16 @@ def main():
                 # next time start with cheching next task first
                 request_pointer = (is_on + 1) % num_tasks
                 #print(f"{((tnow := int(time.time()*10000)) - tprev)} rp {request_pointer}"); tprev = tnow
-                
+
+                # keep-alive with vs1 
+                if(settings_ini.vs1protocol):
+                    if(time.time() - last_vs1_comm > 0.5):
+                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serViDev)
+                        olbreath(retcode)
+                        did_secodary_request = True
+
                 # let cpu take a breath if there was nothing to do
-                if(not (did_vicon_request or did_secodary_request)):
+                if not (did_vicon_request or did_secodary_request):
                     time.sleep(0.005) 
 
     except Exception as e:
@@ -545,7 +561,6 @@ def main():
         timer_pollinterval.cancel()
         if(tcp_server is not None):
             tcp_server.stop()
-        #tcp_thread.join()  #TODO ??
         viconn_util.exit_flag = True
         if(serViCon is not None):
             logger.info("closing serViCon")
@@ -558,9 +573,9 @@ def main():
             serViDev.close()
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
-        if(c_logging.viconnlog.log_handle is not None):
-            logger.info("closing vitolog")
-            c_logging.viconnlog.close_log()
+        if(viconnlog.log_handle is not None):
+            logger.info("closing viconnlog")
+            viconnlog.close_log()
 
  
 if __name__ == "__main__":
