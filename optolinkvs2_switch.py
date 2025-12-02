@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.7.1.2"
+version = "1.7.1.3"
 
 import serial
 import time
@@ -82,13 +82,6 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
 
                     # leave poll_data[poll_pointer] unchanged
 
-                    # wrong:
-                    #if(poll_pointer > 0):
-                    #    # apply value of previous item for csv
-                    #    poll_data[poll_pointer] = poll_data[poll_pointer - 1]
-                    #else:
-                    #    poll_data[poll_pointer] = 0
-                    
                     poll_pointer += 1
                     if(poll_pointer == poll_list.num_items):
                         # no further item this cycle                    
@@ -119,7 +112,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                         next_item = poll_list.items[next_idx]
 
                         # remove PollCycle in case
-                        if(type(next_item[0]) is int):
+                        if(isinstance(item[0], int)):
                             next_item = next_item[1:]
                         
                         # if next address same AND next len same AND next type starts with 'b:'
@@ -439,8 +432,8 @@ def main():
                 retcode = 1
                 is_on = request_pointer
 
+                ### first Vitoconnect request -------------------
                 if(serViCon is not None):
-                    # first Vitoconnect request -------------------
                     vidata = viconn_util.get_vicon_request()
                     if(vidata):
                         serViDev.reset_input_buffer()
