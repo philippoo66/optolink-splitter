@@ -95,7 +95,7 @@ def read_datapoint_ext(addr:int, rdlen:int, ser:serial.Serial) -> tuple[int, int
     #print("R tx", utils.bbbstr(outbuff))
 
     # return retcode, addr, data
-    return receive_vs2telegr(True, False, ser)
+    return receive_telegr(True, False, ser)
 
 
 def write_datapoint(addr:int, data:bytes, ser:serial.Serial) -> bool:
@@ -121,10 +121,10 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     #print("W tx", utils.bbbstr(outbuff))
 
     # return retcode, addr, data
-    return receive_vs2telegr(True, False, ser)
+    return receive_telegr(True, False, ser)
 
 
-def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
     """
     Empfängt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
 
@@ -175,7 +175,6 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
     # returns: ReturnCode, Addr, Data, ProtocolId, MegSqNr, FunctCode
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
-    i = 0
     state = 0
     inbuff = bytearray()
     alldata = bytearray()
@@ -190,14 +189,15 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
     # mqtt_publ_callback = temp_callback
 
     # for up 30x100ms serial data is read. (we do 600x5ms)
-    while(True):
+    for _ in range(600):
         time.sleep(0.005)
         try:
             inbytes = ser.read_all()
-        except: return 0xAA, 0, retdata
-        if(inbytes):
-            inbuff += inbytes
-            alldata += inbytes
+            if(inbytes):
+                inbuff += inbytes
+                alldata += inbytes
+        except: 
+            return 0xAA, 0, retdata
 
         # ggf. gleich durchleiten 
         if(ser2 is not None):
@@ -282,15 +282,13 @@ def receive_vs2telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.
                         mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
                     if(raw): retdata = alldata
                     return 0x01, addr, retdata
-        # timout
-        i+=1
-        if(i > 600):
-            if(settings_ini.show_opto_rx):
-                print("Timeout")
-            if(mqtt_publ_callback):
-                mqtt_publ_callback(0xFF, addr, retdata, msgid, msqn, fctcd, dlen)
-            if(raw): retdata = alldata
-            return 0xFF, addr, retdata
+    # timout
+    if(settings_ini.show_opto_rx):
+        print("rx telegr timeout")
+    if(mqtt_publ_callback):
+        mqtt_publ_callback(0xFF, addr, retdata, msgid, msqn, fctcd, dlen)
+    if(raw): retdata = alldata
+    return 0xFF, addr, retdata
 
 
 def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
@@ -318,7 +316,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings_ini.show_opto_rx):
-                print("rx timeout", utils.bbbstr(data_buffer))
+                print("rx fullraw timeout", utils.bbbstr(data_buffer))
             return bytearray(data_buffer)
 
 
@@ -370,30 +368,30 @@ def main():
 
         # write test
         if(False):
-            buff = read_datapoint(0x6300, 1, ser)
+            buff = read_datapoint(0x27d4, 1, ser)
             currval = buff
-            print("Soll Ist", utils.bbbstr(buff), bytesval(buff))
+            print("Niveau Ist", utils.bbbstr(buff), bytesval(buff))
             
             time.sleep(1)
 
             data = bytes([50])
-            ret = write_datapoint(0x6300, data, ser)
+            ret = write_datapoint(0x27d4, data, ser)
             print("write succ", ret)
 
             time.sleep(2)
 
-            buff = read_datapoint(0x6300, 1, ser)
-            print("Soll neu", utils.bbbstr(buff), bytesval(buff))
+            buff = read_datapoint(0x27d4, 1, ser)
+            print("Niveau neu", utils.bbbstr(buff), bytesval(buff))
 
             time.sleep(1)
 
-            ret = write_datapoint(0x6300, currval, ser)
+            ret = write_datapoint(0x27d4, currval, ser)
             print("write back succ", ret)
 
             time.sleep(2)
 
-            buff = read_datapoint(0x6300, 1, ser)
-            print("Soll read back", utils.bbbstr(buff), bytesval(buff))
+            buff = read_datapoint(0x27d4, 1, ser)
+            print("Niveau read back", utils.bbbstr(buff), bytesval(buff))
 
     
     except KeyboardInterrupt:

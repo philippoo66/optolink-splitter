@@ -29,7 +29,7 @@ def read_energy(ser:serial.Serial, day_of_week=None):
     #print("R tx", utils.bbbstr(outbuff))
 
     # return retcode, addr, data
-    retcode, addr, data = optolinkvs2.receive_vs2telegr(True, True, ser)
+    retcode, addr, data = optolinkvs2.receive_telegr(True, True, ser)
 
     if((retcode == 1) and (len(data) > 20)):
         print(f"day {wkday}:", utils.bbbstr(data[12:-1]))

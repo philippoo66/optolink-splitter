@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.7.1.3"
+version = "1.8.0.0"
 
 import serial
 import time
@@ -25,7 +25,8 @@ import signal
 
 from logger_util import logger
 import settings_ini
-import optolinkvs2
+import optolinkvs2 #TEMP to removed later
+import vs12_adapter
 import viconn_util
 import viessdata_util
 import c_tcpserver
@@ -46,20 +47,25 @@ tcp_server = None
 restart_event = threading.Event()
 #shutdown_event = threading.Event()
 
+last_vs1_comm = 0
+
 
 def olbreath(retcode:int):
     """
     give vitotrol some time after comm to do other things
     """
+    global last_vs1_comm
     if(retcode <= 0x03):
         # success, err msg
+        last_vs1_comm = time.time()
         time.sleep(settings_ini.olbreath)
     elif(retcode in [0xFF, 0xAA, 0xAB]):
         # timeout, err_handle, final item skipped in cycle
         pass
     else:
         # allow calming down
-        time.sleep(5 * settings_ini.olbreath)
+        last_vs1_comm = time.time()
+        time.sleep(3 * settings_ini.olbreath)
 
 
 # polling list +++++++++++++++++++++++++++++
@@ -407,10 +413,11 @@ def main():
 
             else:
                 # VS2 Protokoll am Slave initialisieren
-                if(not optolinkvs2.init_vs2(serViDev)):
+                #if(not optolinkvs2.init_vs2(serViDev)):
+                if(not vs12_adapter.init_protocol(serViDev)):
                     #logger.error("init_vs2 failed")
-                    raise Exception("init_vs2 failed")  # schlecht für KW Protokoll
-                logger.info("VS2 initialized")
+                    raise Exception("init_protocol failed")  # schlecht für KW Protokoll
+                logger.info("protocol initialized")
 
 
             # Polling Mechanismus --------
@@ -441,7 +448,8 @@ def main():
                         c_logging.viconnlog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode, _, redata = optolinkvs2.receive_vs2telegr(True, True, serViDev, serViCon, vicon_publ_callback)
+                        #retcode, _, redata = optolinkvs2.receive_telegr(True, True, serViDev, serViCon, vicon_publ_callback)
+                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serViDev, serViCon, vicon_publ_callback)
                         c_logging.viconnlog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         did_vicon_request = True
@@ -476,8 +484,12 @@ def main():
                                         viessdata_util.buffer_csv_line(poll_data)
                                     # wo1c energy
                                     if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
-                                        olbreath(retcode)
-                                        retcode = wo1c_energy.read_energy(serViDev)
+                                        if(not settings_ini.vs1_protocol):
+                                            olbreath(retcode)
+                                            retcode = wo1c_energy.read_energy(serViDev)
+                                        else:
+                                            logger.warning("wo1c_energy not supported with VS1/KW protocol")
+                                            settings_ini.wo1c_energy = 0
                                     # poll cycle control
                                     poll_cycle += 1
                                     if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12 < 32 bits
@@ -528,9 +540,16 @@ def main():
                 # next time start with cheching next task first
                 request_pointer = (is_on + 1) % num_tasks
                 #print(f"{((tnow := int(time.time()*10000)) - tprev)} rp {request_pointer}"); tprev = tnow
-                
+
+                # keep-alive with vs1 
+                if(settings_ini.vs1_protocol):
+                    if(time.time() - last_vs1_comm > 0.5):
+                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serViDev)
+                        olbreath(retcode)
+                        did_secodary_request = True
+
                 # let cpu take a breath if there was nothing to do
-                if(not (did_vicon_request or did_secodary_request)):
+                if not (did_vicon_request or did_secodary_request):
                     time.sleep(0.005) 
 
     except Exception as e:
