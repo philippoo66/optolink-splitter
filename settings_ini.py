@@ -18,6 +18,7 @@
 port_optolink = '/dev/ttyUSB0'     # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
 port_vitoconnect = '/dev/ttyAMA0'  # Serial port for Vitoconnect (optional, default: '/dev/ttyAMA0', set None if no Vitoconnect) Pls check https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')
 vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detection with Vitoconnect (default: 120)
+vs1protocol = False                # if True, VS1/KW protocol used
 
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
@@ -40,7 +41,6 @@ tcpip_port = 65234               # TCP/IP port for communication (default: 65234
 fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
 fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
 olbreath = 0.1                  # Pause (seconds) after a request-response cycle (default: 0.1)
-vs1_protocol = False            # if True, VS1/KW protocol used
 
 # Optolink Logging ++++++++++++++
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)

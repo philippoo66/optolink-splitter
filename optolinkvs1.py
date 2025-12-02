@@ -70,10 +70,12 @@ def re_init(ser:serial.Serial) -> bool:
 
 def wait_for_05(ser:serial.Serial) -> bool:
     # and for 30x100ms waited for an ENQ (0x05) - we do 300x10ms (1 byte @4800 ca. 0.002s)
-    for _ in range(300):
-        time.sleep(0.01)
+    for _ in range(30):
+        time.sleep(0.1)
         try:
             buff = ser.read(1)
+            if(settings_ini.show_opto_rx):
+                print(buff)
         except: 
             return False
         #print(buff)
@@ -135,7 +137,7 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     return receive_resp_telegr(wrlen, addr, ser)
 
 
-# internal receive a response @ known length
+# mainly internal, receive a response @ known length
 def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
@@ -180,7 +182,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     return 0x01, 0, data  # 0x01?!?
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
     # times in seconds
     inbuff = b''
     start_time = time.time()
@@ -200,13 +202,13 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             # if data received and no further receive since more than eot_time
             if(settings_ini.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
-            return bytearray(inbuff)
+            return 0x01, bytearray(inbuff)
 
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings_ini.show_opto_rx):
                 print("rx timeout", utils.bbbstr(inbuff))
-            return bytearray(inbuff)
+            return 0xFF, bytearray(inbuff)
 
 
 

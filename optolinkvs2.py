@@ -42,7 +42,8 @@ def init_vs2(ser:serial.Serial) -> bool:
     while(i < 30):
         time.sleep(0.1)
         buff = ser.read(1)
-        print(buff)
+        if(settings_ini.show_opto_rx):
+            print(buff)
         if(len(buff) > 0):
             if(int(buff[0]) == 0x05):
                 break
@@ -62,6 +63,8 @@ def init_vs2(ser:serial.Serial) -> bool:
     while(i < 30):
         time.sleep(0.1)
         buff = ser.read(1)
+        if(settings_ini.show_opto_rx):
+            print(buff)
         if(len(buff) > 0):
             if(int(buff[0]) == 0x06):
                 break
@@ -291,11 +294,11 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     return 0xFF, addr, retdata
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> bytearray:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
     # times in seconds
-    data_buffer = b''
+    inbuff = b''
     start_time = time.time()
-    last_receive_time = time.time()
+    last_receive_time = start_time
 
     while True:
         # Zeichen vom Serial Port lesen
@@ -303,21 +306,21 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
 
         if inbytes:
             # Daten zum Datenpuffer hinzufügen
-            data_buffer += inbytes
+            inbuff += inbytes
             last_receive_time = time.time()
             if(ser2 is not None):
                 ser2.write(inbytes)
-        elif data_buffer and ((time.time() - last_receive_time) > eot_time):
+        elif inbuff and ((time.time() - last_receive_time) > eot_time):
             # if data received and no further receive since more than eot_time
             if(settings_ini.show_opto_rx):
-                print("rx", utils.bbbstr(data_buffer))
-            return bytearray(data_buffer)
+                print("rx", utils.bbbstr(inbuff))
+            return 0x01, bytearray(inbuff)
 
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings_ini.show_opto_rx):
-                print("rx fullraw timeout", utils.bbbstr(data_buffer))
-            return bytearray(data_buffer)
+                print("rx fullraw timeout", utils.bbbstr(inbuff))
+            return 0xFF, bytearray(inbuff)
 
 
 def calc_crc(telegram) -> int:

@@ -18,7 +18,6 @@ from typing import Any
 
 from logger_util import logger
 import utils
-import optolinkvs2   #TEMP to removed later
 import vs12_adapter
 import onewire_util
 import c_w1value
@@ -160,10 +159,10 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
         #print("sent to OL:", bbbstr(bstr))
-        data = vs12_adapter.receive_fullraw(settings_ini.fullraw_eot_time,settings_ini.fullraw_timeout, serViDev)
+        retcode, data = vs12_adapter.receive_fullraw(settings_ini.fullraw_eot_time,settings_ini.fullraw_timeout, serViDev)
         val = utils.arr2hexstr(data)
         retstr = str(val)
-        retcode = 0x01  # attention!
+        #retcode = 0x01  # attention!
         #print("recd fr OL:", bbbstr(data))
 
     elif(numelms > 1):

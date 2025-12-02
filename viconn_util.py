@@ -18,8 +18,8 @@ import serial
 import time
 
 import utils
-import optolinkvs2
-import c_logging
+import vs12_adapter
+from c_logging import viconnlog
 
 exit_flag = False
 
@@ -37,7 +37,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 
     timestart = time.time()
 
-    c_logging.viconnlog.do_log("detect_vs2...")
+    viconnlog.do_log("detect_vs2...")
 
     while True:
         # Lesen von Daten von beiden seriellen Schnittstellen
@@ -48,7 +48,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_ringbuffer(bufferVicon, dataVicon)
-            c_logging.viconnlog.do_log(dataVicon, "M")
+            viconnlog.do_log(dataVicon, "M")
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
@@ -56,7 +56,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         if dataOpto:
             serVicon.write(dataOpto)
             add_to_ringbuffer(bufferOpto, dataOpto)
-            c_logging.viconnlog.do_log(dataOpto, "S")
+            viconnlog.do_log(dataOpto, "S")
             # check VS2
             if(bufferVicon == bytearray([0x16, 0x00, 0x00])): 
                 if(dataOpto == b'\x06'):
@@ -66,11 +66,58 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
                 if(bufferOpto[1] == 0x41): 
                     if (bufferOpto[3] == 0x01):
                         # Antwort im VS2 Format erkannt
+                        viconnlog.do_log("vs2 detected")
                         return True
         time.sleep(0.001)
         if(time.time() > timestart + timeout):
             return False
-                
+
+
+def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> bool:
+    bufferVicon = [] #bytearray()
+    bufferOpto = [] #bytearray()
+    timestart = time.time()
+    expctdlen = -1
+
+    while True:
+        # Lesen von Daten von beiden seriellen Schnittstellen
+        dataVicon = serVicon.read()
+        dataOpto = serOpto.read()
+
+        # Überprüfen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
+        if dataVicon:
+            serOpto.write(dataVicon)
+            for byte in dataVicon:
+                bufferVicon.append(byte)
+            viconnlog.do_log(dataVicon, "M")
+            # vs1 request received?
+            if (len(bufferVicon) > 4) and (bufferVicon[0:1] == [0x01, 0xF7]):
+                expctdlen = int(bufferVicon[4])
+            elif (len(bufferVicon) > 3) and (bufferVicon[0] == 0xF7):
+                expctdlen = int(bufferVicon[3])
+            else:
+                expctdlen = -1
+            if(expctdlen >= 0):
+                viconnlog.do_log([], f"expect {expctdlen} bytes")
+            # reset opto buffer
+            bufferOpto = []
+
+        # Überprüfen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
+        if dataOpto:
+            serVicon.write(dataOpto)
+            for byte in dataOpto:
+                bufferOpto.append(byte)
+            viconnlog.do_log(dataOpto, "S")
+            if(expctdlen > 0):
+                if(len(bufferOpto) == expctdlen):
+                    # resonse according to len of vs1 read request detected
+                    return True
+            # reset viconn buffer
+            bufferVicon = []
+        time.sleep(0.001)
+        if(time.time() > timestart + timeout):
+            return False
+
 
 # viconn request mechanism -------------
 vicon_request = bytearray()
@@ -79,18 +126,19 @@ def listen_to_Vitoconnect(servicon:serial.Serial, pubcallback = None):
     global vicon_request
     timeout = 0
     while(not exit_flag):
-        succ, _, data = optolinkvs2.receive_telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
-        if(succ == 1):
+        #retcode, _, data = optolinkvs2.receive_telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
+        retcode, _, data = vs12_adapter.receive_telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
+        if(retcode == 0x01):
             vicon_request = data
             timeout = 0
-        elif(succ == 0xff) and (timeout < 1):
+        elif(retcode == 0xff) and (timeout < 1):
             timeout += 1
-            c_logging.viconnlog.do_log(data, f"TO {timeout}")
+            viconnlog.do_log(data, f"TO {timeout}")
         else:
-            c_logging.viconnlog.do_log(data, f"X {succ:02x}")
+            viconnlog.do_log(data, f"X {retcode:02x}")
             # protocol reset request as preparation for the new VS2 detection (kommt wahscheinlich nicht durch, aber ...)
             vicon_request = bytearray([0x04])
-            raise Exception(f"Error {succ:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")
+            raise Exception(f"Error {retcode:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")
 
 
 def get_vicon_request() -> bytearray:
