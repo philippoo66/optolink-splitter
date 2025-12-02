@@ -45,8 +45,8 @@ For latest developments always check the [Version-Log](https://github.com/philip
 - **Local Control and Cloud Capability** – Allow full local  control and datapoint access while retaining the ability of Viessmann Cloud and App access.
 - **Viessmann Heating/Heat Pump Compatibility** – Works with Vitodens, Vitocal, Vitocrossal and most other Optolink featured devices.
 - **Smart Home Ready** – Integrates with **Home Assistant**, **ioBroker**, **Node-RED** or any other system with MQTT Support.
-- Supports **VS2 and VS1/KW protocols** with different branches.  
-  - The [vs1test branch](https://github.com/philippoo66/optolink-splitter/tree/vs1test) enables **VS1/KW protocol support** but works **only without** Vitoconnect.  
+- Supports **VS2/300 and VS1/KW protocols** now within a single branch.  
+  - with VS1/KW devices/protocol probably Vitoconnect might not work. **TESTER WANTED with KW device and Vitoconnect!**  
   - For **VS1/KW with Vitoconnect**, the [viconn-listener](https://github.com/philippoo66/viconn-listener) is available (currently in beta).
 
 ### Videos
