@@ -40,13 +40,13 @@ tcpip_port = 65234               # TCP/IP port for communication (default: 65234
 # Optolink Communication Timing ++++
 fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
 fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
-olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.1)
+olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.05)
 
 # Optolink Logging ++++++++++++++
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
-no_logger_file = False          # if true the optolinksvs2_switch.log will not get written
+no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
