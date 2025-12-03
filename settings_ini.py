@@ -40,7 +40,7 @@ tcpip_port = 65234               # TCP/IP port for communication (default: 65234
 # Optolink Communication Timing ++++
 fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
 fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
-olbreath = 0.1                  # Pause (seconds) after a request-response cycle (default: 0.1)
+olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.1)
 
 # Optolink Logging ++++++++++++++
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)

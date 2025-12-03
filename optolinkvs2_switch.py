@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.0.0"
+version = "1.8.0.1"
 
 import serial
 import time
@@ -56,15 +56,19 @@ def olbreath(retcode:int):
     global last_vs1_comm
     if(retcode <= 0x03):
         # success, err msg
-        last_vs1_comm = time.time()
+        if(settings_ini.vs1protocol):
+            last_vs1_comm = time.time()
+            vs12_adapter.reset_vs1sync()
         time.sleep(settings_ini.olbreath)
     elif(retcode in [0xFF, 0xAA, 0xAB]):
         # timeout, err_handle, final item skipped in cycle
         pass
     else:
+        if(settings_ini.vs1protocol):
+            last_vs1_comm = time.time()
+            vs12_adapter.reset_vs1sync()
         # allow calming down
-        last_vs1_comm = time.time()
-        time.sleep(3 * settings_ini.olbreath)
+        time.sleep(2 * settings_ini.olbreath)
 
 
 # polling list +++++++++++++++++++++++++++++

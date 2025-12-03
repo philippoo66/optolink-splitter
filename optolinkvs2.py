@@ -220,14 +220,12 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x15, addr, retdata, msgid, msqn, fctcd, dlen)
-                        #if(raw): retdata = alldata
                         return 0x15, 0, retdata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
                         logger.error("VS2 unknown first byte Error")
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x20, addr, retdata, msgid, msqn, fctcd, dlen)
-                        #if(raw): retdata = alldata
                         return 0x20, 0, retdata
                     # erstes Byte abtrennen
                     inbuff = inbuff[1:]

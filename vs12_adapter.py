@@ -82,11 +82,15 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
 
 
 def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
-    return optolinkvs2.receive_fullraw(eot_time, timeout, ser, ser2)
+    # same everywhere, only one to service
+    return optolinkvs2.receive_fullraw(eot_time, timeout, ser, ser2) 
     # if(not settings_ini.vs1protocol):
     #     return optolinkvs2.receive_fullraw(eot_time, timeout, ser, ser2) #, mqtt_publ_callback)
     # else:
     #     return optolinkvs1.receive_fullraw(eot_time, timeout, ser, ser2)
+
+def reset_vs1sync():
+    optolinkvs1.reset_sync()
 
 
 def wait_for_vicon(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> bool:

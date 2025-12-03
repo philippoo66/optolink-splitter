@@ -135,7 +135,7 @@ class TcpServer:
     # ---------------------------------------------------------
     def send(self, data):
         if isinstance(data, str):
-            data = data.encode("utf-8")
+            data = data.encode("utf-8") + b"\n"
 
         try:
             self.client_socket.send(data)

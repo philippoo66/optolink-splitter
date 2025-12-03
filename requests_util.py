@@ -158,12 +158,11 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         bstr = bytes.fromhex(parts[0])
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
-        #print("sent to OL:", bbbstr(bstr))
-        retcode, data = vs12_adapter.receive_fullraw(settings_ini.fullraw_eot_time,settings_ini.fullraw_timeout, serViDev)
+        #print("sent to OL:", utils.bbbstr(bstr))  #temp
+        retcode, data = vs12_adapter.receive_fullraw(settings_ini.fullraw_eot_time, settings_ini.fullraw_timeout, serViDev)
         val = utils.arr2hexstr(data)
         retstr = str(val)
-        #retcode = 0x01  # attention!
-        #print("recd fr OL:", bbbstr(data))
+        #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
 
     elif(numelms > 1):
         cmnd = parts[0].lower()
@@ -175,7 +174,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             #print("sent to OL:", bbbstr(retstr))
             #retcode, _, data = optolinkvs2.receive_vs2telegr(True, True, serViDev)
             retcode, _, data = vs12_adapter.receive_telegr(True, True, serViDev)
-            #print("recd fr OL:", ret, ',', bbbstr(data))
+            #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
             val = utils.arr2hexstr(data)
             retstr = f"{retcode};{val}"
             data = bytearray()
