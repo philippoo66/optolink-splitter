@@ -16,8 +16,9 @@
 
 from typing import Any
 
+from logger_util import logger
 import utils
-import optolinkvs2
+import vs12_adapter
 import onewire_util
 import c_w1value
 import settings_ini
@@ -136,6 +137,7 @@ def get_retstr(retcode, addr, val) -> str:
 
 # 'main' functions +++++++++++++++++++++++++++++
 def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:   # retcode, data, value, string_to_pass 
+    # error handling in calling proc
     ispollitem = False
     if(isinstance(request, str)):
         # TCP, MQTT requests
@@ -153,15 +155,17 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
 
     if(numelms == 1):
         # full raw +++++++++++++++++++ "4105000100F80806"
-        bstr = bytes.fromhex(parts[0])
+        try:
+            bstr = bytes.fromhex(parts[0])
+        except Exception as e:
+            return 0xAC, data, val, f"fullraw: {e}"
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
-        #print("sent to OL:", bbbstr(bstr))
-        data = optolinkvs2.receive_fullraw(settings_ini.fullraw_eot_time,settings_ini.fullraw_timeout, serViDev)
+        #print("sent to OL:", utils.bbbstr(bstr))  #temp
+        retcode, data = vs12_adapter.receive_fullraw(settings_ini.fullraw_eot_time, settings_ini.fullraw_timeout, serViDev)
         val = utils.arr2hexstr(data)
         retstr = str(val)
-        retcode = 0x01  # attention!
-        #print("recd fr OL:", bbbstr(data))
+        #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
 
     elif(numelms > 1):
         cmnd = parts[0].lower()
@@ -171,8 +175,9 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             serViDev.reset_input_buffer()
             serViDev.write(bstr)
             #print("sent to OL:", bbbstr(retstr))
-            retcode, _, data = optolinkvs2.receive_vs2telegr(True, True, serViDev)
-            #print("recd fr OL:", ret, ',', bbbstr(data))
+            #retcode, _, data = optolinkvs2.receive_vs2telegr(True, True, serViDev)
+            retcode, _, data = vs12_adapter.receive_telegr(True, True, serViDev)
+            #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
             val = utils.arr2hexstr(data)
             retstr = f"{retcode};{val}"
             data = bytearray()
@@ -186,7 +191,8 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
                 val = w1values[addr].checked(val)
             else:
                 # Optolink item
-                retcode, addr, data = optolinkvs2.read_datapoint_ext(addr, int(parts[2]), serViDev)
+                #retcode, addr, data = optolinkvs2.read_datapoint_ext(addr, int(parts[2]), serViDev)
+                retcode, addr, data = vs12_adapter.read_datapoint_ext(addr, int(parts[2]), serViDev)
                 if(retcode==1):
                     if(numelms > 3):
                         if(str(parts[3]).startswith('b:')):
@@ -215,7 +221,8 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             #raise Exception("write noch nicht fertig") #TODO scaling und so
             ival = utils.get_int(parts[3])
             bval = ival.to_bytes(int(parts[2]), 'little', signed=(ival < 0))
-            retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
+            #retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
+            retcode, addr, data = vs12_adapter.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
                 val = int.from_bytes(bval, 'little', signed=(ival < 0))
             elif(data):
@@ -225,11 +232,12 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
                 val = "?"
             retstr = get_retstr(retcode, addr, val)
 
-        elif(cmnd in ["writeraw", "wraw"]):  # "writeraw;0x6300;2A"
+        elif(cmnd in ["writeraw", "wraw"]):  # "writeraw;0x27d4;2A"
             # write raw +++++++++++++++++++
             hexstr = str(parts[2]).replace('0x','')
             bval = utils.hexstr2arr(hexstr)
-            retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
+            #retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
+            retcode, addr, data = vs12_adapter.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
                 val = hexstr   #int.from_bytes(bval, 'big')
             elif(data):
@@ -239,7 +247,8 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
                 val = "?"
             retstr = get_retstr(retcode, addr, val)
         else:
-            print("unknown command received:", cmnd)
+            retstr = f"unknown command received: {cmnd}"
+            logger.warning(retstr)
     # and finally return...
     return retcode, data, val, retstr
 
