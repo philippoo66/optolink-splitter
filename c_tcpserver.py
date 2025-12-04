@@ -108,7 +108,6 @@ class TcpServer:
 
                 if msg:
                     m = msg.lower()
-
                     # if m == "exit":
                     #     logger.info("TCP exit command received")
                     #     break
