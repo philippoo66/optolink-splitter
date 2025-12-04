@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.1.0"
+version = "1.8.1.1"
 
 import serial
 import time
@@ -187,6 +187,7 @@ def tcp_connection_loop():
     global tcp_server
     while(not progr_exit_flag):
         tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings_ini.tcpip_port) #, verbose=True)
+        tcp_server.command_callback = do_special_command
         tcp_server.run()
         tcp_server = None
         if progr_exit_flag: return
@@ -195,7 +196,7 @@ def tcp_connection_loop():
 
 
 # utils +++++++++++++++++++++++++++++
-def do_special_command(cmnd:str) -> bool:
+def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP, 0:no response
     global poll_pointer, poll_cycle
     resp =  f"{cmnd} failed"
     if cmnd in ('reset', 'resetrecent'):
@@ -208,18 +209,24 @@ def do_special_command(cmnd:str) -> bool:
             poll_pointer = 0
             poll_cycle = 0
             resp = f"{cmnd} triggered"
-    elif cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
+    elif cmnd in ("exit", "resettcp"):
         if tcp_server:
             tcp_server.stop()
-            resp = f"{cmnd} triggered"
+            resp = f"{cmnd} triggered" if source != 2 else ''
     elif cmnd in ("flushcsv"):
         if settings_ini.write_viessdata_csv:
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
     else:
         return False
-    if(mod_mqtt_util):
-        mod_mqtt_util.publish_response(resp)
+    # responde
+    if(resp):
+        if(source == 1):
+            if(mod_mqtt_util):
+                mod_mqtt_util.publish_response(resp)
+        elif(source == 2):
+            if(tcp_server):
+                tcp_server.send(resp)
     return True
 
 

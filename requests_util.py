@@ -155,7 +155,10 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
 
     if(numelms == 1):
         # full raw +++++++++++++++++++ "4105000100F80806"
-        bstr = bytes.fromhex(parts[0])
+        try:
+            bstr = bytes.fromhex(parts[0])
+        except Exception as e:
+            return 0xAC, data, val, str(e)
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
         #print("sent to OL:", utils.bbbstr(bstr))  #temp

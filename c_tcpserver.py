@@ -10,6 +10,8 @@ class TcpServer:
         self.host = host
         self.port = port
         self.verbose = verbose
+        # callback for 'special' commands
+        self.command_callback = None  
 
         self.server_socket = None
         self.client_socket = None
@@ -107,14 +109,14 @@ class TcpServer:
                 if msg:
                     m = msg.lower()
 
-                    if m == "exit":
-                        logger.info("TCP exit command received")
-                        break
-
-                    elif m == "flushcsv":
-                        import viessdata_util
-                        viessdata_util.buffer_csv_line([], True)
-
+                    # if m == "exit":
+                    #     logger.info("TCP exit command received")
+                    #     break
+                    # elif m == "flushcsv":
+                    #     import viessdata_util
+                    #     viessdata_util.buffer_csv_line([], True)
+                    if(self.command_callback) and self.command_callback(m,2):
+                        pass
                     else:
                         self.received_data = msg
 
