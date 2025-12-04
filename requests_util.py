@@ -158,7 +158,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         try:
             bstr = bytes.fromhex(parts[0])
         except Exception as e:
-            return 0xAC, data, val, str(e)
+            return 0xAC, data, val, f"fullraw: {e}"
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
         #print("sent to OL:", utils.bbbstr(bstr))  #temp
@@ -247,7 +247,8 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
                 val = "?"
             retstr = get_retstr(retcode, addr, val)
         else:
-            logger.warning("unknown command received:", cmnd)
+            retstr = f"unknown command received: {cmnd}"
+            logger.warning(retstr)
     # and finally return...
     return retcode, data, val, retstr
 

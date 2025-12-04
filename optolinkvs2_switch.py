@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.1.1"
+version = "1.8.1.2"
 
 import serial
 import time
@@ -203,7 +203,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         if(mod_mqtt_util is not None):
             mod_mqtt_util.reset_recent = True
             resp = f"{cmnd} triggered"
-    elif cmnd in ('forcepoll'):
+    elif cmnd in ('forcepoll',):
         # nur wenn grad Ruhe
         if(poll_pointer > poll_list.num_items):
             poll_pointer = 0
@@ -213,7 +213,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         if tcp_server:
             tcp_server.stop()
             resp = f"{cmnd} triggered" if source != 2 else ''
-    elif cmnd in ("flushcsv"):
+    elif cmnd in ("flushcsv",):
         if settings_ini.write_viessdata_csv:
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
