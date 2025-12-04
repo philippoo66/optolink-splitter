@@ -198,15 +198,7 @@ def tcp_connection_loop():
 def do_special_command(cmnd:str) -> bool:
     global poll_pointer, poll_cycle
     resp =  f"{cmnd} failed"
-    if cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
-        if tcp_server:
-            tcp_server.stop()
-            resp = f"{cmnd} triggered"
-    elif cmnd in ("flushcsv"):
-        if settings_ini.write_viessdata_csv:
-            viessdata_util.buffer_csv_line([], True)
-            resp = f"{cmnd} triggered"
-    elif cmnd in ('reset', 'resetrecent'):
+    if cmnd in ('reset', 'resetrecent'):
         if(mod_mqtt_util is not None):
             mod_mqtt_util.reset_recent = True
             resp = f"{cmnd} triggered"
@@ -215,6 +207,14 @@ def do_special_command(cmnd:str) -> bool:
         if(poll_pointer > poll_list.num_items):
             poll_pointer = 0
             poll_cycle = 0
+            resp = f"{cmnd} triggered"
+    elif cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
+        if tcp_server:
+            tcp_server.stop()
+            resp = f"{cmnd} triggered"
+    elif cmnd in ("flushcsv"):
+        if settings_ini.write_viessdata_csv:
+            viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
     else:
         return False
