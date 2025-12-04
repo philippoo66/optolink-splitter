@@ -32,6 +32,8 @@ recent_posts = {}
 reset_recent = False
 _sentinel = object()  # eindeutiger Wert für "nicht vorhanden"
 
+# callback for 'special' commands
+command_callback = None  
 
 def on_connect(client, userdata, flags, reason_code, properties):
     if settings_ini.mqtt_listen != None:
@@ -55,6 +57,8 @@ def on_message(client, userdata, msg):
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         if(rec.lower() in ('reset', 'resetrecent')):
             reset_recent = True
+        elif(command_callback) and command_callback(rec):
+            pass
         else:
             cmnd_queue.append(rec) 
     else:

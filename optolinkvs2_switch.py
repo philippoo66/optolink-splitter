@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.0.1"
+version = "1.8.1.0"
 
 import serial
 import time
@@ -196,18 +196,32 @@ def tcp_connection_loop():
 
 # utils +++++++++++++++++++++++++++++
 def do_special_command(cmnd:str) -> bool:
+    global poll_pointer, poll_cycle
+    resp =  f"{cmnd} failed"
     if cmnd in ("exit", "exittcp", "closetcp", "resettcp"):
         if tcp_server:
             tcp_server.stop()
+            resp = f"{cmnd} triggered"
     elif cmnd in ("flushcsv"):
         if settings_ini.write_viessdata_csv:
             viessdata_util.buffer_csv_line([], True)
+            resp = f"{cmnd} triggered"
     elif cmnd in ('reset', 'resetrecent'):
         if(mod_mqtt_util is not None):
             mod_mqtt_util.reset_recent = True
+            resp = f"{cmnd} triggered"
+    elif cmnd in ('forcepoll'):
+        # nur wenn grad Ruhe
+        if(poll_pointer > poll_list.num_items):
+            poll_pointer = 0
+            poll_cycle = 0
+            resp = f"{cmnd} triggered"
     else:
         return False
+    if(mod_mqtt_util):
+        mod_mqtt_util.publish_response(resp)
     return True
+
 
 def mqtt_publ_debug(msg:str):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
@@ -369,6 +383,7 @@ def main():
             # avoid paho.mqtt required if not used
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
+            mod_mqtt_util.command_callback = do_special_command
 
 
         # TCP/IP connection --------
