@@ -23,7 +23,12 @@ vs1protocol = False                # if True, VS1/KW protocol used
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
 mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
-mqtt_logging = False             # dis/enables logging of paho.mqtt (default: False)
+mqtt_logging = False             # Enable/Disables logging of paho.mqtt (default: False)
+mqtt_tls_enable = False          # True = connect via TLS (MQTT over TLS) (default: False)
+mqtt_tls_skip_verify = False     # Disables TLS cert + hostname verification (INSECURE; self-signed / lab only; Default = False)
+mqtt_tls_ca_certs = None         # MQTT TLS CA bundle path (default: None to use OS CA store)
+mqtt_tls_certfile = None         # MQTT TLS client cert (mTLS) path (default: None for no client cert)
+mqtt_tls_keyfile  = None         # MQTT TLS client key (mTLS) path (default: None for
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
@@ -169,5 +174,6 @@ poll_items = [                  # Datapoints defined here will be polled; ignore
     # ("SpeicherTemp_oben", 0xFFFd),
     # ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
+
 
 
