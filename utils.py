@@ -31,7 +31,7 @@ def to_number(v):
         try:
             return float(s)
         except ValueError:
-            #raise ValueError("Ungültige Zeichenkette für Umwandlung in eine Zahl")
+            #raise ValueError("Ungueltige Zeichenkette fuer Umwandlung in eine Zahl")
             return None
 
 def get_bool(v) -> bool:
@@ -90,7 +90,7 @@ def str2bstr(normal_str:str) -> bytes:
 #     # '776f726c64' -> b'776f726c64'
 #     return bytes.fromhex(hex_str)
 
-# überflüssig...
+# ueberfluessig...
 # def arr2bstr(data):
 #     # b'68656C6C6F' -> 68656C6C6F <class 'str'>
 #     if isinstance(data, bytes):

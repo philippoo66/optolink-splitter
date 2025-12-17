@@ -21,7 +21,7 @@ def list_serial_ports():
     if not ports:
         print("Keine seriellen Ports gefunden.")
     else:
-        print("Verfügbare serielle Ports:")
+        print("Verfuegbare serielle Ports:")
         for port, desc, hwid in sorted(ports):
             print(f"{port}: {desc} [{hwid}]")
 

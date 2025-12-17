@@ -43,15 +43,17 @@ fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (
 olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.05)
 
 # Optolink Logging ++++++++++++++
+show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
-show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
+#viconnVS1_ringbuff = 50         # Size of ring buffer when VS1 Viconn published on MQTT  
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
 data_hex_format = '02x'         # Hexadecimal formatting (set '02X' for uppercase formatting, default: '02x')
 resp_addr_format = 'x'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, e.g. '04X' for 4-digit hex, default: 'x')
+retcode_format = 'd'
 
 # Viessdata Utilities +++++++++++
 write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: False)

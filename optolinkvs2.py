@@ -127,55 +127,79 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
     return receive_telegr(True, False, ser)
 
 
+def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'', protid=0x00) -> tuple[int, int, bytearray]:
+    pldlen = 5 + len(data)
+    outbuff = bytearray(pldlen + 3)  # + STX, LEN, CRC
+    outbuff[0] = 0x41                # 0x41 Telegrammstart
+    outbuff[1] = pldlen              # Len Payload
+    outbuff[2] = protid              # Protocol|MsgIdentifier
+    outbuff[3] = fctcode & 0xFF      # function code (sequ num wird hier unterdrueckt/ignoriert/ueberschrieben)
+    outbuff[4] = (addr >> 8) & 0xFF  # hi byte
+    outbuff[5] = addr & 0xFF         # lo byte
+    outbuff[6] = rlen                # Anzahl requested Data-Bytes oder data len
+    for i in range(len(data)):
+        outbuff[7 + i] = data[i]
+    outbuff[-1] = calc_crc(outbuff)
+
+    print(utils.bbbstr(outbuff))
+
+    ser.reset_input_buffer()
+    ser.write(outbuff)
+    #print("W tx", utils.bbbstr(outbuff))
+
+    # return retcode, addr, data
+    return receive_telegr(True, False, ser)
+
+
 def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
     """
-    Empfängt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
+    Empfaengt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
 
     Parameter:
     ----------
     resptelegr : bool
         Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
-        Wenn False, wird ein reguläres Datentelegramm erwartet.
+        Wenn False, wird ein regulaeres Datentelegramm erwartet.
     raw : bool
         Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
         True = Rohdatenmodus (keine Protokollauswertung),
         False = dekodierte Protokolldaten.
     ser : serial.Serial
-        Geöffnete serielle Schnittstelle (z. B. COM-Port), über die das Telegramm empfangen wird.
+        Geoeffnete serielle Schnittstelle (z. B. COM-Port), ueber die das Telegramm empfangen wird.
     ser2 : serial.Serial, optional
         Zweite serielle Schnittstelle (z. B. bei Weiterleitung oder Duplexbetrieb).
         Standardwert ist None.
     mqtt_publ_callback :
         Funktion zum Publizieren der (Vitoconnect) Daten auf MQTT
 
-    Rückgabewerte:
+    Rueckgabewerte:
     ---------------
-    tuple[int, int, bytearray, int, int, int]
-        Enthält folgende Elemente:
+    tuple[int, int, bytearray]
+        Enthaelt folgende Elemente:
 
         1. **ReturnCode (int)**  
            Statuscode des Empfangs:  
            - 0x01 = Erfolg  
            - 0x03 = Fehlermeldung  
            - 0x15 = NACK  
-           - 0x20 = Unbekannter B0-Fehler  
+           - 0x20 = Byte0-unbekannt-Fehler  
            - 0x41 = STX-Fehler  
            - 0xAA = Handle verloren  
-           - 0xFD = Paketlängenfehler  
+           - 0xFD = Paketlaengenfehler  
            - 0xFE = CRC-Fehler  
            - 0xFF = Timeout  
 
         2. **Addr (int)**  
-           Adresse des Zielgeräts.
+           Adresse des Datenpunktes.
 
         3. **Data (bytearray)**  
            Nutzdaten des empfangenen Telegramms.
 
     Hinweise:
     ----------
-    Diese Funktion blockiert, bis das Telegramm vollständig empfangen oder ein Timeout erreicht wurde.
+    Diese Funktion blockiert, bis das Telegramm vollstaendig empfangen oder ein Timeout erreicht wurde.
     """
-    # returns: ReturnCode, Addr, Data, ProtocolId, MegSqNr, FunctCode
+    # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, 03=ErrMsg, 15=NACK, 20=UnknB0_Err, 41=STX_Err, AA=HandleLost, FD=PlLen_Err, FE=CRC_Err, FF=TimeOut (all hex)
     # receives the V2 response to a Virtual_READ or Virtual_WRITE request
     state = 0
@@ -187,9 +211,6 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     msqn = 0x100   # message sequence number, top 3 bits of byte 3
     fctcd = 0x100  # function code, low 5 bis of byte 3 (https://github.com/sarnau/InsideViessmannVitosoft/blob/main/VitosoftCommunication.md#defined-commandsfunction-codes)
     dlen = -1
-
-    # #temp!!
-    # mqtt_publ_callback = temp_callback
 
     # for up 30x100ms serial data is read. (we do 600x5ms)
     for _ in range(600):
@@ -220,7 +241,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x15, addr, retdata, msgid, msqn, fctcd, dlen)
-                        return 0x15, 0, retdata       # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
+                        return 0x15, 0, retdata       # hier muesste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
                         logger.error("VS2 unknown first byte Error")
                         retdata = alldata
@@ -241,7 +262,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0x41, addr, retdata, msgid, msqn, fctcd, dlen)
                     #if(raw): retdata = alldata
-                    return 0x41, 0, retdata  # hier müsste ggf noch ein eventueller Rest des Telegrams abgewartet werden
+                    return 0x41, 0, retdata  # hier muesste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
 
         if(state == 2):
@@ -283,7 +304,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                         mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
                     if(raw): retdata = alldata
                     return 0x01, addr, retdata
-    # timout
+    # timout if get to here
     if(settings_ini.show_opto_rx):
         print("rx telegr timeout")
     if(mqtt_publ_callback):
@@ -303,7 +324,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         inbytes = ser.read_all()
 
         if inbytes:
-            # Daten zum Datenpuffer hinzufügen
+            # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
             last_receive_time = time.time()
             if(ser2 is not None):
@@ -344,7 +365,7 @@ def main():
     ser = serial.Serial(port, baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0) 
 
     try:
-        # Serial Port öffnen
+        # Serial Port oeffnen
         if not ser.is_open:
             ser.open()
 
@@ -400,7 +421,7 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        # Serial Port schließen
+        # Serial Port schliessen
         if ser.is_open:
             print("exit close")
             # re-init KW protocol

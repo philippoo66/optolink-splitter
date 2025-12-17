@@ -30,7 +30,7 @@ publ_queue = []   # stuff to get published
 
 recent_posts = {}
 reset_recent = False
-_sentinel = object()  # eindeutiger Wert für "nicht vorhanden"
+_sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 
 # callback for 'special' commands
 command_callback = None  

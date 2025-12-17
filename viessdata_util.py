@@ -52,9 +52,9 @@ def minutes_since_monday_midnight() -> int:
 def formatted_timestamp() -> str:
     # Aktuellen Zeitstempel abrufen
     now = datetime.datetime.now()
-    # Wochentag abrufen und in das entsprechende Kürzel umwandeln
+    # Wochentag abrufen und in das entsprechende Kuerzel umwandeln
     weekday = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][now.weekday()]
-    # Zeitstempel im gewünschten Format erstellen
+    # Zeitstempel im gewuenschten Format erstellen
     return "{0}-{1:02d}:{2:02d}:{3:02d}".format(weekday, now.hour, now.minute, now.second)
 
 

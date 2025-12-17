@@ -44,14 +44,14 @@ class TcpServer:
 
         if not self.server_socket: return
 
-        # Server-Socket nicht mehr nötig
+        # Server-Socket nicht mehr noetig
         self.server_socket.close()
         self.server_socket = None
 
         # empfangen, bis exit oder FIN
         self._listen()
 
-        # Nach Empfang -> alles schließen
+        # Nach Empfang -> alles schliessen
         self.stop()
 
     
@@ -70,9 +70,9 @@ class TcpServer:
                 logger.info(f"TCP Connection from {self.client_address}")
                 break
             except socket.timeout:
-                continue   # prüfe exit_flag, weiter warten
+                continue   # pruefe exit_flag, weiter warten
             except OSError as e:
-                # falls socket von außen closed wurde -> abbrechen
+                # falls socket von aussen closed wurde -> abbrechen
                 logger.info(f"accept() aborted: {e}")
                 break
 
@@ -120,7 +120,7 @@ class TcpServer:
                         self.received_data = msg
 
             except socket.timeout:
-                # keine Daten → einfach exit_flag erneut prüfen
+                # keine Daten → einfach exit_flag erneut pruefen
                 continue
 
             except ConnectionError:
@@ -154,7 +154,7 @@ class TcpServer:
         return msg
 
     # ---------------------------------------------------------
-    # Schließt alles
+    # Schliesst alles
     # ---------------------------------------------------------
     def stop(self):
         if self.exit_flag: 
@@ -189,7 +189,7 @@ import time
 def main():
     print("Starte TCP-Server-Endlosschleife. STRG+C zum Beenden.")
 
-    server = None  # global für Cleanup
+    server = None  # global fuer Cleanup
 
     def tcp_loop():
 
@@ -220,7 +220,7 @@ def main():
         if server:
             server.stop()
 
-        # Optional: warte kurz, damit Threads sauber schließen
+        # Optional: warte kurz, damit Threads sauber schliessen
         time.sleep(0.5)
 
         print("Programm beendet.")

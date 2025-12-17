@@ -193,7 +193,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         inbytes = ser.read_all()
 
         if inbytes:
-            # Daten zum Datenpuffer hinzufügen
+            # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
             last_receive_time = time.time()
             if(ser2 is not None):
@@ -228,7 +228,7 @@ def main():
     ser = serial.Serial(port, baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0) 
 
     try:
-        # Serial Port öffnen
+        # Serial Port oeffnen
         if not ser.is_open:
             ser.open()
 
@@ -284,7 +284,7 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        # Serial Port schließen
+        # Serial Port schliessen
         if ser.is_open:
             print("exit close")
             # re-init KW protocol

@@ -11,18 +11,18 @@ def convert_file(input_file, output_file):
     print(f"convering file {input_file} ...")
 
     for line in lines:    
-        # Entfernen von führenden und nachfolgenden Leerzeichen und Zeilenumbrüchen
+        # Entfernen von fuehrenden und nachfolgenden Leerzeichen und Zeilenumbruechen
         line = line.strip()
         
-        # Wenn die Zeile leer ist, überspringen
+        # Wenn die Zeile leer ist, ueberspringen
         if not line:
             continue
 
-        # Zählen der Tabs in der Zeile
+        # Zaehlen der Tabs in der Zeile
         parts = line.split('\t')
         parts_count = len(parts)
 
-        # Wenn die Anzahl der Tabs sich ändert, schreibe die vorherige Gruppe
+        # Wenn die Anzahl der Tabs sich aendert, schreibe die vorherige Gruppe
         if last_count and (parts_count != last_count):
             dura = int(ts) - int(last_ts)     
             output_lines.append(f"{last_count-1}\t{ts}\t{dura}\t" + " ".join(current_group))
@@ -37,7 +37,7 @@ def convert_file(input_file, output_file):
         if(not last_count):
             last_ts = ts
 
-        # Füge die aktuelle Zeile zur Gruppe hinzu
+        # Fuege die aktuelle Zeile zur Gruppe hinzu
         current_group.append(f"{parts[-1]}")
         last_count = parts_count
 

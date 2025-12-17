@@ -23,11 +23,11 @@ from c_logging import viconnlog
 
 exit_flag = False
 
-# Funktion zum Hinzufügen von Bytes zum Puffer
+# Funktion zum Hinzufuegen von Bytes zum Puffer
 def add_to_ringbuffer(buffer, new_bytes):
     for byte in new_bytes:
-        buffer.pop(0)  # Entferne das erste Byte (das älteste Byte)
-        buffer.append(byte)  # Füge das neue Byte am Ende hinzu
+        buffer.pop(0)  # Entferne das erste Byte (das aelteste Byte)
+        buffer.append(byte)  # Fuege das neue Byte am Ende hinzu
 
 
 # VS detection ---------------
@@ -44,7 +44,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         dataVicon = serVicon.read()
         dataOpto = serOpto.read()
 
-        # Überprüfen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
+        # Ueberpruefen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
         if dataVicon:
             serOpto.write(dataVicon)
             add_to_ringbuffer(bufferVicon, dataVicon)
@@ -52,7 +52,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
             # reset optobuffer
             bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
-        # Überprüfen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
+        # Ueberpruefen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
         if dataOpto:
             serVicon.write(dataOpto)
             add_to_ringbuffer(bufferOpto, dataOpto)
@@ -84,7 +84,7 @@ def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
         dataVicon = serVicon.read()
         dataOpto = serOpto.read()
 
-        # Überprüfen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
+        # Ueberpruefen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
         if dataVicon:
             serOpto.write(dataVicon)
             for byte in dataVicon:
@@ -102,7 +102,7 @@ def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
             # reset opto buffer
             bufferOpto = []
 
-        # Überprüfen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
+        # Ueberpruefen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
         if dataOpto:
             serVicon.write(dataOpto)
             for byte in dataOpto:

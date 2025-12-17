@@ -127,12 +127,11 @@ def perform_bytebit_filter_and_evaluate(data, parts):
 
 
 def get_retstr(retcode, addr, val) -> str:
-    prefix = ''
-    if('x' in settings_ini.resp_addr_format.lower()):
-        prefix = '0x'
+    prefix = '' #'0x' if('x' in settings_ini.retcode_format.lower()) else '' 
+    sretcode = prefix + format(retcode, settings_ini.retcode_format)
+    prefix = '0x' if('x' in settings_ini.resp_addr_format.lower()) else '' 
     saddr = prefix + format(addr, settings_ini.resp_addr_format)
-    #retstr = str(retcode) + ';' + str(addr) + ';' + str(val)
-    return f"{retcode};{saddr};{val}"
+    return f"{sretcode};{saddr};{val}"
 
 
 # 'main' functions +++++++++++++++++++++++++++++
@@ -155,10 +154,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
 
     if(numelms == 1):
         # full raw +++++++++++++++++++ "4105000100F80806"
-        try:
-            bstr = bytes.fromhex(parts[0])
-        except Exception as e:
-            return 0xAC, data, val, f"fullraw: {e}"
+        bstr = bytes.fromhex(parts[0].replace(' ',''))
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
         #print("sent to OL:", utils.bbbstr(bstr))  #temp
@@ -171,7 +167,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         cmnd = parts[0].lower()
         if(cmnd == "raw"):  # "raw;4105000100F80806"
             # raw +++++++++++++++++++
-            bstr = bytes.fromhex(parts[1])
+            bstr = bytes.fromhex(parts[1].replace(' ',''))
             serViDev.reset_input_buffer()
             serViDev.write(bstr)
             #print("sent to OL:", bbbstr(retstr))
@@ -180,7 +176,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
             val = utils.arr2hexstr(data)
             retstr = f"{retcode};{val}"
-            data = bytearray()
+            #data = bytearray()
 
         elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False" or "r;0x2500;22;'b:0:1';0.1"
             # read +++++++++++++++++++
@@ -234,7 +230,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
 
         elif(cmnd in ["writeraw", "wraw"]):  # "writeraw;0x27d4;2A"
             # write raw +++++++++++++++++++
-            hexstr = str(parts[2]).replace('0x','')
+            hexstr = str(parts[2]).replace('0x','').replace(' ','')
             bval = utils.hexstr2arr(hexstr)
             #retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             retcode, addr, data = vs12_adapter.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
@@ -246,6 +242,19 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             else:
                 val = "?"
             retstr = get_retstr(retcode, addr, val)
+        
+        elif(cmnd in ["request", "req"]):  # "request;<i_fctcode>;<i_addr>;<i_len>;<s_data>;<i_protid>"
+            fctcode = utils.get_int(parts[1])
+            addr = utils.get_int(parts[2])
+            rlen = utils.get_int(parts[3])
+            bstr = bytes.fromhex(parts[4].replace('0x','').replace(' ','')) if (numelms > 4) else bytes()
+            protid = utils.get_int(parts[5]) if (numelms > 5) else 0x00
+            # request
+            retcode, addr, data = vs12_adapter.do_request(serViDev, fctcode, addr, rlen, bstr, protid)
+            # eval response
+            val = utils.arr2hexstr(data) if data else "none"
+            retstr = get_retstr(retcode, addr, val)
+
         else:
             retstr = f"unknown command received: {cmnd}"
             logger.warning(retstr)
