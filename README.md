@@ -102,7 +102,7 @@ Modify `settings_ini.py` according to your heating (/ datapoints):
 
 ### 4. Run the Script
 ```sh
-python3 source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
+source myvenv/bin/activate  # Make sure to activate the virtual environment. On Windows use: venv\Scripts\activate
 python3 optolinkvs2_switch.py
 ```
 For automatic startup, set up a service. See the [Wiki Guide](https://github.com/philippoo66/optolink-splitter/wiki/120-optolinkvs2_switch-automatisch-starten).
