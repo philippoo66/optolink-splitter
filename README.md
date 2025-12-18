@@ -85,7 +85,7 @@ Using a virtual environment is recommended to keep dependencies isolated and avo
 #### 2.1. Create & activate the virtual environment:
 ```sh
 python3 -m venv myvenv
-python3 source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
+source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
 ```
 
 #### 2.2. Install required dependencies:
