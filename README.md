@@ -65,7 +65,7 @@ For latest developments always check the [Version-Log](https://github.com/philip
 - Viessmann Optolink-compatible heating (Vitodens, Vitocal, Vitocrossal, etc.).
 - Optolink r/w head:
   - Original Viessmann model or self-made.
-  - Volkszähler-compatible versions may work if LED distance is adjusted ([8€ option](https://www.ebay.de/itm/285350331996)).
+  - Volkszaehler-compatible versions may work if LED distance is adjusted ([8€ option](https://www.ebay.de/itm/285350331996)).
 - To retain **ViCare App functionality**, use a USB-to-TTL adapter:
   - Recommended: CP2102 chip ([Example](https://www.google.com/search?q=cp2102+usb+ttl)).
   - Some newer Vitoconnect models may work with FTDI chips.
@@ -85,7 +85,7 @@ Using a virtual environment is recommended to keep dependencies isolated and avo
 #### 2.1. Create & activate the virtual environment:
 ```sh
 python3 -m venv myvenv
-python3 source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
+source myvenv/bin/activate  # On Windows use: myvenv\Scripts\activate
 ```
 
 #### 2.2. Install required dependencies:
