@@ -47,10 +47,10 @@ def init_protocol(ser:serial.Serial) -> bool:
     if(not wait_for_05(ser)):
         return False
     # now read F8 with STX
-    outbuff = bytes([0x01, 0xF7, 0x00, 0xF8, 0x02])
+    outbuff = bytes([0x01, 0xF7, 0x00, 0xF8, 0x04])
     ser.reset_input_buffer()
     ser.write(outbuff)
-    retcd,_,_ = receive_resp_telegr(2,0xF8,ser)
+    retcd,_,_ = receive_resp_telegr(4,0xF8,ser)
     ret = (retcd == 0x01) 
     #print("init_protocol vs1", ret)
     return ret
