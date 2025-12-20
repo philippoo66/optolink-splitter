@@ -51,7 +51,6 @@ olbreath = 0.05                 # Pause (seconds) after a request-response cycle
 show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
-#viconnVS1_ringbuff = 50         # Size of ring buffer when VS1 Viconn published on MQTT  
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
 # Data Formatting +++++++++++++++
@@ -74,7 +73,7 @@ wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
 # Dictionary for 1-Wire sensor configuration (default: empty dictionary)
 w1sensors = {                  
     # Addr: ('<w1_folder/sn>', '<slave_type>'),   # entry format
-#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor (highest known Optolink Address is 0xFF17)
+#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor
 #     0xFFFd: ('28-3ce1d443a4ed', 'ds18b20'),     # Another example sensor
 }
 
