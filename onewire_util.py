@@ -59,11 +59,11 @@ def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
             if lines[0].strip()[-3:] == 'YES':
                 counts = []
                 for line in lines[1:]:
-                    # Extrahieren der Zählerwerte aus den Daten
+                    # Extrahieren der Zaehlerwerte aus den Daten
                     if line.startswith('count'):
                         count_value = int(line.split('=')[1])
                         counts.append(count_value)
-                if len(counts) == 4:  # Stellen sicher, dass wir alle 4 Zählerwerte haben
+                if len(counts) == 4:  # Stellen sicher, dass wir alle 4 Zaehlerwerte haben
                     return 0x01, counts
         except:
             pass

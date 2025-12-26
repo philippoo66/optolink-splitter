@@ -22,12 +22,12 @@ import settings_ini
 # VS detection +++++++++++++++++++++++
 ring_buffer = bytearray([0xFF, 0xFF, 0xFF])
 
-# Funktion zum Hinzufügen von Bytes zum Puffer
+# Funktion zum Hinzufuegen von Bytes zum Puffer
 def add_to_buffer(new_bytes):
     global ring_buffer
     for byte in new_bytes:
-        ring_buffer.pop(0)  # Entferne das erste Byte (das älteste Byte)
-        ring_buffer.append(byte)  # Füge das neue Byte am Ende hinzu
+        ring_buffer.pop(0)  # Entferne das erste Byte (das aelteste Byte)
+        ring_buffer.append(byte)  # Fuege das neue Byte am Ende hinzu
 
 
 # utils ++++++++++++++++++++
@@ -38,7 +38,7 @@ def bbbstr(data_buffer):
 # main ++++++++++++++++++++++++++++++++
 def main():
     # Konfiguration der seriellen Schnittstellen
-    # Vitoconnect  (älter: /dev/ttyAMA0)
+    # Vitoconnect  (aelter: /dev/ttyAMA0)
     ser1 = serial.Serial(settings_ini.port_vitoconnect,    #'/dev/ttyS0',   # please adjust in case!!
             baudrate=4800,
             parity=serial.PARITY_EVEN,
@@ -63,7 +63,7 @@ def main():
     now = datetime.now()
     ts = now.strftime("%y%m%d%H%M%S")
     logf = 'serlog_' + ts + '.txt'
-    # Öffnen der Ausgabedatei im Schreibmodus
+    # Oeffnen der Ausgabedatei im Schreibmodus
     with open(logf, 'a') as f:
         try:
             while True:
@@ -73,14 +73,14 @@ def main():
 
                 fdata = False
 
-                # Überprüfen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
+                # Ueberpruefen, ob Daten von ser1 empfangen wurden und dann auf ser2 schreiben
                 if data1:
                     ser2.write(data1)
                     fdata = True
                     if not vs2detectd:
                         add_to_buffer(data1)
 
-                # Überprüfen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
+                # Ueberpruefen, ob Daten von ser2 empfangen wurden und dann auf ser1 schreiben
                 if data2:
                     ser1.write(data2)
                     fdata = True
@@ -100,12 +100,12 @@ def main():
                     f.write(f"{timestamp_ms}\t{data1.hex().upper()}\t{data2.hex().upper()}\n")   #\t{bbbstr(ring_buffer)}\n")
                      #f.flush()  # Puffer leeren, um sicherzustellen, dass die Daten sofort in die Datei geschrieben werden
 
-                # Wartezeit für die Schleife, um die CPU-Last zu reduzieren
+                # Wartezeit fuer die Schleife, um die CPU-Last zu reduzieren
                 time.sleep(0.001)  # Anpassen der Wartezeit je nach Anforderung
         except KeyboardInterrupt:
             print("Abbruch durch Benutzer.")
         finally:
-            # Schließen der seriellen Schnittstellen und der Ausgabedatei
+            # Schliessen der seriellen Schnittstellen und der Ausgabedatei
             ser1.close()
             ser2.close()
             #ser1.__del__()  # hilft nix, macht man auch nicht

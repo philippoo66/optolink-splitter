@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.1.2"
+version = "1.8.3.1"
 
 import serial
 import time
@@ -81,11 +81,12 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
     item = "?"
 
     try:
+        # handle PollCycle option +++++++++++++++++++++++
         # loop though poll items until find one to be done this cycle
         while(True):  
-            # handle PollCycle option +++++++++++++++++++++++
             item = poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
             if(len(item) > 1 and isinstance(item[0], int)):
+                # this is poll_cycle item
                 if(item[0] != 0) and (poll_cycle % item[0] != 0):
                     # +++ do not poll this item this time +++
 
@@ -100,6 +101,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                     item = item[1:]
                     break
             else:
+                # not poll_cycle item, perform it
                 break
 
         retcode, data, val, _ = requests_util.response_to_request(item, ser)
@@ -175,10 +177,10 @@ def vicon_thread_func(serViCon, serViDev):
     except Exception as e:
         msg = f"Error in listen_to_Vitoconnect: {e}"
         viconnlog.do_log(msg)
-        logger.error(msg, "re-init")
+        logger.error(f"{msg} -> re-init")
         mqtt_publ_debug(msg)
         viconn_util.exit_flag = True
-        restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart nötig ist
+        restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart noetig ist
         return  # Thread wird beendet
 
 
@@ -235,6 +237,7 @@ def mqtt_publ_debug(msg:str):
         mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
 
 
+# MQTT publish callback VS2 +++++++++++++++++++++++++++++
 def mqtt_publ_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
         if addr:
@@ -326,6 +329,33 @@ dicFunctionCodes = {
     # 202 : "GFA_WRITE",
 }
 
+# MQTT publish callback VS1 +++++++++++++++++++++++++++++
+
+# digs = len(str(settings_ini.viconnVS1_ringbuff))
+# rb_pointer = 0
+def mqtt_publ_viconnVS1(data, request:bool):
+    global rb_pointer 
+    if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
+        if(request):
+            pass
+            
+        topic = settings_ini.mqtt_topic + f"/viconn/{'Vicon' if request else 'Opto'}"
+        mod_mqtt_util.publish_smart(topic, utils.bbbstr(data))
+
+def get_fctcodeVS1(val):
+    strg = dicFunctionCodesVS1.get(val) 
+    if strg: return strg
+    else: return f"0x{val:02X}"
+
+dicFunctionCodesVS1 = {
+    0xF4 : "Virtuell_Write", 
+    0xF7 : "Virtuell_Read",
+    0x68 : "GFA_Write", 
+    0x6B : "GFA_Read", 
+    0x78 : "PROZESS_WRITE", 
+    0x7B : "PROZESS_READ" 
+}
+
 
 # signal handling
 def handle_exit(sig, frame):
@@ -341,7 +371,7 @@ def main():
     global poll_pointer, poll_cycle
     global progr_exit_flag
 
-    # Signale abfangen für sauberes Beenden
+    # Signale abfangen fuer sauberes Beenden
     signal.signal(signal.SIGTERM, handle_exit)
     signal.signal(signal.SIGINT, handle_exit)
 
@@ -383,7 +413,7 @@ def main():
                         exclusive=True,
                         timeout=0)
 
-        # Empfangstask der sekundären Master starten (TcpIp, MQTT) ++++++++++++++
+        # Empfangstask der sekundaeren Master starten (TcpIp, MQTT) ++++++++++++++
 
         # MQTT --------
         if(settings_ini.mqtt is not None):
@@ -440,7 +470,7 @@ def main():
                 # Protokoll/Kommunikation am Slave initialisieren
                 spr = "VS2/300" if not settings_ini.vs1protocol else "VS1/KW"
                 if(not vs12_adapter.init_protocol(serViDev)):
-                    raise Exception(f"init_protocol {spr} failed")  # schlecht für KW Protokoll
+                    raise Exception(f"init_protocol {spr} failed")  # schlecht fuer KW Protokoll
                 logger.info(f"{spr} protocol initialized")
 
 
@@ -478,7 +508,7 @@ def main():
                         did_vicon_request = True
 
                 ### secondary requests ------------------
-                #TODO überlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
+                #TODO ueberlegen/testen, ob Vitoconnect request nicht auch in der Reihe reicht
                 
                 for i in range(num_tasks):
                     is_on = (request_pointer + i) % num_tasks
@@ -537,7 +567,7 @@ def main():
                                     mod_mqtt_util.publish_response(resp)
                                 except Exception as e:
                                     mod_mqtt_util.publish_response(f"Error: {e}")
-                                    logger.warning("Error handling MQTT request:", e)
+                                    logger.warning(f"Error handling MQTT request: {e}")
                                 did_secodary_request = True
 
                     # TCP/IP request --------
@@ -551,7 +581,7 @@ def main():
                                     #print(f"retcode {retcode}, try to send tcp: {resp}")  #temp
                                     tcp_server.send(resp)
                                 except Exception as e:
-                                    logger.warning("Error handling TCP request:", e)
+                                    logger.warning(f"Error handling TCP request: {e}")
                                 did_secodary_request = True
         
                     #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_secodary_request}"); tprev = tnow
@@ -581,7 +611,7 @@ def main():
     finally:
         # sauber beenden: Tasks stoppen, VS1 Protokoll aktivieren(?), alle Verbindungen trennen
         progr_exit_flag = True
-        # Schließen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
+        # Schliessen der seriellen Schnittstellen, Ausgabedatei, PollTimer, 
         logger.info("exit close...")
         logger.info("cancel poll timer") 
         timer_pollinterval.cancel()

@@ -23,7 +23,12 @@ vs1protocol = False                # if True, VS1/KW protocol used
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
 mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
-mqtt_logging = False             # dis/enables logging of paho.mqtt (default: False)
+mqtt_logging = False             # Enable/Disables logging of paho.mqtt (default: False)
+mqtt_tls_enable = False          # True = connect via TLS (MQTT over TLS) (default: False)
+mqtt_tls_skip_verify = False     # Disables TLS cert + hostname verification (INSECURE; self-signed / lab only; Default = False)
+mqtt_tls_ca_certs = None         # MQTT TLS CA bundle path (default: None to use OS CA store)
+mqtt_tls_certfile = None         # MQTT TLS client cert (mTLS) path (default: None for no client cert)
+mqtt_tls_keyfile  = None         # MQTT TLS client key (mTLS) path (default: None for
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
@@ -43,8 +48,8 @@ fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (
 olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.05)
 
 # Optolink Logging ++++++++++++++
+show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
-show_opto_rx = True             # Display received Optolink data (default: True, no output when run as service)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
@@ -52,6 +57,7 @@ no_logger_file = False          # if True the optolinksvs2_switch.log will not g
 max_decimals = 4                # Max decimal places for float values (default: 4)
 data_hex_format = '02x'         # Hexadecimal formatting (set '02X' for uppercase formatting, default: '02x')
 resp_addr_format = 'x'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, e.g. '04X' for 4-digit hex, default: 'x')
+retcode_format = 'd'
 
 # Viessdata Utilities +++++++++++
 write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: False)
@@ -67,7 +73,7 @@ wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
 # Dictionary for 1-Wire sensor configuration (default: empty dictionary)
 w1sensors = {                  
     # Addr: ('<w1_folder/sn>', '<slave_type>'),   # entry format
-#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor (highest known Optolink Address is 0xFF17)
+#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor
 #     0xFFFd: ('28-3ce1d443a4ed', 'ds18b20'),     # Another example sensor
 }
 
@@ -169,5 +175,6 @@ poll_items = [                  # Datapoints defined here will be polled; ignore
     # ("SpeicherTemp_oben", 0xFFFd),
     # ("RuecklaufTemp_Sensor", 0xFFF4),
 ]
+
 
 

@@ -27,7 +27,7 @@ class cLogging:
 
     def open_log(self):
         """
-        Öffnet die Logdatei im Anhängemodus.
+        Oeffnet die Logdatei im Anhaengemodus.
         """
         try:
             self.log_handle = open(self.log_file, 'a')
@@ -37,7 +37,7 @@ class cLogging:
 
     def close_log(self):
         """
-        Schließt die Logdatei.
+        Schliesst die Logdatei.
         """
         if self.log_handle:
             self.do_log("closing log file...")
@@ -62,7 +62,7 @@ class cLogging:
 
     def __del__(self):
         """
-        Sicherstellen, dass die Logdatei geschlossen wird, wenn die Instanz zerstört wird.
+        Sicherstellen, dass die Logdatei geschlossen wird, wenn die Instanz zerstoert wird.
         """
         self.close_log()
 

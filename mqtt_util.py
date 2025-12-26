@@ -30,7 +30,7 @@ publ_queue = []   # stuff to get published
 
 recent_posts = {}
 reset_recent = False
-_sentinel = object()  # eindeutiger Wert für "nicht vorhanden"
+_sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 
 # callback for 'special' commands
 command_callback = None  
@@ -78,14 +78,21 @@ def on_log(client, userdata, level, buf):
     print("MQTT Log:", buf)
 
 
-def connect_mqtt():
+def connect_mqtt(): 
     global mqtt_client
     try:
         # Verbindung zu MQTT Broker herstellen ++++++++++++++
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "olswitch") # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
-        if(settings_ini.mqtt_user is not None):
-            mlst = settings_ini.mqtt_user.split(':')
-            mqtt_client.username_pw_set(mlst[0], password=mlst[1])
+        # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
+        creds = getattr(settings_ini, "mqtt_user", None)
+        if creds is not None:
+            creds = str(creds).strip()
+            if creds != "":
+                if ":" in creds:
+                    user, pwd = creds.split(":", 1)  # split once; allows ":" inside password
+                    mqtt_client.username_pw_set(user, password=(pwd if pwd != "" else None))
+                else:
+                    mqtt_client.username_pw_set(creds, password=None)
         mqtt_client.on_connect = on_connect
         mqtt_client.on_disconnect = on_disconnect
         mqtt_client.on_message = on_message
@@ -96,6 +103,24 @@ def connect_mqtt():
             mqtt_client.on_log = on_log
             mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
             mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
+        # Optional TLS / SSL
+        if getattr(settings_ini, "mqtt_tls_enable", False):
+            import ssl
+            skip = bool(getattr(settings_ini, "mqtt_tls_skip_verify", False))
+            ca_path = getattr(settings_ini, "mqtt_tls_ca_certs", None)
+            certfile = getattr(settings_ini, "mqtt_tls_certfile", None)
+            keyfile  = getattr(settings_ini, "mqtt_tls_keyfile", None)
+            if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
+                raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
+            mqtt_client.tls_set(
+                ca_certs=ca_path,  # None => OS CA store
+                certfile=certfile,
+                keyfile=keyfile,
+                cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
+                tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
+            )
+            # IP / hostname mismatch and for "skip verify" mode
+            mqtt_client.tls_insecure_set(skip)
         mlst = settings_ini.mqtt.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
@@ -146,7 +171,7 @@ def publish_smart(topic, value, qos=0, retain=False):
 def exit_mqtt():
     if(mqtt_client != None):
         logger.info("disconnect MQTT client")
-        if(mqtt_client.is_connected):
+        if(mqtt_client.is_connected()):
             mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
         mqtt_client.disconnect()
 
@@ -172,3 +197,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

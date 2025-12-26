@@ -47,10 +47,10 @@ def init_protocol(ser:serial.Serial) -> bool:
     if(not wait_for_05(ser)):
         return False
     # now read F8 with STX
-    outbuff = bytes([0x01, 0xF7, 0x00, 0xF8, 0x02])
+    outbuff = bytes([0x01, 0xF7, 0x00, 0xF8, 0x04])
     ser.reset_input_buffer()
     ser.write(outbuff)
-    retcd,_,_ = receive_resp_telegr(2,0xF8,ser)
+    retcd,_,_ = receive_resp_telegr(4,0xF8,ser)
     ret = (retcd == 0x01) 
     #print("init_protocol vs1", ret)
     return ret
@@ -193,7 +193,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         inbytes = ser.read_all()
 
         if inbytes:
-            # Daten zum Datenpuffer hinzufügen
+            # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
             last_receive_time = time.time()
             if(ser2 is not None):
@@ -228,7 +228,7 @@ def main():
     ser = serial.Serial(port, baudrate=4800, bytesize=8, parity='E', stopbits=2, timeout=0) 
 
     try:
-        # Serial Port öffnen
+        # Serial Port oeffnen
         if not ser.is_open:
             ser.open()
 
@@ -284,7 +284,7 @@ def main():
     except Exception as e:
         print(e)
     finally:
-        # Serial Port schließen
+        # Serial Port schliessen
         if ser.is_open:
             print("exit close")
             # re-init KW protocol
