@@ -25,7 +25,7 @@ import re
 import time
 import sys
 import paho.mqtt.client as paho
-import settings_ini
+import settings
 import c_polllist
 
 # Global MQTT Client
@@ -33,7 +33,7 @@ mqtt_client = None
 
 def connect_mqtt(retries=3, delay=5):
     """ Global MQTT Client for this script. 
-        Connects to the MQTT broker using credentials from settings_ini.py """
+        Connects to the MQTT broker using credentials from settings.py """
 
     global mqtt_client
 
@@ -45,13 +45,13 @@ def connect_mqtt(retries=3, delay=5):
         return True
 
     try:
-        mqtt_credentials = settings_ini.mqtt.split(':')
+        mqtt_credentials = settings.mqtt.split(':')
         if len(mqtt_credentials) != 2:
             raise ValueError("ERROR: MQTT settings must be in the format 'host:port'")
 
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
 
-        mqtt_user_pass = settings_ini.mqtt_user
+        mqtt_user_pass = settings.mqtt_user
         if mqtt_user_pass and mqtt_user_pass.lower() != "none":
             mqtt_user, mqtt_password = mqtt_user_pass.split(":")
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
@@ -120,13 +120,13 @@ def verify_mqtt_optolink_lwt(timeout=10):
         return False  # Return failure instead of exiting
 
 def read_poll_list_datapoints():
-    """ Reads the poll_list either from settings_ini.py or poll_list.py using c_polllist. """
+    """ Reads the poll_list either from settings.py or poll_list.py using c_polllist. """
     
     poll_list_datapoints = []
 
     try:
         poll_items = c_polllist.poll_list.items
-        print(f"Reading poll_list from poll_list.py or settings_ini.py")
+        print(f"Reading poll_list from poll_list.py or settings.py")
         for item in poll_items:
             if len(item) > 1:
                 # Checks if the first value is PollCycle (an integer). If so, it takes the next value as the name.
@@ -267,7 +267,7 @@ def check_entities_and_print_entity_table(entity_data):
     # Display a warning if any generated datapoint (DP) does not exist in poll_items.
     if missing_poll_items:
         print("\n" * 4 + "!!! WARNING !!!")
-        print("One or more entities from your homeassistant_entities.json were not found in your poll_items (settings_ini.py or poll_list.py).")
+        print("One or more entities from your homeassistant_entities.json were not found in your poll_items (settings.py or poll_list.py).")
 
         print("\nPossible causes:")
         print(" - Thermostats consist of multiple values with no direct counterpart in poll_items.")

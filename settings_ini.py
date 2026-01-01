@@ -22,13 +22,13 @@ vs1protocol = False                # if True, VS1/KW protocol used
 
 # MQTT Connection ++++++++++++++++
 mqtt = "192.168.0.123:1883"      # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
-mqtt_user = None                 # MQTT user credentials: "<user>:<pwd>" (default: None for anonymous access)
-mqtt_logging = False             # Enable/Disables logging of paho.mqtt (default: False)
+mqtt_user = None                 # MQTT user credentials: "meuser:mypwd" (default: None for anonymous access)
 mqtt_tls_enable = False          # True = connect via TLS (MQTT over TLS) (default: False)
 mqtt_tls_skip_verify = False     # Disables TLS cert + hostname verification (INSECURE; self-signed / lab only; Default = False)
 mqtt_tls_ca_certs = None         # MQTT TLS CA bundle path (default: None to use OS CA store)
 mqtt_tls_certfile = None         # MQTT TLS client cert (mTLS) path (default: None for no client cert)
 mqtt_tls_keyfile  = None         # MQTT TLS client key (mTLS) path (default: None for
+mqtt_logging = False             # Enable/Disables logging of paho.mqtt (default: False)
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
@@ -51,7 +51,6 @@ olbreath = 0.05                 # Pause (seconds) after a request-response cycle
 show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
-no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
 # Data Formatting +++++++++++++++
 max_decimals = 4                # Max decimal places for float values (default: 4)
@@ -64,6 +63,10 @@ write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: Fals
 viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "")
 buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
 dec_separator = ","             # Decimal separator for CSV output (default: ",")
+
+
+# General Settings +++++++++++
+no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 
 # special for wo1c: read daily/weekly energy statistics +++++++++++
 wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle

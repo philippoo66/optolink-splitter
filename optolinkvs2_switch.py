@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-version = "1.8.3.1"
+VERSION = "1.8.4.0"
 
 import serial
 import time
@@ -24,7 +24,7 @@ import json
 import signal
 
 from logger_util import logger
-import settings_ini
+import settings
 import vs12_adapter
 import viconn_util
 import viessdata_util
@@ -56,19 +56,19 @@ def olbreath(retcode:int):
     global last_vs1_comm
     if(retcode <= 0x03):
         # success, err msg
-        if(settings_ini.vs1protocol):
+        if(settings.vs1protocol):
             last_vs1_comm = time.time()
             vs12_adapter.reset_vs1sync()
-        time.sleep(settings_ini.olbreath)
+        time.sleep(settings.olbreath)
     elif(retcode in [0xFF, 0xAA, 0xAB]):
         # timeout, err_handle, final item skipped in cycle
         pass
     else:
-        if(settings_ini.vs1protocol):
+        if(settings.vs1protocol):
             last_vs1_comm = time.time()
             vs12_adapter.reset_vs1sync()
         # allow calming down
-        time.sleep(2 * settings_ini.olbreath)
+        time.sleep(2 * settings.olbreath)
 
 
 # polling list +++++++++++++++++++++++++++++
@@ -153,7 +153,7 @@ def on_polltimer():
     global poll_pointer
     if(poll_pointer > poll_list.num_items):
         poll_pointer = 0
-    startPollTimer(settings_ini.poll_interval)
+    startPollTimer(settings.poll_interval)
 
 timer_pollinterval = threading.Timer(1.0, on_polltimer)
 
@@ -171,7 +171,7 @@ def vicon_thread_func(serViCon, serViDev):
     """
     print("running Vitoconnect listener")
     try:
-        callback = mqtt_publ_viconn if settings_ini.viconn_to_mqtt else None
+        callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
         viconn_util.exit_flag = False
         viconn_util.listen_to_Vitoconnect(serViCon, callback)
     except Exception as e:
@@ -188,7 +188,7 @@ def vicon_thread_func(serViCon, serViDev):
 def tcp_connection_loop():
     global tcp_server
     while(not progr_exit_flag):
-        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings_ini.tcpip_port) #, verbose=True)
+        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port) #, verbose=True)
         tcp_server.command_callback = do_special_command
         tcp_server.run()
         tcp_server = None
@@ -216,7 +216,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             tcp_server.stop()
             resp = f"{cmnd} triggered" if source != 2 else ''
     elif cmnd in ("flushcsv",):
-        if settings_ini.write_viessdata_csv:
+        if settings.write_viessdata_csv:
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
     else:
@@ -234,14 +234,14 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
 
 def mqtt_publ_debug(msg:str):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
-        mod_mqtt_util.mqtt_client.publish(settings_ini.mqtt_topic + "/debug", msg)  
+        mod_mqtt_util.mqtt_client.publish(settings.mqtt_topic + "/debug", msg)  
 
 
 # MQTT publish callback VS2 +++++++++++++++++++++++++++++
 def mqtt_publ_viconn(retcd, addr, data, msgid, msqn, fctcd, dlen):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
         if addr:
-            topic = settings_ini.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
+            topic = settings.mqtt_topic + f"/viconn/{addr:04X}/{get_msgid(msgid)}"
             jdata = {"retcode" : get_retcode(retcd),
                     "fctcode" : get_fctcode(fctcd),
                     "datalen" : dlen,
@@ -331,7 +331,7 @@ dicFunctionCodes = {
 
 # MQTT publish callback VS1 +++++++++++++++++++++++++++++
 
-# digs = len(str(settings_ini.viconnVS1_ringbuff))
+# digs = len(str(settings.viconnVS1_ringbuff))
 # rb_pointer = 0
 def mqtt_publ_viconnVS1(data, request:bool):
     global rb_pointer 
@@ -339,7 +339,7 @@ def mqtt_publ_viconnVS1(data, request:bool):
         if(request):
             pass
             
-        topic = settings_ini.mqtt_topic + f"/viconn/{'Vicon' if request else 'Opto'}"
+        topic = settings.mqtt_topic + f"/viconn/{'Vicon' if request else 'Opto'}"
         mod_mqtt_util.publish_smart(topic, utils.bbbstr(data))
 
 def get_fctcodeVS1(val):
@@ -381,42 +381,45 @@ def main():
 
     excptn = None
 
-    logger.info(f"Version {version}")
+    logger.info(f"Version {VERSION}")
 
     try:
     #if True:
+        serOptolink = None  # Viessmann Device (Slave)
+        serVitoConnnect = None  # Vitoconnect (Master)
+
         poll_list.make_list()
         # buffer for read data for writing viessdata.csv 
         poll_data = [None] * poll_list.num_items
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
-        serViDev = None  # Viessmann Device (Slave)
-        serViCon = None  # Vitoconnect (Master)
-
-        if(settings_ini.port_optolink is not None):
-            serViDev = serial.Serial(settings_ini.port_optolink,
+        
+        if(settings.port_optolink is not None):
+            serOptolink = serial.Serial(settings.port_optolink,
                         baudrate=4800,
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
                         bytesize=serial.EIGHTBITS,
                         exclusive=True,
                         timeout=0)
+            logger.info("Optolink serial port opened")
         else:
             raise Exception("Error: Optolink device is mandatory!")
 
-        if(settings_ini.port_vitoconnect is not None):
-            serViCon = serial.Serial(settings_ini.port_vitoconnect,
+        if(settings.port_vitoconnect is not None):
+            serVitoConnnect = serial.Serial(settings.port_vitoconnect,
                         baudrate=4800,
                         parity=serial.PARITY_EVEN,
                         stopbits=serial.STOPBITS_TWO,
                         bytesize=serial.EIGHTBITS,
                         exclusive=True,
                         timeout=0)
+            logger.info("Vitoconnect serial port opened")
 
         # Empfangstask der sekundaeren Master starten (TcpIp, MQTT) ++++++++++++++
 
         # MQTT --------
-        if(settings_ini.mqtt is not None):
+        if(settings.mqtt is not None):
             # avoid paho.mqtt required if not used
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
@@ -424,7 +427,7 @@ def main():
 
 
         # TCP/IP connection --------
-        if(settings_ini.tcpip_port is not None):
+        if(settings.tcpip_port is not None):
             tcp_thread = threading.Thread(target=tcp_connection_loop, daemon=True)
             tcp_thread.start()
 
@@ -435,7 +438,7 @@ def main():
         requests_util.init_w1_values_check()
 
         # publish viconn or not
-        vicon_publ_callback = mqtt_publ_viconn if settings_ini.viconn_to_mqtt else None
+        vicon_publ_callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
 
 
         # ------------------------
@@ -443,18 +446,18 @@ def main():
         # ------------------------        
         while(True):  #not shutdown_event.is_set():
             # run VS2 connection ------------------
-            if(serViCon is not None):
+            if(serVitoConnnect is not None):
                 # reset vicon_request buffer
                 viconn_util.vicon_request = bytearray()
 
                 # Vitoconncet logging
-                if(settings_ini.log_vitoconnect):
+                if(settings.log_vitoconnect):
                     if(viconnlog.log_handle is None):
                         viconnlog.open_log()
 
-                # detect/init VS2 Protokol ++++++++++++
+                # detect/init Protokol ++++++++++++
                 logger.info("awaiting Vitoconnect being operational...")
-                if not vs12_adapter.wait_for_vicon(serViCon, serViDev, settings_ini.vs2timeout):
+                if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):
                     raise Exception("Vitoconnect not detected operational within timeout")
                 msg = "Vitoconnect detected operational"
                 viconnlog.do_log(msg)           
@@ -463,20 +466,20 @@ def main():
                 # listen to vicon ++++++++++++
                 # run reception thread
                 restart_event.clear()
-                vicon_thread = threading.Thread(target=vicon_thread_func, args=(serViCon, serViDev), daemon=True)
+                vicon_thread = threading.Thread(target=vicon_thread_func, args=(serVitoConnnect, serOptolink), daemon=True)
                 vicon_thread.start()
 
             else:
                 # Protokoll/Kommunikation am Slave initialisieren
-                spr = "VS2/300" if not settings_ini.vs1protocol else "VS1/KW"
-                if(not vs12_adapter.init_protocol(serViDev)):
+                spr = "VS2/300" if not settings.vs1protocol else "VS1/KW"
+                if(not vs12_adapter.init_protocol(serOptolink)):
                     raise Exception(f"init_protocol {spr} failed")  # schlecht fuer KW Protokoll
                 logger.info(f"{spr} protocol initialized")
 
 
             # Polling Mechanismus --------
-            if(settings_ini.poll_interval > 0) and (poll_list.num_items > 0):
-                startPollTimer(settings_ini.poll_interval)
+            if(settings.poll_interval > 0) and (poll_list.num_items > 0):
+                startPollTimer(settings.poll_interval)
 
             # ------------------------
             # Main Loop starten und Sachen abarbeiten ++++++++++++
@@ -494,15 +497,15 @@ def main():
                 is_on = request_pointer
 
                 ### first Vitoconnect request -------------------
-                if(serViCon is not None):
+                if(serVitoConnnect is not None):
                     vidata = viconn_util.get_vicon_request()
                     if(vidata):
-                        serViDev.reset_input_buffer()
-                        serViDev.write(vidata)
+                        serOptolink.reset_input_buffer()
+                        serOptolink.write(vidata)
                         viconnlog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serViDev, serViCon, vicon_publ_callback)
+                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serOptolink, serVitoConnnect, vicon_publ_callback)
                         viconnlog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         did_vicon_request = True
@@ -516,9 +519,9 @@ def main():
 
                     # polling list --------
                     if(is_on == 0):              
-                        if(settings_ini.poll_interval >= 0):
+                        if(settings.poll_interval >= 0):
                             if(poll_pointer < poll_list.num_items):
-                                retcode = do_poll_item(poll_data, serViDev, mod_mqtt_util)
+                                retcode = do_poll_item(poll_data, serOptolink, mod_mqtt_util)
                                 # increment poll pointer
                                 poll_pointer += 1
 
@@ -533,23 +536,23 @@ def main():
                                         # no csv line if once_onlies were present
                                         # set up buffer according to remaining items
                                         poll_data = [None] * poll_list.num_items
-                                    elif(settings_ini.write_viessdata_csv):
+                                    elif(settings.write_viessdata_csv):
                                         viessdata_util.buffer_csv_line(poll_data)
                                     # wo1c energy
-                                    if(settings_ini.wo1c_energy > 0) and (poll_cycle % settings_ini.wo1c_energy == 0):
-                                        if(not settings_ini.vs1protocol):
+                                    if(settings.wo1c_energy > 0) and (poll_cycle % settings.wo1c_energy == 0):
+                                        if(not settings.vs1protocol):
                                             olbreath(retcode)
-                                            retcode = wo1c_energy.read_energy(serViDev)
+                                            retcode = wo1c_energy.read_energy(serOptolink)
                                         else:
                                             logger.warning("wo1c_energy not supported with VS1/KW protocol")
-                                            settings_ini.wo1c_energy = 0
+                                            settings.wo1c_energy = 0
                                     # poll cycle control
                                     poll_cycle += 1
                                     if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12 < 32 bits
                                         poll_cycle = 0
                                     # poll pointer control
                                     poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > poll_list.num_items)
-                                    if(settings_ini.poll_interval == 0):
+                                    if(settings.poll_interval == 0):
                                         poll_pointer = 0  # else: poll_pointer gets reset by timer
                                     # #TEMP test
                                     # if(poll_cycle == 1):
@@ -563,7 +566,7 @@ def main():
                             msg = mod_mqtt_util.get_mqtt_request()
                             if(msg):
                                 try:
-                                    retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                                    retcode, _, _, resp = requests_util.response_to_request(msg, serOptolink)
                                     mod_mqtt_util.publish_response(resp)
                                 except Exception as e:
                                     mod_mqtt_util.publish_response(f"Error: {e}")
@@ -577,7 +580,7 @@ def main():
                             if(msg):
                                 #print(f"recd tcp msg: {msg}")  #temp
                                 try:
-                                    retcode, _, _, resp = requests_util.response_to_request(msg, serViDev)
+                                    retcode, _, _, resp = requests_util.response_to_request(msg, serOptolink)
                                     #print(f"retcode {retcode}, try to send tcp: {resp}")  #temp
                                     tcp_server.send(resp)
                                 except Exception as e:
@@ -595,9 +598,9 @@ def main():
                 #print(f"{((tnow := int(time.time()*10000)) - tprev)} rp {request_pointer}"); tprev = tnow
 
                 # keep-alive with vs1 
-                if(settings_ini.vs1protocol):
+                if(settings.vs1protocol):
                     if(time.time() - last_vs1_comm > 0.5):
-                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serViDev)
+                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serOptolink)
                         olbreath(retcode)
                         did_secodary_request = True
 
@@ -618,15 +621,15 @@ def main():
         if(tcp_server is not None):
             tcp_server.stop()
         viconn_util.exit_flag = True
-        if(serViCon is not None):
-            logger.info("closing serViCon")
-            serViCon.close()
-        if(serViDev is not None):
-            if(serViDev.is_open and (not isinstance(excptn, OSError))):
+        if(serVitoConnnect is not None):
+            logger.info("closing serVitoConnnect")
+            serVitoConnnect.close()
+        if(serOptolink is not None):
+            if(serOptolink.is_open and (not isinstance(excptn, OSError))):
                 logger.info("reset Optolink protocol")
-                serViDev.write(bytes([0x04]))
-            logger.info("closing serViDev")
-            serViDev.close()
+                serOptolink.write(bytes([0x04]))
+            logger.info("closing serOptolink")
+            serOptolink.close()
         if(mod_mqtt_util is not None):
             mod_mqtt_util.exit_mqtt()
         if(viconnlog.log_handle is not None):

@@ -15,7 +15,7 @@
 '''
 
 import time
-import settings_ini
+import settings
 
 # Pfad zum One-Wire-Slave-Verzeichnis
 base_dir = '/sys/bus/w1/devices/'
@@ -41,7 +41,7 @@ def read_ds18b20(device_file) -> tuple[int, float]:  # retcode, temp_°C
                     temp_string = lines[1][pos+2:]
                     temp_c = float(temp_string) / 1000.0
                     if(temp_reasonable(temp_c)):
-                        if(settings_ini.show_opto_rx):
+                        if(settings.show_opto_rx):
                             print("w1", lines[1][:pos])
                         return 0x01, temp_c
                     else:
@@ -73,7 +73,7 @@ def read_ds2423(device_file) -> tuple[int, list[int]]:  # retcode, counts
 
 # 'main' function -----------------
 def read_w1sensor(sensor_id) -> tuple[int, any]:  # retcode, val/s
-    sensinfo = settings_ini.w1sensors[sensor_id]  # tuple ('<w1_folder>', '<slave_type>')
+    sensinfo = settings.w1sensors[sensor_id]  # tuple ('<w1_folder>', '<slave_type>')
     device_file = base_dir + sensinfo[0] + '/w1_slave'
     if(sensinfo[1].lower() == 'ds18b20'):
         return read_ds18b20(device_file)

@@ -15,7 +15,7 @@
 '''
 
 from datetime import datetime
-import settings_ini
+import settings
 
 # utils +++++++++++++++++++++++++++++
 def get_int(v) -> int:
@@ -46,18 +46,18 @@ def get_bool(v) -> bool:
 def bytesval(data, scale=1.0, signd=False):
     val = int.from_bytes(data, byteorder='little', signed=signd)
     if(scale != 1.0):
-        val = round(val * scale, settings_ini.max_decimals)
+        val = round(val * scale, settings.max_decimals)
     return val
 
 
 def bbbstr(data):
     try:
-        return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
+        return ' '.join([format(byte, settings.data_hex_format) for byte in data])
     except:
         return data
 
 def arr2hexstr(data):
-    return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])
+    return ''.join([format(byte, settings.data_hex_format) for byte in data])
 
 def hexstr2arr(thestring:str) -> bytearray:
     # '776F726C64' -> bytearray(b'world') <class 'bytearray'>

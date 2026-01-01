@@ -3,9 +3,9 @@ import serial
 import optolinkvs2
 import optolinkvs1
 import viconn_util
-import settings_ini
+import settings
 
-VS2 = not settings_ini.vs1protocol
+VS2 = not settings.vs1protocol
 
 
 def init_protocol(ser:serial.Serial) -> bool:

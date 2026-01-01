@@ -19,7 +19,7 @@ import sys
 import time
 
 import utils
-import settings_ini
+import settings
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS1 / KW Protocol, mainly virtual r/w datapoints
@@ -74,7 +74,7 @@ def wait_for_05(ser:serial.Serial) -> bool:
         time.sleep(0.1)
         try:
             buff = ser.read(1)
-            if(settings_ini.show_opto_rx):
+            if(settings.show_opto_rx):
                 print(buff)
         except: 
             return False
@@ -163,13 +163,13 @@ def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Seria
         
         # 'evaluate'
         if(len(inbuff) >= rlen):
-            if(settings_ini.show_opto_rx):
+            if(settings.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
             reset_sync()
             return 0x01, addr, inbuff[0:rlen]
 
     # timout
-    if(settings_ini.show_opto_rx):
+    if(settings.show_opto_rx):
         print("rx telegr timeout")
     return 0xFF, addr, inbuff
 
@@ -178,7 +178,7 @@ def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Seria
 def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
-    retcode, data = receive_fullraw(settings_ini.fullraw_eot_time, settings_ini.fullraw_timeout, ser, ser2)
+    retcode, data = receive_fullraw(settings.fullraw_eot_time, settings.fullraw_timeout, ser, ser2)
     return retcode, 0, data  # 0x01?!?
 
 
@@ -200,14 +200,14 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
                 ser2.write(inbytes)
         elif inbuff and ((time.time() - last_receive_time) > eot_time):
             # if data received and no further receive since more than eot_time
-            if(settings_ini.show_opto_rx):
+            if(settings.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
             reset_sync()
             return 0x01, bytearray(inbuff)
 
         time.sleep(0.005)
         if((time.time() - start_time) > timeout):
-            if(settings_ini.show_opto_rx):
+            if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))
             return 0xFF, bytearray(inbuff)
 
