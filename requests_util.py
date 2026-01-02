@@ -21,14 +21,14 @@ import utils
 import vs12_adapter
 import onewire_util
 import c_w1value
-import settings
+import settings_adapter
 
 
 # onewire util
 w1values: dict[int, c_w1value.W1Value] = {}
 
 def init_w1_values_check():
-    for addr,info in settings.w1sensors.items():  # Addr: ('<w1_folder/sn>', '<slave_type>')
+    for addr,info in settings_adapter.w1sensors.items():  # Addr: ('<w1_folder/sn>', '<slave_type>')
         if info[1].lower() == 'ds18b20':
             # scalar value, check max_change
             w1val = c_w1value.W1Value(addr, max_change=10.0, max_ignore=3)
@@ -128,9 +128,9 @@ def perform_bytebit_filter_and_evaluate(data, parts):
 
 def get_retstr(retcode, addr, val) -> str:
     prefix = '' #'0x' if('x' in settings.retcode_format.lower()) else '' 
-    sretcode = prefix + format(retcode, settings.retcode_format)
-    prefix = '0x' if('x' in settings.resp_addr_format.lower()) else '' 
-    saddr = prefix + format(addr, settings.resp_addr_format)
+    sretcode = prefix + format(retcode, settings_adapter.retcode_format)
+    prefix = '0x' if('x' in settings_adapter.resp_addr_format.lower()) else '' 
+    saddr = prefix + format(addr, settings_adapter.resp_addr_format)
     return f"{sretcode};{saddr};{val}"
 
 
@@ -158,7 +158,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         serViDev.reset_input_buffer()
         serViDev.write(bstr)
         #print("sent to OL:", utils.bbbstr(bstr))  #temp
-        retcode, data = vs12_adapter.receive_fullraw(settings.fullraw_eot_time, settings.fullraw_timeout, serViDev)
+        retcode, data = vs12_adapter.receive_fullraw(settings_adapter.fullraw_eot_time, settings_adapter.fullraw_timeout, serViDev)
         val = utils.arr2hexstr(data)
         retstr = str(val)
         #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
@@ -181,7 +181,7 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
         elif((cmnd in ["read", "r"]) or ispollitem):  # "read;0x0804;1;0.1;False" or "r;0x2500;22;'b:0:1';0.1"
             # read +++++++++++++++++++
             addr = utils.get_int(parts[1])
-            if(addr in settings.w1sensors):
+            if(addr in settings_adapter.w1sensors):
                 # 1wire sensor
                 retcode, val = onewire_util.read_w1sensor(addr)
                 val = w1values[addr].checked(val)

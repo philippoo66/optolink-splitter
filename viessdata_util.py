@@ -18,7 +18,7 @@ import datetime
 import os
 
 from logger_util import logger
-import settings
+import settings_adapter
 import utils
 import c_polllist
 
@@ -74,19 +74,19 @@ def buffer_csv_line(data, force_write=False):
     new_week = (mins_new < mins_old)  # new week
     mins_old = mins_new
 
-    buffer_full = (len(wrbuffer) >= settings.buffer_to_write)
+    buffer_full = (len(wrbuffer) >= settings_adapter.buffer_to_write)
 
     if(data):
         sline = str(mins_new) + ";"
         sline += formatted_timestamp() + ";"
 
         # decimal separator
-        tbreplaced = "." if settings.dec_separator == "," else ","
+        tbreplaced = "." if settings_adapter.dec_separator == "," else ","
         for i in range(0, c_polllist.poll_list.num_items):
             sval = str(data[i]) if data[i] else "0"  # wg. None wg. once_onlies.... alles Pfusch
             if(utils.to_number(data[i]) != None):
                 # format number, anything else left like it is
-                sval = sval.replace(tbreplaced, settings.dec_separator) 
+                sval = sval.replace(tbreplaced, settings_adapter.dec_separator) 
             sline += sval + ";"
 
         if(force_write and not new_week):
@@ -96,7 +96,7 @@ def buffer_csv_line(data, force_write=False):
 
     if(force_write or new_week or buffer_full):
         try:
-            csvfile = os.path.join(settings.viessdata_csv_path, recent_filename)
+            csvfile = os.path.join(settings_adapter.viessdata_csv_path, recent_filename)
             writehd = (not os.path.exists(csvfile))
             with open(csvfile, 'a') as f:
                 if(writehd):
