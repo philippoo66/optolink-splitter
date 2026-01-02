@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.8.4.0"
+VERSION = "1.8.4.1"
 
 import serial
 import time
@@ -393,7 +393,7 @@ def main():
         poll_data = [None] * poll_list.num_items
 
         # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
-        
+
         if(settings.port_optolink is not None):
             serOptolink = serial.Serial(settings.port_optolink,
                         baudrate=4800,

@@ -17,6 +17,7 @@
 import datetime
 import os
 
+from logger_util import logger
 import settings
 import utils
 import c_polllist
@@ -107,7 +108,7 @@ def buffer_csv_line(data, force_write=False):
             wrbuffer = []
             recent_filename = get_filename()
         except Exception as e:
-            print("ERROR write csv: ", e)
+            logger.error(f"ERROR write csv: {e}")
 
     if(sline is not None):
         wrbuffer.append(sline)

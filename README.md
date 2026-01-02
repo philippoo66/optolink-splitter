@@ -96,7 +96,7 @@ pip install paho-mqtt  # Only if MQTT is used
 *NOTE:* After installation, the environment must be activated before running the script.
 
 ### 3. Configure the Settings
-Modify `settings.py` according to your heating (/ datapoints):
+Modify `settings_ini.py` according to your heating (/ datapoints):
 - Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
 - Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
 
@@ -110,8 +110,8 @@ For automatic startup, set up a service. See the [Wiki Guide](https://github.com
 ## Updating to a new Version
 If you want to update your installation to a new version, the recommended way is to
 - make a backup copy of your current installation (folder)
-- from the new version repo, clone **all files except settings.py** into your original folder (replace existing files)
-- check the [version log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log) for added or changed entries in the settings_ini and apply (only) those changes to your existing settings.py 
+- from the new version repo, clone **all files except settings_ini.py** into your original folder (replace existing files)
+- check the [version log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log) for added or changed entries in the settings_ini and apply (only) those changes to your existing settings_ini.py 
 
 Alternatively you might clone all files and apply your original settings to the new settings_ini afterwards.
 
@@ -182,7 +182,7 @@ A compact and practical 3D-printable case designed for Raspberry Pi 2 & 3 includ
 [Raspberry Pi 2/3 Case with CP2102 UART Board Holder](https://www.printables.com/model/1144565-raspberry-pi-3-b-sleeve-case-w-cp2102-holder-wall)  
 
 ## :camera_flash: Additional Images (MQTT, Visualization)
-### Datapoints in settings.py & MQTT Explorer monitoring
+### Datapoints in settings_ini.py & MQTT Explorer monitoring
 ![grafik](https://github.com/philippoo66/optolink-splitter/assets/122479122/82618777-af8b-492d-8669-e755a1172d80)
  
 ### Data visualisation
