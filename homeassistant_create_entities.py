@@ -25,7 +25,8 @@ import re
 import time
 import sys
 import paho.mqtt.client as paho
-import settings_adapter
+from c_settings_adapter import settings
+
 import c_polllist
 
 # Global MQTT Client
@@ -45,13 +46,13 @@ def connect_mqtt(retries=3, delay=5):
         return True
 
     try:
-        mqtt_credentials = settings_adapter.mqtt.split(':')
+        mqtt_credentials = settings.mqtt.split(':')
         if len(mqtt_credentials) != 2:
             raise ValueError("ERROR: MQTT settings must be in the format 'host:port'")
 
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
 
-        mqtt_user_pass = settings_adapter.mqtt_user
+        mqtt_user_pass = settings.mqtt_user
         if mqtt_user_pass and mqtt_user_pass.lower() != "none":
             mqtt_user, mqtt_password = mqtt_user_pass.split(":")
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
