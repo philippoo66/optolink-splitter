@@ -1,0 +1,302 @@
+shared_config = {
+    "device": {
+        "identifiers": ["Vitotronic_WO1C"],
+        "name": "Vitocal",
+        "model": "Vitocal 200-G",
+        "manufacturer": "Viessmann"
+    },
+    "node_id": "vitocal",
+    "beautifier" : {"search"  : ["primaer","sekundaer","rueck","energy", "heating","water", "thermal",  "electric", "kaelte", "kuehl", "ueber", "fluessig", "oeff"],
+                    "replace" : ["primär", "sekundär", "rück", "energie","heizen", "wasser","thermisch","elektrisch", "kälte", "kühl", "über", "flüssig", "öff"],
+                    },
+    "domains": [
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "°C",
+            "device_class": "temperature",
+            "state_class": "measurement",
+            "suggested_display_precision": 1,
+            "poll": [
+                ( 15,"aussentemperatur", 0x01c1, 3, "b:0:1", 0.1, True),                   #WPR3_Aussentemperatur~0x01C1
+                (  5,"primaerkreis_vorlauftemperatur", 0x01c3, 3, "b:0:1", 0.1),           #WPR3_Vorlauftemp_Primaerquelle~0x01C3
+                (  5,"primaerkreis_ruecklauftemperatur", 0x01c4, 3, "b:0:1", 0.1),         #WPR3_Ruecklauftemp_Primaerquelle~0x01C4
+                (  5,"sekundaerkreis_vorlauftemperatur", 0x01c5, 3, "b:0:1", 0.1),         #WPR3_Sekundaer_Vorlauftemp_1~0x01C5
+                (  5,"sekundaerkreis_ruecklauftemperatur", 0x01c6, 3, "b:0:1", 0.1),       #WPR3_Sekundaer_Ruecklauftemp_1~0x01C6
+                (  5,"pufferspeichertemperatur", 0x01cb, 3, "b:0:1", 0.1),                 #WPR3_Pufferspeichertemperatur_1~0x01CB
+                (  5,"warmwassertemperatur", 0x01cd, 3, "b:0:1", 0.1),                     #WPR3_WW_Temperatur_Oben~0x01CD
+                ( 15,"heizen_vorlaufsolltemperatur", 0x1800, 2, 0.1),                      #WPR3_Vorlaufsolltemperatur_HK1~0x1800
+                (  1,"fluessiggastemperatur", 0xb404, 3, "b:0:1", 0.1),                    #WPR3_Fluessiggastemperatur~0xB404
+                (  1,"verdampfung_soll", 0xb406, 3, "b:0:1", 0.1),                         #WPR3_VERDAMPFUNG_SOLL~0xB406
+                (  1,"verdampfung", 0xb407, 3, "b:0:1", 0.1),                              #WPR3_VERDAMPFUNG~0xB407
+                (  1,"kondensation", 0xb408, 3, "b:0:1", 0.1),                             #WPR3_KONDENSATION~0xB408
+                (  1,"sauggas", 0xb409, 3, "b:0:1", 0.1),                                  #WPR3_SAUGGAS~0xB409
+                (  1,"heissgas", 0xb40a, 3, "b:0:1", 0.1),                                 #WPR3_HEISSGAS~0xB40A
+                (  1,"ueberhitzung_soll", 0xb40b, 3, "b:0:1", 0.1),                        #WPR3_UEBERHITZUNG_SOLL~0xB40B
+                (  1,"ueberhitzung_ist", 0xb40c, 3, "b:0:1", 0.1),                         #WPR3_UEBERHITZUNG_IST~0xB40C
+            ]
+        },  
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "bara",
+            "state_class": "measurement",
+            "suggested_display_precision": 1,
+            "poll": [
+                (  1,"sauggasdruck", 0xb410, 3, "b:0:1", 0.1),                             #WPR3_B410_Sauggasdruck~0xB410
+                (  1,"heissgasdruck", 0xb411, 3, "b:0:1", 0.1),                            #WPR3_B411_Heissgasdruck~0xB411
+            ]
+        },
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°C",
+            "icon": "mdi:thermometer-lines",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": 10,
+            "max": 45,
+            "step": 1,
+            "mode": "box",            
+            "poll": [
+                ( 15,"heizen_normaltemperatur", 0x2000, 2, 0.1),                           #WPR_HK1_Normaltemperatur~0x2000", 0x2000,
+                ( 15,"heizen_reduzierte_temperatur", 0x2001, 2, 0.1),                      #WPR_HK1_Redtemperatur~0x2001", 0x2001, 2,
+                ( 15,"heizen_party_temperatur", 0x2022, 2, 0.1),                           #WPR3_HK1_PartySolltemperatur~0x2022", 0x20
+                ( 15,"heizen_maximale_vorlauftemperatur", 0x200e, 2, 0.1),                 #WPR_HK1_max_Vorlauftemperatur_HK~0x200E",
+                ( 15,"heizen_minimale_vorlauftemperatur", 0x200f, 2, 0.1),                 #WPR_HK1_min_Vorlauftemperatur_HK~0x200F",
+            ]
+        },
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°C",
+            "icon": "mdi:thermometer-lines",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": 30,
+            "max": 65,
+            "step": 1,
+            "mode": "box",            
+            "poll": [
+                ( 15,"warmwasser_temperatur_soll", 0x6000, 2, 0.1),                        #WPR_WW_Temp_soll~0x6000", 0x6000, 2, 0.1),
+                ( 15,"warmwasser_temperatur_maximal", 0x6006, 2, 0.1),                     #WPR_WW_Temp_max_WWspeicher~0x6006", 0x6006, 2
+                ( 15,"warmwasser_temperatur_legionelle", 0x600c, 2, 0.1),                  #WPR_WW_Temp_Legionelle~0x600C", 0x600C, 2, 0.
+            ]
+        },
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°C",
+            "icon": "mdi:thermometer-lines",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": 4,
+            "max": 15,
+            "step": 1,
+            "mode": "box",            
+            "poll": [
+                ( 10,"temperaturdifferenz_heizgrenze", 0x7003, 2, 0.1),                    #WPR_Temperaturdifferenz_Berechnung_Heizgrenze~0x7003
+                ( 15,"pufferspeicher_hysterese", 0x7203, 2, 0.1),                          #WPR_Hysterese_Pufferspeicher_HK~0x7203
+                ( 15,"warmwasser_hysterese", 0x6007, 2, 0.1),                              #WPR_WW_Hysterese_Warmwasser~0x6007", 0x6007,
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "poll": [
+                ( 15,"datum_uhrzeit", 0x08e0, 8, "vcaldatetime"),                          #BCD: YYYYMMDDxxHHMISS
+                ( 45,"device_id", 0x00F8,  8, "raw"),                                      #Device-ID~0x00F8-00FF
+                ( 45,"herstellnr", 0xf010, 16, "utf8"),                                    #HWHerstellNrKessel~0xF010
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "h",
+            "device_class": "duration",
+            "suggested_display_precision": 2,
+            "poll": [
+                ( 15,"verdichterlaufzeit", 0x0580, 4, 0.00027777778),                      #WPR_RelaisLaufzeiten_Verdichter1~0x0580
+                ( 75,"laufzeit_belastungsklasse1", 0x1620, 2, 1),                          #WPR_Belastungsklasse1_Verdichter1~0x1620
+                ( 75,"laufzeit_belastungsklasse2", 0x1622, 2, 1),                          #WPR_Belastungsklasse2_Verdichter1~0x1622
+                ( 75,"laufzeit_belastungsklasse3", 0x1624, 2, 1),                          #WPR_Belastungsklasse3_Verdichter1~0x1624
+                ( 75,"laufzeit_belastungsklasse4", 0x1626, 2, 1),                          #WPR_Belastungsklasse4_Verdichter1~0x1626
+                ( 75,"laufzeit_belastungsklasse5", 0x1628, 2, 1),                          #WPR_Belastungsklasse5_Verdichter1~0x1628
+                ( 15,"eheizunglaufzeit_stufe1", 0x0588, 4, 0.00027777778),                 #WPR_RelaisLaufzeiten_eHeizung_Stufe1~0x0588
+                ( 15,"eheizunglaufzeit_stufe2", 0x0589, 4, 0.00027777778),                 #WPR_RelaisLaufzeiten_eHeizung_Stufe2~0x0589
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "suggested_display_precision": 1,
+            "device_class": "power_factor",
+            "poll": [
+                ( 75,"jaz_gesamt", 0x1680, 1, 0.1),                                        #WPR_WO1H_JAZ_Gesamt~0x1680
+                ( 75,"jaz_heizen", 0x1681, 1, 0.1),                                        #WPR_WO1H_JAZ_Heizen~0x1682
+                ( 75,"jaz_warmwasser", 0x1682, 1, 0.1),                                    #WPR_WO1H_JAZ_Warmwasser~0x1682
+                (  1,"cop_heizen", 0x1690, 1, 0.1),                                        #WPR_WO1H_COP_Heizbetrieb~0x1690
+                (  1,"cop_warmwasser", 0x1691, 1, 0.1),                                    #WPR_WO1H_COP_WWBetrieb~0x1691
+           ]
+        },
+        {
+            "domain" : "sensor",
+            "poll": [
+                ( 15,"verdichterstarts", 0x0500, 4, 1),                                    #WPR_RelaisZyklen_Verdichter1~0x0500
+                (  1,"verdichterphase", 0x130b, 1, 1),                                     #"WPR_130B_Zustandsautomat_WP1~0x130B 0=Off, 1=prepairing, 2=heating, 3=pause
+           ]
+        },
+        {
+            "domain" : "sensor",
+            #"domain": "number",
+            "suggested_display_precision": 0,
+            "poll": [
+                ( 15,"betriebsart", 0xb000, 3, "b:0:0", 1),                                #WPR_WO1H_HK1_Betriebsart~0xB000 0=0 – Abschaltbetrieb,1=1 – Nur WW,2=2 – Heizen/Kühlen/WW,4=4 – dauernd reduziert,5=5 – dauernd normal,6=6 – normal Abschalt,7=7 – nur Kühlen
+                ( 15,"partybetrieb", 0xb000, 3, "b:1:1", 1),
+                ( 15,"sparbetrieb", 0xb000, 3, "b:2:2", 1),
+                (  5,"warmwasser_1x_laden", 0xb020, 1, 1),                                 #einmalige Aufladung
+                (999,"anlagenschema", 0x7000, 1, 1),                                       #WPR_Anlagenkonfig_Anlagenschema~0x7000 0: WW,1: 1 HK,2: 1 HK WW,3: 0 HK 1 MHK,4: 0 HK 1 MHK WW,5: 1 HK 1 MHK,6: 1 HK 1 MHK WW,7: 0 HK 1 MHK 1 MHK,8: 0 HK 1 MHK 1 MHK WW,9: 1 HK 1 MHK 1 MHK,10: 1 HK 1 MHK 1 MHK WW,11: Fremdansteuerung
+           ]
+        },
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°K",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": -5,
+            "max": 5,
+            "step": 0.1,
+            "mode": "box",    
+            "suggested_display_precision": 1,
+            "poll": [
+                ( 15,"heizkennlinie_niveau", 0x2006, 2, 0.1),                              #WPR_HK1_Niveau_Heizkennlinie~0x2006", 0x20
+            ]
+        },    
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°K/°K",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": 0,
+            "max": 2,
+            "step": 0.1,
+            "mode": "box",    
+            "suggested_display_precision": 1,
+            "poll": [
+                ( 15,"heizkennlinie_neigung", 0x2007, 2, 0.1),                             #WPR_HK1_Neigung_Heizkennlinie~0x2007", 0x2
+            ]
+        },    
+        {
+            "domain" : "sensor",
+            #"domain": "number",
+            "unit_of_measurement": "min",
+            "suggested_display_precision": 0,
+            "poll": [
+                ( 15,"warmwasser_maximale_laufzeit_heizbetrieb", 0x6011, 2, 1),            #WPR_WW_max_Laufzeit_Heizbetrieb~0x6011", 0x60
+                ( 15,"warmwasser_maximale_unterbrechung_heizbetrieb", 0x6012, 2, 1),       #WPR_WW_max_Unterbrechung_Heizbetrieb~0x6012",
+                ( 20,"aussentemperatur_mittelzeit", 0x7002, 2, 1),                         #WPR_Anlagenkonfig_Mittelzeit_aussentemperatur~0x7002
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "W",
+            "suggested_display_precision": 0,
+            "state_class" : "measurement",
+            "poll": [
+                (  1,"heizleistung", 0x16a0, 4, 1),                                        #WPR3_Heizleistung_1~0x16A0", 0x16A0,
+                (  1,"leistungsaufnahme", 0x16a4, 4, 1),                                   #WPR3_Leistungsaufnahme_1~0x16A4", 0x1
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "kW",
+            "suggested_display_precision": 0,
+            "poll": [
+                (999,"verdichterleistung", 0x5030, 1, 1),                                  #WPR_Verdichter1_LeistungVerd~0x5030
+            ]
+        },    
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "kWh",
+            "suggested_display_precision": 0,
+            "nopoll": [        # <------------------------------------------------------------  "nopoll"
+                (  0,"energy_heating_thermal", 0xb800),                                    # for HA only. will be excluded from polling list
+                (  0,"energy_heating_electric", 0xb800),                                   # 
+                (  0,"energy_water_thermal", 0xb800),                                      # puplished by wo1c_energy.read_energy
+                (  0,"energy_water_electric", 0xb800),                                     # 
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "°C",
+            "device_class": "temperature",
+            "state_class": "measurement",
+            "suggested_display_precision": 1,
+            "nopoll": [        # <------------------------------------------------------------  "nopoll"
+                (  0,"splitter_cpu_temp", 0x0000),                                         # 
+             ]
+        },
+        {
+            "domain" : "sensor",
+            "unit_of_measurement": "%",
+            "state_class": "measurement",
+            "icon": "mdi:percent-outline",
+            "suggested_display_precision": 0,
+            "poll": [
+                (  1,"drehzahl_primaerpumpe", 0xb420, 2, "b:0:0", 1),                      #WPR3_B420_Drehzahl_Primaerquelle~0xB420
+                (  1,"drehzahl_sekundaerpumpe", 0xb421, 2, "b:0:0", 1),                    #WPR3_B421_Drehzahl_Sekundaerpumpe~0xB421
+                (  1,"oeffnung_elektr_expansionsventil", 0xb424, 2, "b:0:0", 1),           #WPR3_B424_Position_ECV~0xB424
+                #(  1,"leistung_verdichter", 0xb423, 2, "b:0:0", 1),                        #WPR3_B423_Leistung_Verdichter~0xB423 vitocal 300/333 G
+            ],
+            "nopoll": [        # <------------------------------------------------------------  "nopoll"
+                (  0,"splitter_ram_percent", 0x0000),                                      # published by osinfo
+                (  0,"splitter_disk_percent", 0x0000),                                     # 
+            ]
+        },
+        {
+            "domain" : "sensor",
+            "nopoll": [        # <------------------------------------------------------------  "nopoll"
+                (  0,"splitter_cpu_load", 0x0000),                                         # ---------------------
+                (  0,"splitter_timestamp", 0x0000),                                        # 
+            ]
+        },
+        {
+            "domain" : "binary_sensor",
+            "payload_on": "1",
+            "payload_off": "0",
+            "poll": [
+                (  1,"verdichterstatus", 0xb443, 1, 1),                                    #WPR_RelaisStatus_Verdichter1_Neu~0xB443
+                (  1,"heizkreispumpe", 0x048d, 1, 1),                                      #WPR_RelaisStatus_Heizkreispumpe_A1~0x048D
+                (  1,"warmwasserzirkulation", 0x0490, 1, 1),                               #WPR_RelaisStatus_Schaltausgang_Wtimer_ZirkulationP~0x0490
+                (  1,"heizen_warmwasser", 0x0494, 1, 1),                                   #WPR_RelaisStatus_3W_VentilHeizen_WW1~0x0494 0=Heizen,1=WW
+             ]
+        }, 
+        {
+            "domain" : "number",
+            "unit_of_measurement": "°C",
+            "icon": "mdi:thermometer-lines",
+            "suggested_display_precision": 1,
+            "command_template": "{{ \"w;%address%;%bytelength%;\"~value*10 }}",
+            "min": 4,
+            "max": 15,
+            "step": 1,
+            "mode": "box",            
+            "poll": [
+                ( 10,"temperaturdifferenz_heizgrenze", 0x7003, 2, 0.1),                    #WPR_Temperaturdifferenz_Berechnung_Heizgrenze~0x7003
+                ( 15,"pufferspeicher_hysterese", 0x7203, 2, 0.1),                          #WPR_Hysterese_Pufferspeicher_HK~0x7203
+                ( 15,"warmwasser_hysterese", 0x6007, 2, 0.1),                              #WPR_WW_Hysterese_Warmwasser~0x6007", 0x6007,
+            ]
+        },        
+    ],
+    "commands" : [
+        {
+            "name" : "refresh",
+            "payload_press" : "forcepoll",
+        }
+    ]
+}
+
+def extract_poll_items(shared_config):
+    poll_items = []
+    if "domains" in shared_config:
+        for config in shared_config["domains"]:
+            if "poll" in config:
+                poll_items.extend(config["poll"])
+    return poll_items
+
+poll_items = extract_poll_items(shared_config)
+
+
+

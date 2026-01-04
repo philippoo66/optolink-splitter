@@ -33,6 +33,8 @@ class cPollList:
         try:
             if(os.path.exists("poll_list.py")):
                 mylist = importlib.import_module('poll_list')
+            elif(os.path.exists("ha_shared_config.py")):
+                mylist = importlib.import_module('ha_shared_config')
             else:
                 mylist = importlib.import_module('settings_ini')
             if reload:
