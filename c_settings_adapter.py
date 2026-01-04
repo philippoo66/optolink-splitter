@@ -103,7 +103,7 @@ class SettingsAdapter:
         self.set_settings("settings_ini")
 
 
-    def set_settings(self, settings_module:str = None):
+    def set_settings(self, settings_module:str = None, reload:bool = False):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Here we take the settings from a module if exist there, 
@@ -120,6 +120,14 @@ class SettingsAdapter:
         if not self._settings_obj:
             logger.error("set_settings: no settings object set")
             return
+        
+        if reload:
+            try:
+                self._settings_obj = importlib.reload(self._settings_obj)
+            except Exception as e:
+                logger.error(f"reload settings module: {e}")
+                return
+
 
         # General Settings +++++++++++
         # a later change of no_logger_file will not be effective since logger is already up then 

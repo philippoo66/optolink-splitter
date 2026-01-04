@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.8.4.2"
+VERSION = "1.8.4.3"
 
 import serial
 import time
@@ -201,6 +201,7 @@ def tcp_connection_loop():
 def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP, 0:no response
     global poll_pointer, poll_cycle
     resp =  f"{cmnd} failed"
+    #print("do_special_command",cmnd)
     if cmnd in ('reset', 'resetrecent'):
         if(mod_mqtt_util is not None):
             mod_mqtt_util.reset_recent = True
@@ -211,6 +212,15 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             poll_pointer = 0
             poll_cycle = 0
             resp = f"{cmnd} triggered"
+    # elif cmnd in ('reloadpoll',):    # threading problem!!
+    #     # nur wenn grad Ruhe
+    #     if(poll_pointer > poll_list.num_items):
+    #         timer_pollinterval.cancel()
+    #         poll_list.make_list(reload=True)
+    #         poll_pointer = 0
+    #         poll_cycle = 0
+    #         timer_pollinterval.start()
+    #         resp = f"poll list reloaded"
     elif cmnd in ("exit", "resettcp"):
         if tcp_server:
             tcp_server.stop()
@@ -219,6 +229,10 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         if settings.write_viessdata_csv:
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
+    elif cmnd in ("reini", "reloadini"):
+        # some changes (like ser ports) will not have effect...
+        settings.set_settings(reload=True)
+        resp = f"ini settings reloaded"
     else:
         return False
     # responde

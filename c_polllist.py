@@ -17,7 +17,6 @@
 import os
 import importlib
 
-import settings_ini
 from logger_util import logger
 
 
@@ -30,14 +29,20 @@ class cPollList:
         self.num_items = 0
         self.onceonlies_removed = False
 
-    def make_list(self):
-        if(os.path.exists("poll_list.py")):
-            mylist = importlib.import_module('poll_list')
+    def make_list(self, reload = False):
+        try:
+            if(os.path.exists("poll_list.py")):
+                mylist = importlib.import_module('poll_list')
+            else:
+                mylist = importlib.import_module('settings_ini')
+            if reload:
+                mylist = importlib.reload(mylist)
             self.items = mylist.poll_items
-        else:
-            self.items = settings_ini.poll_items
-        self.num_items = len(self.items)
-        logger.info(f"poll_list made, {self.num_items} items")
+            self.num_items = len(self.items)
+            self.onceonlies_removed = False
+            logger.info(f"poll_list made, {self.num_items} items")
+        except Exception as e:
+            logger.error(f"make_list: {e}")
 
     def remove_once_onlies(self) -> bool:
         if self.onceonlies_removed: 

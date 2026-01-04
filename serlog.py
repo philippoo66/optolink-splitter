@@ -17,7 +17,7 @@
 import serial
 import time
 from datetime import datetime
-from c_settings_adapter import settings
+import settings_ini
 
 
 # VS detection +++++++++++++++++++++++
@@ -40,7 +40,7 @@ def bbbstr(data_buffer):
 def main():
     # Konfiguration der seriellen Schnittstellen
     # Vitoconnect  (aelter: /dev/ttyAMA0)
-    ser1 = serial.Serial(settings.port_vitoconnect,    #'/dev/ttyS0',   # please adjust in case!!
+    ser1 = serial.Serial(settings_ini.port_vitoconnect,    #'/dev/ttyS0',   # please adjust in case!!
             baudrate=4800,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
@@ -49,7 +49,7 @@ def main():
             exclusive=True)
 
     # Optolink Kopf
-    ser2 = serial.Serial(settings.port_optolink, #'/dev/ttyUSB0',   # please adjust in case!!
+    ser2 = serial.Serial(settings_ini.port_optolink, #'/dev/ttyUSB0',   # please adjust in case!!
             baudrate=4800,
             parity=serial.PARITY_EVEN,
             stopbits=serial.STOPBITS_TWO,
