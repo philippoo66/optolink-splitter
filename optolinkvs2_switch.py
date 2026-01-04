@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.8.4.3"
+VERSION = "1.9.0.0"
 
 import serial
 import time
@@ -433,7 +433,7 @@ def main():
         # Empfangstask der sekundaeren Master starten (TcpIp, MQTT) ++++++++++++++
 
         # MQTT --------
-        if(settings.mqtt is not None):
+        if(settings.mqtt_broker is not None):
             # avoid paho.mqtt required if not used
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
