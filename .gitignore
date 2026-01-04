@@ -6,7 +6,8 @@ __pycache__/
 *.csv
 *.txt
 # user specific files
-#settings_ini.py
+settings_ini.py
+ha_shared_config.py
 entities,json
 test.py
 allupdate.sh
