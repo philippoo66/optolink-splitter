@@ -28,9 +28,9 @@ class SettingsAdapter:
     def __init__(self):
         self._settings_obj = None
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Here we define all the settings and their default values 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #  Here we define all the settings and their default values 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # These settings might get overwritten later by
         # - settings.setting = value
@@ -98,17 +98,17 @@ class SettingsAdapter:
         # Datapoint Polling List +++++++++
         self.poll_interval = 30                 # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # now we apply given settings from settings_ini.py
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #  now we apply given settings from settings_ini.py
         self.set_settings("settings_ini")
 
 
     def set_settings(self, settings_module:str = '', reload:bool = False):
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Here we take the settings from a module if exist there, 
-        # otherwise keep value unchanged 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #  Here we take the settings from a module if exist there, 
+        #  otherwise keep value unchanged 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if settings_module:
             try:

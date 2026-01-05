@@ -32,12 +32,12 @@ mqtt_logging = False                # Enable/Disables logging of paho.mqtt (defa
 
 # MQTT Topics ++++++++++++++++++++
 # Best practices recommendation: Always use lowercase for consistency and compatibility.
-mqtt_topic = "Vito"              # MQTT topic for publishing data (default: "Vito")
-mqtt_listen = "Vito/cmnd"        # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
-mqtt_respond = "Vito/resp"       # MQTT topic for responses (default: "Vito/resp", set None to disable)
-mqtt_fstr = "{dpname}"           # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
-mqtt_retain = False              # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
-mqtt_no_redundant = False        # if True, no previously published unchanged messages 
+mqtt_topic = "Vito"             # MQTT topic for publishing data (default: "Vito")
+mqtt_listen = "Vito/cmnd"       # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
+mqtt_respond = "Vito/resp"      # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_fstr = "{dpname}"          # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
+mqtt_retain = False             # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
+mqtt_no_redundant = False       # if True, no previously published unchanged messages 
 
 # TCP/IP ++++++++++++++++++++++++++
 tcpip_port = 65234              # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
