@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.9.1.0"
+VERSION = "1.9.1.1"
 
 import serial
 import time
@@ -540,22 +540,19 @@ def main():
                     # polling list --------
                     if(is_on == 0):              
                         if(settings.poll_interval >= 0):
-                            # things not to be done while poll cycle not finished
-                            if(poll_pointer >= poll_list.num_items) or (poll_pointer == 0):
-                                # force poll including onceonlies
-                                if force_poll_flag:
-                                    poll_pointer = 0
-                                    poll_cycle = 0
-                                    force_poll_flag = False
-                                # reload poll list
-                                if reload_poll_flag:
-                                    poll_list.make_list(reload=True)
-                                    if(len(poll_data) != poll_list.num_items):
-                                        poll_data = [None] * poll_list.num_items
-                                    publish_stat()
-                                    poll_pointer = 0
-                                    poll_cycle = 0
-                                    reload_poll_flag = False
+                            # force poll including onceonlies
+                            if force_poll_flag:
+                                poll_pointer = 0
+                                poll_cycle = 0
+                                force_poll_flag = False
+                            # reload poll list
+                            if reload_poll_flag:
+                                poll_list.make_list(reload=True)
+                                poll_data = [None] * poll_list.num_items
+                                publish_stat()
+                                poll_pointer = 0
+                                poll_cycle = 0
+                                reload_poll_flag = False
 
                             if(0 <= poll_pointer < poll_list.num_items):
                                 retcode = do_poll_item(poll_data, serOptolink, mod_mqtt_util)
