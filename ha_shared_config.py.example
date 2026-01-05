@@ -301,8 +301,8 @@ def extract_poll_items(shared_config):              #
     poll_items = []                                 #
     if "domains" in shared_config:                  #
     for config in shared_config["domains"]:         #
-            if "poll" in config:                    #
-                poll_items.extend(config["poll"])   #
+        if "poll" in config:                        #
+            poll_items.extend(config["poll"])       #
     return poll_items                               #
                                                     #
 poll_items = extract_poll_items(shared_config)      #
