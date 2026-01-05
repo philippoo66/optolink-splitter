@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.8.4.3"
+VERSION = "1.9.0.2"
 
 import serial
 import time
@@ -108,7 +108,8 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
 
         if(retcode == 0x01):
             # save val in buffer for csv
-            poll_data[poll_pointer] = val
+            try: poll_data[poll_pointer] = val
+            except: pass    #Exception as e: logger.warning(f"buffer poll_data({poll_pointer}): {e}")   # passiert ggf. nach reloadpoll, macht aber nix
 
             # post to MQTT broker
             if(mod_mqtt is not None): 
@@ -131,7 +132,8 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                             next_val = requests_util.perform_bytebit_filter_and_evaluate(data, next_item)
 
                             # save val in buffer for csv
-                            poll_data[next_idx] = next_val
+                            try: poll_data[next_idx] = next_val
+                            except: pass    #Exception as e: logger.warning(f"buffer poll_data({next_idx}): {e}")   # passiert ggf. nach reloadpoll, macht aber nix
 
                             if(mod_mqtt is not None): 
                                 # publish to MQTT broker
@@ -212,15 +214,14 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             poll_pointer = 0
             poll_cycle = 0
             resp = f"{cmnd} triggered"
-    # elif cmnd in ('reloadpoll',):    # threading problem!!
-    #     # nur wenn grad Ruhe
-    #     if(poll_pointer > poll_list.num_items):
-    #         timer_pollinterval.cancel()
-    #         poll_list.make_list(reload=True)
-    #         poll_pointer = 0
-    #         poll_cycle = 0
-    #         timer_pollinterval.start()
-    #         resp = f"poll list reloaded"
+    elif cmnd in ('reloadpoll',):    # threading problem!!
+        # nur wenn grad Ruhe
+        if(poll_pointer > poll_list.num_items):
+            poll_pointer = -1
+            poll_list.make_list(reload=True)
+            poll_pointer = 0
+            poll_cycle = 0
+            resp = f"poll_list reloaded"
     elif cmnd in ("exit", "resettcp"):
         if tcp_server:
             tcp_server.stop()
@@ -244,6 +245,15 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             if(tcp_server):
                 tcp_server.send(resp)
     return True
+
+
+def publish_stat():
+    if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
+        topic = settings.mqtt_topic + "/stats"
+        jdata = {"Splitter Version" : VERSION,
+                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
+                "Poll List Make" : str(poll_list.module_date)}
+        mod_mqtt_util.publish_smart(topic, json.dumps(jdata))
 
 
 def mqtt_publ_debug(msg:str):
@@ -433,7 +443,7 @@ def main():
         # Empfangstask der sekundaeren Master starten (TcpIp, MQTT) ++++++++++++++
 
         # MQTT --------
-        if(settings.mqtt is not None):
+        if(settings.mqtt_broker is not None):
             # avoid paho.mqtt required if not used
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
@@ -454,6 +464,8 @@ def main():
         # publish viconn or not
         vicon_publ_callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
 
+        # show what we have
+        publish_stat()
 
         # ------------------------
         # connection / re-connect loop
@@ -534,7 +546,7 @@ def main():
                     # polling list --------
                     if(is_on == 0):              
                         if(settings.poll_interval >= 0):
-                            if(poll_pointer < poll_list.num_items):
+                            if(0 <= poll_pointer < poll_list.num_items):
                                 retcode = do_poll_item(poll_data, serOptolink, mod_mqtt_util)
                                 # increment poll pointer
                                 poll_pointer += 1

@@ -15,9 +15,12 @@
 '''
 
 import os
+from pathlib import Path
 import importlib
 
+from c_settings_adapter import settings
 from logger_util import logger
+import utils
 
 
 class cPollList:
@@ -28,23 +31,38 @@ class cPollList:
         self.items = []
         self.num_items = 0
         self.onceonlies_removed = False
+        self.module_date = "0"
 
     def make_list(self, reload = False):
         try:
+            # import module where poll list is taken from
             if(os.path.exists("poll_list.py")):
-                mylist = importlib.import_module('poll_list')
+                listmodule = importlib.import_module('poll_list')
             elif(os.path.exists("ha_shared_config.py")):
-                mylist = importlib.import_module('ha_shared_config')
+                listmodule = importlib.import_module('ha_shared_config')
             else:
-                mylist = importlib.import_module('settings_ini')
+                listmodule = importlib.import_module('settings_ini')
+            
+            # if reload is requested
             if reload:
-                mylist = importlib.reload(mylist)
-            self.items = mylist.poll_items
+                listmodule = importlib.reload(listmodule)
+            
+            # apply poll list
+            self.items = listmodule.poll_items
             self.num_items = len(self.items)
             self.onceonlies_removed = False
+
+            # apply poll interval if given
+            settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
+
+            # info
             logger.info(f"poll_list made, {self.num_items} items")
+
+            # get modified date of module
+            self.module_date = utils.get_module_modified_datetime(listmodule)
         except Exception as e:
             logger.error(f"make_list: {e}")
+
 
     def remove_once_onlies(self) -> bool:
         if self.onceonlies_removed: 

@@ -8,15 +8,17 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 For latest developments always check the [Version-Log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log)
 
 ## 🎉 Announcements
+- [**Version 1.9.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1902) **Home Assistant integration** simplified! Define Entities and poll_list together in `ha_shared_config.py` and run `ha_publish.py` once and everything is fine! Thank you @matthias-oe, @EarlSneedSinclair!
+
+- [**Version 1.8.3.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) Adds MQTT TLS support (optional). TLS/SSL mode for the MQTT client possible. Thank you @EarlSneedSinclair!
+
 - [**Version 1.7.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1710) New TCP solution. Properly cleans up and releases all connections. Switch to disable writing of optolinkvs2_switch.log file (protects SD card). Inverse boolean format specifiers introduced.
 
-- [**Version 1.6.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) More speed if Vitoconnect in use! Request task control fixed: alternating Vitoconnect / (poll or mqtt or tcp) ensured. Previously it was 2 Viconn request, 1 poll item. So now 30% faster poll list!
-
-- [**Version 1.5.0.5**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1505) New feature showing all the vitoconnect traffic on MQTT
 
 
-- Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
-- Explore other feature branches, there might be something useful for you! 😉
+
+- Need **VS1 / KW protocol support**? It got implemented in the main tree since V1.8.0.0. Just set `vs1protocol = True`<br>
+Still **TESTERS WANTED with KW device and Vitoconnnect!**
 
 - minimal Optolink Adapter confirmed:
 

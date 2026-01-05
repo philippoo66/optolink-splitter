@@ -21,7 +21,7 @@ def connect_mqtt(retries=3, delay=5):
         return True
     
     try:
-        mqtt_credentials = settings.mqtt.split(':')
+        mqtt_credentials = settings.mqtt_broker.split(':')
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
         
         mqtt_user_pass = settings.mqtt_user

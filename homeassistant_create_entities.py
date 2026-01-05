@@ -46,7 +46,7 @@ def connect_mqtt(retries=3, delay=5):
         return True
 
     try:
-        mqtt_credentials = settings.mqtt.split(':')
+        mqtt_credentials = settings.mqtt_broker.split(':')
         if len(mqtt_credentials) != 2:
             raise ValueError("ERROR: MQTT settings must be in the format 'host:port'")
 
