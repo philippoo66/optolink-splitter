@@ -248,7 +248,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
 
 def publish_stat():
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
-        topic = settings.mqtt_topic + "/stat"
+        topic = settings.mqtt_topic + "/stats"
         jdata = {"Splitter Version" : VERSION,
                 "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
                 "Poll List Make" : str(poll_list.module_date)}
