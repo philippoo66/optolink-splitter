@@ -1,3 +1,35 @@
+'''
+   Copyright 2026 matthias-oe
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   This script is designed to make Optolink-Splitter datapoints available in Home Assistant by publishing them via MQTT. 
+   The configuration is defined in the ha_shared_config.py file.
+
+   The documentation can be found here:
+      https://github.com/philippoo66/optolink-splitter/wiki/211-Alternative-Home-Assistant-Integration
+      
+   
+   MQTT publishing in Home Assistant:
+   --------------------------------------------------
+   Home Assistance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
+   Topic: 
+   {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
+   Value:
+   {"object_id": "{dp_prefix}{name}", "unique_id": "{dp_prefix}[name(converted)]", "device": [...] , "availability_topic": "{mqtt_optolink_base_topic}/LWT", "state_topic": "{mqtt_optolink_base_topic}/[name(converted)]", "name": "[name]", [...]}
+   
+'''
+
 import json
 import paho.mqtt.client as paho
 import time
@@ -49,37 +81,6 @@ def connect_mqtt(retries=3, delay=5):
         print(f" ERROR connecting to MQTT broker: {e}")
         return False
 
-def verify_mqtt_optolink_lwt(timeout=10):
-    """Verifies Optolink-Splitter availability via LWT."""
-    global mqtt_client
-    
-    if mqtt_client is None:
-        print(" ERROR: MQTT client is not initialized.")
-        return False
-    
-    LWT_TOPIC = settings.mqtt_topic + "/LWT" 
-    lwt_status = {"online": False}
-    
-    def on_message(client, userdata, message):
-        payload = message.payload.decode()
-        if payload == "online":
-            print(f" ✓ Optolink-Splitter LWT reports 'online'.")
-            lwt_status["online"] = True
-    
-    mqtt_client.on_message = on_message
-    print(f"Subscribing to {LWT_TOPIC}...")
-    mqtt_client.subscribe(LWT_TOPIC)
-    
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if lwt_status["online"]:
-            return True
-        time.sleep(1)
-    
-    print(" ERROR: Optolink-Splitter LWT did not report 'online'.")
-    print(" Ensure optolinkvs2_switch.py is running.")
-    return False
-
 def beautify(text):
     result = text
     if "beautifier" in shared_config:
@@ -92,16 +93,12 @@ def beautify(text):
                 result = result.replace(sea[i], rep[i])
                 i = i + 1
     return result
-   
     
 def publish_ha_discovery():
     """Veröffentlicht HA Discovery mit neuer Array-Struktur."""
     # MQTT verbinden und prüfen
     if not connect_mqtt():
         print(" ERROR: MQTT connection failed. Exiting.")
-        return
-    if not verify_mqtt_optolink_lwt():
-        print(" ERROR: Optolink-Splitter offline. Exiting.")
         return
 
     mqtt_base = settings.mqtt_topic
