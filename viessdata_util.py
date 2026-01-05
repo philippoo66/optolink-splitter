@@ -36,8 +36,9 @@ def get_headline() -> str:
     for itm in c_polllist.poll_list.items:
         # get addr as column caption
         if(isinstance(itm[0], int)):
-            # PollCycle...
-            cols.append(itm[2])
+            if(itm[0] != 0):
+                # PollCycle...
+                cols.append(itm[2])
         else:
             cols.append(itm[1])
     capts = ';'.join([format(addr, '04X') for addr in cols])
@@ -84,11 +85,12 @@ def buffer_csv_line(data, force_write=False):
         # decimal separator
         tbreplaced = "." if settings.dec_separator == "," else ","
         for i in range(0, c_polllist.poll_list.num_items):
-            sval = str(data[i]) if data[i] else "0"  # wg. None wg. once_onlies.... alles Pfusch
-            if(utils.to_number(data[i]) != None):
-                # format number, anything else left like it is
-                sval = sval.replace(tbreplaced, settings.dec_separator) 
-            sline += sval + ";"
+            if not utils.is_onceonly(c_polllist.poll_list.items[i]):
+                sval = str(data[i]) if data[i] else "0"  # wg. None wg. once_onlies.... alles Pfusch
+                if(utils.to_number(data[i]) != None):
+                    # format number, anything else left like it is
+                    sval = sval.replace(tbreplaced, settings.dec_separator) 
+                sline += sval + ";"
 
         if(force_write and not new_week):
             wrbuffer.append(sline)
