@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.9.0.2"
+VERSION = "1.9.1.0"
 
 import serial
 import time
@@ -47,6 +47,9 @@ restart_event = threading.Event()
 #shutdown_event = threading.Event()
 
 last_vs1_comm = 0
+
+force_poll_flag = False
+reload_poll_flag = False
 
 
 def olbreath(retcode:int):
@@ -87,7 +90,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             item = poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
             if(len(item) > 1 and isinstance(item[0], int)):
                 # this is poll_cycle item
-                if(item[0] != 0) and (poll_cycle % item[0] != 0):
+                if((item[0] != 0) and (poll_cycle % item[0] != 0)) or ((item[0] == 0) and (poll_cycle != 0)):
                     # +++ do not poll this item this time +++
 
                     # leave poll_data[poll_pointer] unchanged
@@ -108,8 +111,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
 
         if(retcode == 0x01):
             # save val in buffer for csv
-            try: poll_data[poll_pointer] = val
-            except: pass    #Exception as e: logger.warning(f"buffer poll_data({poll_pointer}): {e}")   # passiert ggf. nach reloadpoll, macht aber nix
+            poll_data[poll_pointer] = val
 
             # post to MQTT broker
             if(mod_mqtt is not None): 
@@ -132,8 +134,7 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                             next_val = requests_util.perform_bytebit_filter_and_evaluate(data, next_item)
 
                             # save val in buffer for csv
-                            try: poll_data[next_idx] = next_val
-                            except: pass    #Exception as e: logger.warning(f"buffer poll_data({next_idx}): {e}")   # passiert ggf. nach reloadpoll, macht aber nix
+                            poll_data[next_idx] = next_val
 
                             if(mod_mqtt is not None): 
                                 # publish to MQTT broker
@@ -201,7 +202,8 @@ def tcp_connection_loop():
 
 # utils +++++++++++++++++++++++++++++
 def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP, 0:no response
-    global poll_pointer, poll_cycle
+    global force_poll_flag, reload_poll_flag
+
     resp =  f"{cmnd} failed"
     #print("do_special_command",cmnd)
     if cmnd in ('reset', 'resetrecent'):
@@ -209,19 +211,11 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             mod_mqtt_util.reset_recent = True
             resp = f"{cmnd} triggered"
     elif cmnd in ('forcepoll',):
-        # nur wenn grad Ruhe
-        if(poll_pointer > poll_list.num_items):
-            poll_pointer = 0
-            poll_cycle = 0
-            resp = f"{cmnd} triggered"
-    elif cmnd in ('reloadpoll',):    # threading problem!!
-        # nur wenn grad Ruhe
-        if(poll_pointer > poll_list.num_items):
-            poll_pointer = -1
-            poll_list.make_list(reload=True)
-            poll_pointer = 0
-            poll_cycle = 0
-            resp = f"poll_list reloaded"
+        force_poll_flag = True
+        resp = f"{cmnd} triggered"
+    elif cmnd in ('reloadpoll',):   
+        reload_poll_flag = True
+        resp = f"{cmnd} triggered"
     elif cmnd in ("exit", "resettcp"):
         if tcp_server:
             tcp_server.stop()
@@ -231,7 +225,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
     elif cmnd in ("reini", "reloadini"):
-        # some changes (like ser ports) will not have effect...
+        # some changes (like ser ports) will not take effect...
         settings.set_settings(reload=True)
         resp = f"ini settings reloaded"
     else:
@@ -393,12 +387,14 @@ def handle_exit(sig, frame):
 def main():
     global mod_mqtt_util
     global poll_pointer, poll_cycle
-    global progr_exit_flag
+    global progr_exit_flag, force_poll_flag, reload_poll_flag
 
     # Signale abfangen fuer sauberes Beenden
     signal.signal(signal.SIGTERM, handle_exit)
     signal.signal(signal.SIGINT, handle_exit)
 
+    serOptolink = None  # Viessmann Device (Slave)
+    serVitoConnnect = None  # Vitoconnect (Master)
 
     # #temp!!
     # optolinkvs2.temp_callback = publish_viconn
@@ -409,8 +405,6 @@ def main():
 
     try:
     #if True:
-        serOptolink = None  # Viessmann Device (Slave)
-        serVitoConnnect = None  # Vitoconnect (Master)
 
         poll_list.make_list()
         # buffer for read data for writing viessdata.csv 
@@ -546,6 +540,23 @@ def main():
                     # polling list --------
                     if(is_on == 0):              
                         if(settings.poll_interval >= 0):
+                            # things not to be done while poll cycle not finished
+                            if(poll_pointer >= poll_list.num_items) or (poll_pointer == 0):
+                                # force poll including onceonlies
+                                if force_poll_flag:
+                                    poll_pointer = 0
+                                    poll_cycle = 0
+                                    force_poll_flag = False
+                                # reload poll list
+                                if reload_poll_flag:
+                                    poll_list.make_list(reload=True)
+                                    if(len(poll_data) != poll_list.num_items):
+                                        poll_data = [None] * poll_list.num_items
+                                    publish_stat()
+                                    poll_pointer = 0
+                                    poll_cycle = 0
+                                    reload_poll_flag = False
+
                             if(0 <= poll_pointer < poll_list.num_items):
                                 retcode = do_poll_item(poll_data, serOptolink, mod_mqtt_util)
                                 # increment poll pointer
@@ -553,16 +564,8 @@ def main():
 
                                 #### everything to be done after poll cycle completed ++++++++++
                                 if(poll_pointer >= poll_list.num_items):
-                                    # remove once_onlies
-                                    items_removed = False
-                                    if(poll_cycle == 0):
-                                        items_removed = poll_list.remove_once_onlies()
                                     # Viessdata csv
-                                    if(items_removed):
-                                        # no csv line if once_onlies were present
-                                        # set up buffer according to remaining items
-                                        poll_data = [None] * poll_list.num_items
-                                    elif(settings.write_viessdata_csv):
+                                    if(settings.write_viessdata_csv):
                                         viessdata_util.buffer_csv_line(poll_data)
                                     # wo1c energy
                                     if(settings.wo1c_energy > 0) and (poll_cycle % settings.wo1c_energy == 0):
@@ -579,11 +582,9 @@ def main():
                                     # poll pointer control
                                     poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > poll_list.num_items)
                                     if(settings.poll_interval == 0):
+                                        # continuous polling
                                         poll_pointer = 0  # else: poll_pointer gets reset by timer
-                                    # #TEMP test
-                                    # if(poll_cycle == 1):
-                                    #     tcp_server.stop()
-                                    # #TEMP test end
+                                # we did something
                                 did_secodary_request = True
 
                     # MQTT request --------
