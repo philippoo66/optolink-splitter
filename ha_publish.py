@@ -1,3 +1,35 @@
+'''
+   Copyright 2026 matthias-oe
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+   This script is designed to make Optolink-Splitter datapoints available in Home Assistant by publishing them via MQTT. 
+   The configuration is defined in the ha_shared_config.py file.
+
+   The documentation can be found here:
+      https://github.com/philippoo66/optolink-splitter/wiki/211-Alternative-Home-Assistant-Integration
+      
+   
+   MQTT publishing in Home Assistant:
+   --------------------------------------------------
+   Home Assistance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
+   Topic: 
+   {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
+   Value:
+   {"object_id": "{dp_prefix}{name}", "unique_id": "{dp_prefix}[name(converted)]", "device": [...] , "availability_topic": "{mqtt_optolink_base_topic}/LWT", "state_topic": "{mqtt_optolink_base_topic}/[name(converted)]", "name": "[name]", [...]}
+   
+'''
+
 import json
 import paho.mqtt.client as paho
 import time
