@@ -14,6 +14,7 @@
    limitations under the License.
 '''
 
+from pathlib import Path
 from datetime import datetime
 from c_settings_adapter import settings
 
@@ -136,3 +137,14 @@ def unixtime2str(data) -> str:
         dval = int.from_bytes(data, byteorder="little", signed=False)
         return f"{datetime.fromtimestamp(dval//1000)}.{dval%1000}"
 
+
+def get_module_modified_datetime(module) -> datetime:
+    """
+    Gibt das letzte Aenderungsdatum der .py-Datei eines importierten Moduls zurueck.
+    Erwartet ein normales benutzerdefiniertes Modul.
+    """
+    try:
+        module_path = Path(module.__file__).with_suffix(".py")
+        return datetime.fromtimestamp(module_path.stat().st_mtime)
+    except:
+        return datetime.min

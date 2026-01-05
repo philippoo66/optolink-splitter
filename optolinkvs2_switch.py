@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.9.0.0"
+VERSION = "1.9.0.1"
 
 import serial
 import time
@@ -246,6 +246,15 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
     return True
 
 
+def publish_stat():
+    if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
+        topic = settings.mqtt_topic + "/stat"
+        jdata = {"Splitter Version" : VERSION,
+                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
+                "Poll List Make" : str(poll_list.module_date)}
+        mod_mqtt_util.publish_smart(topic, json.dumps(jdata))
+
+
 def mqtt_publ_debug(msg:str):
     if(mod_mqtt_util is not None) and mod_mqtt_util.mqtt_client.is_connected:
         mod_mqtt_util.mqtt_client.publish(settings.mqtt_topic + "/debug", msg)  
@@ -454,6 +463,8 @@ def main():
         # publish viconn or not
         vicon_publ_callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
 
+        # show what we have
+        publish_stat()
 
         # ------------------------
         # connection / re-connect loop
