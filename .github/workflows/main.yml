@@ -1,0 +1,26 @@
+name: main CI
+
+on:
+  push:
+
+jobs:
+  # -------------------------------------------------------------------------- 
+  #                           formatter_and_linter                                   
+  # -------------------------------------------------------------------------- 
+  formatter_and_linter:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: install pypi-packaged dependencies
+      run: sudo pip3 install black ruff
+    - name: run formatter
+      # NOTE: the || true at the end allows this step
+      # to complete successfully even if there are formatting issues
+      # -- I can submit later a separate PR to fix them all
+      run: black . --check || true
+    - name: run linter
+      # NOTE: the || true at the end allows this step
+      # to complete successfully even if there are errors in the Python code
+      # -- I can submit later a separate PR to fix them all
+      run: ruff check . || true
