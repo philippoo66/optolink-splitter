@@ -17,8 +17,7 @@ For latest developments always check the [Version-Log](https://github.com/philip
 
 
 
-- Need **VS1 / KW protocol support**? Use the [dedicated branch](https://github.com/philippoo66/optolink-splitter/blob/vs1test/).
-- Explore other feature branches, there might be something useful for you! 😉
+- Need **VS1 / KW protocol support**? It got implemented in the main tree. Just set `vs1protocol = True`
 
 - minimal Optolink Adapter confirmed:
 
