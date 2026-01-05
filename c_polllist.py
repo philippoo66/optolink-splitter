@@ -15,7 +15,6 @@
 '''
 
 import os
-from pathlib import Path
 import importlib
 
 from c_settings_adapter import settings
@@ -30,7 +29,6 @@ class cPollList:
         """
         self.items = []
         self.num_items = 0
-        self.onceonlies_removed = False
         self.module_date = "0"
 
     def make_list(self, reload = False):
@@ -50,32 +48,16 @@ class cPollList:
             # apply poll list
             self.items = listmodule.poll_items
             self.num_items = len(self.items)
-            self.onceonlies_removed = False
+            self.module_date = utils.get_module_modified_datetime(listmodule)
 
             # apply poll interval if given
             settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
 
             # info
             logger.info(f"poll_list made, {self.num_items} items")
-
-            # get modified date of module
-            self.module_date = utils.get_module_modified_datetime(listmodule)
         except Exception as e:
             logger.error(f"make_list: {e}")
 
-
-    def remove_once_onlies(self) -> bool:
-        if self.onceonlies_removed: 
-            return False
-        filtered = [item for item in self.items if not (isinstance(item[0], int) and item[0] == 0)]
-        self.items = filtered
-        self.onceonlies_removed = True
-        newlen = len(self.items)
-        if(self.num_items != newlen):
-            self.num_items = newlen
-            logger.info(f"poll_list shrinked to {self.num_items} items")
-            return True
-        return False
 
 # for global use
 poll_list = cPollList()

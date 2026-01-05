@@ -148,3 +148,8 @@ def get_module_modified_datetime(module) -> datetime:
         return datetime.fromtimestamp(module_path.stat().st_mtime)
     except:
         return datetime.min
+    
+
+def is_onceonly(item) -> bool:
+    return (isinstance(item[0], int) and item[0] == 0)
+
