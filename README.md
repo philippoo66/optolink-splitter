@@ -8,7 +8,7 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 For latest developments always check the [Version-Log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log)
 
 ## 🎉 Announcements
-- [**Version 1.9.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1902) Home Assistant integration simplified! Define Entities and poll_list together in `ha_shared_config.py` and run `ha_publish.py` once and everything is fine! Thank you @matthias-oe, @EarlSneedSinclair!
+- [**Version 1.9.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1902) **Home Assistant integration** simplified! Define Entities and poll_list together in `ha_shared_config.py` and run `ha_publish.py` once and everything is fine! Thank you @matthias-oe, @EarlSneedSinclair!
 
 - [**Version 1.8.3.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) Adds MQTT TLS support (optional). TLS/SSL mode for the MQTT client possible. Thank you @EarlSneedSinclair!
 
@@ -17,7 +17,8 @@ For latest developments always check the [Version-Log](https://github.com/philip
 
 
 
-- Need **VS1 / KW protocol support**? It got implemented in the main tree. Just set `vs1protocol = True`
+- Need **VS1 / KW protocol support**? It got implemented in the main tree since V1.8.0.0. Just set `vs1protocol = True`<br>
+Still **TESTERS WANTED with KW device and Vitoconnnect!**
 
 - minimal Optolink Adapter confirmed:
 
