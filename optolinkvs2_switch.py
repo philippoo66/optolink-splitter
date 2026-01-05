@@ -442,6 +442,8 @@ def main():
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
             mod_mqtt_util.command_callback = do_special_command
+            # Set poll_list reference for /set topic handling
+            mod_mqtt_util.set_poll_list_reference(poll_list)
 
 
         # TCP/IP connection --------
