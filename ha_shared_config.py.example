@@ -226,7 +226,7 @@ shared_config = {
             "suggested_display_precision": 1,
             "nopoll": [        # <------------------------------------------------------------  "nopoll"
                 (  0,"splitter_cpu_temp", 0x0000),                                         # 
-             ]
+            ]
         },
         {
             "domain" : "sensor",
@@ -288,15 +288,25 @@ shared_config = {
     ]
 }
 
-def extract_poll_items(shared_config):
-    poll_items = []
-    if "domains" in shared_config:
-        for config in shared_config["domains"]:
-            if "poll" in config:
-                poll_items.extend(config["poll"])
-    return poll_items
 
-poll_items = extract_poll_items(shared_config)
+
+# base poll interval [seconds]
+poll_interval = 30
+
+
+#####################################################
+#   ATTENTION! Do NOT modify this section!          #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        #
+def extract_poll_items(shared_config):              #
+    poll_items = []                                 #
+    if "domains" in shared_config:                  #
+    for config in shared_config["domains"]:         #
+        if "poll" in config:                        #
+            poll_items.extend(config["poll"])       #
+    return poll_items                               #
+                                                    #
+poll_items = extract_poll_items(shared_config)      #
+#####################################################
 
 
 

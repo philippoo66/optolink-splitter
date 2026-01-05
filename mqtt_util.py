@@ -122,7 +122,7 @@ def connect_mqtt():
             )
             # IP / hostname mismatch and for "skip verify" mode
             mqtt_client.tls_insecure_set(skip)
-        mlst = settings.mqtt.split(':')
+        mlst = settings.mqtt_broker.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
         mqtt_client.loop_start()
