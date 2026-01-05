@@ -49,37 +49,6 @@ def connect_mqtt(retries=3, delay=5):
         print(f" ERROR connecting to MQTT broker: {e}")
         return False
 
-def verify_mqtt_optolink_lwt(timeout=10):
-    """Verifies Optolink-Splitter availability via LWT."""
-    global mqtt_client
-    
-    if mqtt_client is None:
-        print(" ERROR: MQTT client is not initialized.")
-        return False
-    
-    LWT_TOPIC = settings.mqtt_topic + "/LWT" 
-    lwt_status = {"online": False}
-    
-    def on_message(client, userdata, message):
-        payload = message.payload.decode()
-        if payload == "online":
-            print(f" ✓ Optolink-Splitter LWT reports 'online'.")
-            lwt_status["online"] = True
-    
-    mqtt_client.on_message = on_message
-    print(f"Subscribing to {LWT_TOPIC}...")
-    mqtt_client.subscribe(LWT_TOPIC)
-    
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if lwt_status["online"]:
-            return True
-        time.sleep(1)
-    
-    print(" ERROR: Optolink-Splitter LWT did not report 'online'.")
-    print(" Ensure optolinkvs2_switch.py is running.")
-    return False
-
 def beautify(text):
     result = text
     if "beautifier" in shared_config:
@@ -92,16 +61,12 @@ def beautify(text):
                 result = result.replace(sea[i], rep[i])
                 i = i + 1
     return result
-   
     
 def publish_ha_discovery():
     """Veröffentlicht HA Discovery mit neuer Array-Struktur."""
     # MQTT verbinden und prüfen
     if not connect_mqtt():
         print(" ERROR: MQTT connection failed. Exiting.")
-        return
-    if not verify_mqtt_optolink_lwt():
-        print(" ERROR: Optolink-Splitter offline. Exiting.")
         return
 
     mqtt_base = settings.mqtt_topic
