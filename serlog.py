@@ -19,6 +19,7 @@ import time
 from datetime import datetime
 import settings_ini
 
+
 # VS detection +++++++++++++++++++++++
 ring_buffer = bytearray([0xFF, 0xFF, 0xFF])
 

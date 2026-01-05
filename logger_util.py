@@ -53,8 +53,8 @@ def setup_logger(
 # === Globale Loggerinstanz ===============================================
 no_file = False
 try:
-    import settings_ini
-    no_file = settings_ini.no_logger_file
+    from c_settings_adapter import settings
+    no_file = settings.no_logger_file
 except:
     pass 
 logger = setup_logger(no_file=no_file)

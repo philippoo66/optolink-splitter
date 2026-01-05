@@ -18,7 +18,8 @@ import time
 import paho.mqtt.client as paho
 
 import utils
-import settings_ini
+from c_settings_adapter import settings
+
 from logger_util import logger
 
 
@@ -36,23 +37,23 @@ _sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 command_callback = None  
 
 def on_connect(client, userdata, flags, reason_code, properties):
-    if settings_ini.mqtt_listen != None:
-        client.subscribe(settings_ini.mqtt_listen)
-    mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
+    if settings.mqtt_listen != None:
+        client.subscribe(settings.mqtt_listen)
+    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
     
 def on_disconnect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
         logger.warning('mqtt broker disconnected. reason_code = ' + str(reason_code))
-    mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
 
 def on_message(client, userdata, msg):
     global reset_recent
     #print("MQTT recd:", msg.topic, msg.payload)
-    if(settings_ini.mqtt_listen is None):
+    if(settings.mqtt_listen is None):
         logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
-    if topic == settings_ini.mqtt_listen:
+    if topic == settings.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         # if(rec.lower() in ('reset', 'resetrecent')):
@@ -84,7 +85,7 @@ def connect_mqtt():
         # Verbindung zu MQTT Broker herstellen ++++++++++++++
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "olswitch") # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
         # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
-        creds = getattr(settings_ini, "mqtt_user", None)
+        creds = settings.mqtt_user
         if creds is not None:
             creds = str(creds).strip()
             if creds != "":
@@ -96,20 +97,20 @@ def connect_mqtt():
         mqtt_client.on_connect = on_connect
         mqtt_client.on_disconnect = on_disconnect
         mqtt_client.on_message = on_message
-        mqtt_client.will_set(settings_ini.mqtt_topic + "/LWT", "offline", qos=0,  retain=True)
-        if(settings_ini.mqtt_listen != None):
+        mqtt_client.will_set(settings.mqtt_topic + "/LWT", "offline", qos=0,  retain=True)
+        if(settings.mqtt_listen != None):
             mqtt_client.on_subscribe = on_subscribe
-        if(settings_ini.mqtt_logging):
+        if(settings.mqtt_logging):
             mqtt_client.on_log = on_log
             mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
             mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
         # Optional TLS / SSL
-        if getattr(settings_ini, "mqtt_tls_enable", False):
+        if settings.mqtt_tls_enable:
             import ssl
-            skip = bool(getattr(settings_ini, "mqtt_tls_skip_verify", False))
-            ca_path = getattr(settings_ini, "mqtt_tls_ca_certs", None)
-            certfile = getattr(settings_ini, "mqtt_tls_certfile", None)
-            keyfile  = getattr(settings_ini, "mqtt_tls_keyfile", None)
+            skip = bool(settings.mqtt_tls_skip_verify)
+            ca_path = settings.mqtt_tls_ca_certs
+            certfile = settings.mqtt_tls_certfile
+            keyfile  = settings.mqtt_tls_keyfile
             if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
                 raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
             mqtt_client.tls_set(
@@ -121,13 +122,13 @@ def connect_mqtt():
             )
             # IP / hostname mismatch and for "skip verify" mode
             mqtt_client.tls_insecure_set(skip)
-        mlst = settings_ini.mqtt.split(':')
+        mlst = settings.mqtt_broker.split(':')
         mqtt_client.connect(mlst[0], int(mlst[1]))
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
         mqtt_client.loop_start()
         # preparations
-        if(settings_ini.mqtt_fstr is None):
-            settings_ini.mqtt_fstr = "{dpname}"
+        if(settings.mqtt_fstr is None):
+            settings.mqtt_fstr = "{dpname}"
     except Exception as e:
         raise Exception("Error connecting MQTT: " + str(e))
 
@@ -139,22 +140,22 @@ def get_mqtt_request() -> str:
 
 def publish_read(name, addr, value):
     if(mqtt_client != None):
-        publishStr = settings_ini.mqtt_fstr.format(dpaddr = addr, dpname = name)
+        publishStr = settings.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
-        ret = publish_smart(settings_ini.mqtt_topic + "/" + publishStr, value, retain=settings_ini.mqtt_retain)    
+        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)    
         if(verbose): print(ret)
 
 def publish_response(resp:str):
     if(mqtt_client != None):
         # always publish responses
-        ret = mqtt_client.publish(settings_ini.mqtt_respond, resp)    
+        ret = mqtt_client.publish(settings.mqtt_respond, resp)    
         if(verbose): print(ret)
 
 
 def publish_smart(topic, value, qos=0, retain=False):
     global reset_recent
     if(mqtt_client != None):
-        if(settings_ini.mqtt_no_redundant):
+        if(settings.mqtt_no_redundant):
             if(reset_recent):
                 recent_posts.clear()
                 reset_recent = False
@@ -172,7 +173,7 @@ def exit_mqtt():
     if(mqtt_client != None):
         logger.info("disconnect MQTT client")
         if(mqtt_client.is_connected()):
-            mqtt_client.publish(settings_ini.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+            mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
         mqtt_client.disconnect()
 
     

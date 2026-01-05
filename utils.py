@@ -14,8 +14,10 @@
    limitations under the License.
 '''
 
+from pathlib import Path
 from datetime import datetime
-import settings_ini
+from c_settings_adapter import settings
+
 
 # utils +++++++++++++++++++++++++++++
 def get_int(v) -> int:
@@ -46,18 +48,18 @@ def get_bool(v) -> bool:
 def bytesval(data, scale=1.0, signd=False):
     val = int.from_bytes(data, byteorder='little', signed=signd)
     if(scale != 1.0):
-        val = round(val * scale, settings_ini.max_decimals)
+        val = round(val * scale, settings.max_decimals)
     return val
 
 
 def bbbstr(data):
     try:
-        return ' '.join([format(byte, settings_ini.data_hex_format) for byte in data])
+        return ' '.join([format(byte, settings.data_hex_format) for byte in data])
     except:
         return data
 
 def arr2hexstr(data):
-    return ''.join([format(byte, settings_ini.data_hex_format) for byte in data])
+    return ''.join([format(byte, settings.data_hex_format) for byte in data])
 
 def hexstr2arr(thestring:str) -> bytearray:
     # '776F726C64' -> bytearray(b'world') <class 'bytearray'>
@@ -135,3 +137,14 @@ def unixtime2str(data) -> str:
         dval = int.from_bytes(data, byteorder="little", signed=False)
         return f"{datetime.fromtimestamp(dval//1000)}.{dval%1000}"
 
+
+def get_module_modified_datetime(module) -> datetime:
+    """
+    Gibt das letzte Aenderungsdatum der .py-Datei eines importierten Moduls zurueck.
+    Erwartet ein normales benutzerdefiniertes Modul.
+    """
+    try:
+        module_path = Path(module.__file__).with_suffix(".py")
+        return datetime.fromtimestamp(module_path.stat().st_mtime)
+    except:
+        return datetime.min

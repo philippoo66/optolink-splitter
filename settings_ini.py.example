@@ -1,0 +1,84 @@
+'''
+   Copyright 2024 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       https://www.gnu.org/licenses/gpl-3.0.html
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
+
+# Serial Ports +++++++++++++++++++
+port_optolink = '/dev/ttyUSB0'      # Serial port for Optolink device (mandatory, default: '/dev/ttyUSB0')
+port_vitoconnect = '/dev/ttyAMA0'   # Serial port for Vitoconnect (optional, default: '/dev/ttyAMA0', set None if no Vitoconnect) Pls check https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')
+vs2timeout = 120                    # Timeout (seconds) for VS2 protocol detection with Vitoconnect (default: 120)
+vs1protocol = False                 # if True, VS1/KW protocol used
+
+# MQTT Connection ++++++++++++++++
+mqtt_broker = "192.168.0.123:1883"  # MQTT broker address (default: "192.168.0.123:1883", set None to disable MQTT)
+mqtt_user = None                    # MQTT user credentials: "meuser:mypwd" (default: None for anonymous access)
+mqtt_tls_enable = False             # True = connect via TLS (MQTT over TLS) (default: False)
+mqtt_tls_skip_verify = False        # Disables TLS cert + hostname verification (INSECURE; self-signed / lab only; Default = False)
+mqtt_tls_ca_certs = None            # MQTT TLS CA bundle path (default: None to use OS CA store)
+mqtt_tls_certfile = None            # MQTT TLS client cert (mTLS) path (default: None for no client cert)
+mqtt_tls_keyfile  = None            # MQTT TLS client key (mTLS) path (default: None for)
+mqtt_logging = False                # Enable/Disables logging of paho.mqtt (default: False)
+
+# MQTT Topics ++++++++++++++++++++
+# Best practices recommendation: Always use lowercase for consistency and compatibility.
+mqtt_topic = "Vito"             # MQTT topic for publishing data (default: "Vito")
+mqtt_listen = "Vito/cmnd"       # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
+mqtt_respond = "Vito/resp"      # MQTT topic for responses (default: "Vito/resp", set None to disable)
+mqtt_fstr = "{dpname}"          # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
+mqtt_retain = False             # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
+mqtt_no_redundant = False       # if True, no previously published unchanged messages 
+
+# TCP/IP ++++++++++++++++++++++++++
+tcpip_port = 65234              # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
+
+# Optolink Communication Timing ++++
+fullraw_eot_time = 0.05         # Timeout (seconds) to determine end of telegram (default: 0.05)
+fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (default: 2)
+olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.05)
+
+# Optolink Logging ++++++++++++++
+show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
+log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
+viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
+
+# Data Formatting +++++++++++++++
+max_decimals = 4                # Max decimal places for float values (default: 4)
+data_hex_format = '02x'         # Hexadecimal formatting (set '02X' for uppercase formatting, default: '02x')
+resp_addr_format = 'x'          # Format of DP addresses in MQTT/TCPIP request responses ('d' for decimal, e.g. '04X' for 4-digit hex, default: 'x')
+retcode_format = 'd'            # Format of return code in MQTT/TCPIP requests ('d' for decimal, e.g. '02X' for 2-digit hex, default: 'd')
+
+# Viessdata Utilities +++++++++++
+write_viessdata_csv = False     # Enable writing Viessdata to CSV (default: False)
+viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "")
+buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
+dec_separator = ","             # Decimal separator for CSV output (default: ",")
+
+
+# General Settings +++++++++++
+no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
+
+# special for wo1c: read daily/weekly energy statistics +++++++++++
+wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
+
+# 1-Wire Sensors +++++++++++++++
+# A typical sensor for temperature could be DS18B20; please mind that GPIO must be enabled for 1-Wire sensors (see Optolink-Splitter Wiki)
+# Dictionary for 1-Wire sensor configuration (default: empty dictionary)
+w1sensors = {                  
+    # Addr: ('<w1_folder/sn>', '<slave_type>'),   # entry format
+#     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor
+#     0xFFFd: ('28-3ce1d443a4ed', 'ds18b20'),     # Another example sensor
+}
+
+
+
