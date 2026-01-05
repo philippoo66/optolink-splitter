@@ -202,7 +202,6 @@ def tcp_connection_loop():
 
 # utils +++++++++++++++++++++++++++++
 def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP, 0:no response
-    global poll_pointer, poll_cycle
     global force_poll_flag, reload_poll_flag
 
     resp =  f"{cmnd} failed"
@@ -226,7 +225,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
             viessdata_util.buffer_csv_line([], True)
             resp = f"{cmnd} triggered"
     elif cmnd in ("reini", "reloadini"):
-        # some changes (like ser ports) will not have effect...
+        # some changes (like ser ports) will not take effect...
         settings.set_settings(reload=True)
         resp = f"ini settings reloaded"
     else:
