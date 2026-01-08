@@ -42,6 +42,36 @@ poll_list_ref = None
 # datapoint metadata cache for /set topics
 datapoint_metadata = {}
 
+# datapoints that should be force-refreshed on next poll cycle
+_forced_refresh_names = set()
+_forced_refresh_addrs = set()
+
+
+def mark_force_refresh(dpname: str, addr: int | None = None):
+    """Mark a datapoint to be refreshed on the next polling opportunity."""
+    try:
+        if dpname:
+            _forced_refresh_names.add(dpname)
+        if addr is not None:
+            _forced_refresh_addrs.add(int(addr))
+    except Exception:
+        pass
+
+
+def consume_force_refresh(dpname: str | None, addr: int | None) -> bool:
+    """Return True once for a marked datapoint (by name or addr) and clear the mark; otherwise False."""
+    try:
+        hit = False
+        if dpname and dpname in _forced_refresh_names:
+            _forced_refresh_names.discard(dpname)
+            hit = True
+        if addr is not None and int(addr) in _forced_refresh_addrs:
+            _forced_refresh_addrs.discard(int(addr))
+            hit = True
+        return hit
+    except Exception:
+        return False
+
 
 def handle_set_topic(topic, payload):
     """
@@ -91,6 +121,10 @@ def handle_set_topic(topic, payload):
         
         logger.info(f"Generated write command: {write_cmd}")
         cmnd_queue.append(write_cmd)
+
+        # Ensure the affected datapoint is refreshed on the next poll cycle
+        # even if it normally skips due to its PollCycle interval.
+        mark_force_refresh(dpname, addr)
         
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
@@ -309,11 +343,15 @@ def get_mqtt_request() -> str:
     return ret
 
 def publish_read(name, addr, value):
-    if(mqtt_client != None):
-        publishStr = settings.mqtt_fstr.format(dpaddr = addr, dpname = name)
+    if mqtt_client is not None:
+        # Round float values to 1 decimal to stabilize sensor jitter (esp. w1 sensors)
+        if isinstance(value, float):
+            value = round(value, 1)
+        publishStr = settings.mqtt_fstr.format(dpaddr=addr, dpname=name)
         # send
-        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)    
-        if(verbose): print(ret)
+        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)
+        if verbose:
+            print(ret)
 
 def publish_response(resp:str):
     if(mqtt_client != None):

@@ -90,6 +90,15 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             item = poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
             if(len(item) > 1 and isinstance(item[0], int)):
                 # this is poll_cycle item
+                # allow force refresh to override interval skipping
+                try:
+                    if (mod_mqtt is not None) and mod_mqtt.consume_force_refresh(item[1], item[2]):
+                        # remove PollCycle for further processing immediately
+                        item = item[1:]
+                        break
+                except Exception:
+                    pass
+
                 if((item[0] != 0) and (poll_cycle % item[0] != 0)) or ((item[0] == 0) and (poll_cycle != 0)):
                     # +++ do not poll this item this time +++
 
