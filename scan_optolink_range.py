@@ -128,7 +128,7 @@ def main(argv: List[str]) -> int:
         nargs="?",
         help="Target value to match (decimal or 0x.. hex). Optional when --value-range is used",
     )
-    ap.add_argument("--host", default="BoekArc", help="Optolink TCP host (default: %(default)s)")
+    ap.add_argument("--host", default="localhost", help="Optolink TCP host (default: %(default)s)")
     ap.add_argument("--port", type=int, default=65234, help="Optolink TCP port (default: %(default)s)")
     ap.add_argument(
         "--codes",
