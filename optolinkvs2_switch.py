@@ -51,6 +51,8 @@ last_vs1_comm = 0
 force_poll_flag = False
 reload_poll_flag = False
 
+print("this is to see how it works.")
+
 
 def olbreath(retcode:int):
     """
