@@ -78,7 +78,95 @@ def olbreath(retcode:int):
 poll_pointer = 0
 poll_cycle = 0
 
-def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
+# anti-jitter tracking: maps item index -> {'last_value': val, 'last_change': change, 'stability_count': count}
+jitter_state = {}
+
+
+def should_publish_value(item_idx: int, value, item_config) -> bool:
+    """
+    Determines if a value should be published based on anti-jitter threshold.
+    
+    Args:
+        item_idx: Index in poll_list
+        value: Current value to publish
+        item_config: The poll item config tuple
+        
+    Returns:
+        True if value should be published, False if filtered by jitter threshold
+    """
+    global jitter_state
+    
+    # Extract jitter threshold if present (last optional parameter)
+    jitter_threshold = None
+    if len(item_config) >= 7:
+        # Item has jitter threshold as last parameter
+        try:
+            jitter_threshold = float(item_config[-1])
+        except (ValueError, TypeError):
+            # Last parameter is not a number, no jitter threshold
+            pass
+    
+    # No jitter threshold configured
+    if jitter_threshold is None:
+        return True
+    
+    # Try to convert value to float for comparison
+    try:
+        current_val = float(value)
+    except (ValueError, TypeError):
+        # Can't compare non-numeric values, publish as-is
+        return True
+    
+    # Check if we have previous state for this item
+    if item_idx not in jitter_state:
+        # First time seeing this value, always publish
+        jitter_state[item_idx] = {
+            'last_value': current_val,
+            'last_change': None,
+            'stability_count': 1
+        }
+        return True
+    
+    state = jitter_state[item_idx]
+    last_val = state['last_value']
+    
+    # Calculate change
+    change = abs(current_val - last_val)
+    
+    # If change exceeds threshold, publish immediately
+    if change > jitter_threshold:
+        jitter_state[item_idx] = {
+            'last_value': current_val,
+            'last_change': change,
+            'stability_count': 1
+        }
+        return True
+    
+    # Change is below threshold
+    # Check if this is the same small change as before
+    last_change = state['last_change']
+    
+    if last_change is not None and abs(change - last_change) < 1e-9:
+        # Same change as last cycle, increment stability counter
+        state['stability_count'] += 1
+        state['last_value'] = current_val
+        
+        # Publish if stable for 2+ cycles
+        if state['stability_count'] >= 2:
+            return True
+    else:
+        # Different change detected, reset counter
+        jitter_state[item_idx] = {
+            'last_value': current_val,
+            'last_change': change,
+            'stability_count': 1
+        }
+    
+    # Don't publish if below threshold and not stable for 2+ cycles
+    return False
+
+
+def do_poll_item(poll_data, ser: serial.Serial, mod_mqtt=None) -> int:  # retcode
     global poll_pointer
     val = "?"
     item = "?"
@@ -122,9 +210,12 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             # save val in buffer for csv
             poll_data[poll_pointer] = val
 
-            # post to MQTT broker
-            if(mod_mqtt is not None): 
-                mod_mqtt.publish_read(item[0], item[1], val)
+            # Check anti-jitter filter before publishing
+            original_item = poll_list.items[poll_pointer]
+            if should_publish_value(poll_pointer, val, original_item):
+                # post to MQTT broker
+                if(mod_mqtt is not None): 
+                    mod_mqtt.publish_read(item[0], item[1], val)
 
             # probably more bytebit values of the same datapoint?!
             if(len(item) > 3):
@@ -145,9 +236,12 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
                             # save val in buffer for csv
                             poll_data[next_idx] = next_val
 
-                            if(mod_mqtt is not None): 
-                                # publish to MQTT broker
-                                mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
+                            # Check anti-jitter filter before publishing
+                            original_next_item = poll_list.items[next_idx]
+                            if should_publish_value(next_idx, next_val, original_next_item):
+                                if(mod_mqtt is not None): 
+                                    # publish to MQTT broker
+                                    mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
 
                             poll_pointer = next_idx
                         else:
@@ -563,6 +657,7 @@ def main():
                                     poll_list.make_list(reload=True)
                                     if(len(poll_data) != poll_list.num_items):
                                         poll_data = [None] * poll_list.num_items
+                                    jitter_state.clear()  # Reset jitter state when reloading poll list
                                     publish_stat()
                                     poll_pointer = 0
                                     poll_cycle = 0
