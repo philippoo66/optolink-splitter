@@ -80,6 +80,8 @@ git clone https://github.com/philippoo66/optolink-splitter.git
 cd optolink-splitter
 ```
 
+Alternatively you may download as zip and expand to a folder of your choice.
+
 ### 2. Create Virtual Environment & Install Dependencies
 
 Using a virtual environment is recommended to keep dependencies isolated and avoid conflicts with system-wide packages. More details can be found in [this guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv).
