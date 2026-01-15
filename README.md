@@ -163,8 +163,7 @@ Optolink Splitter can connect to an **MQTT Broker** for sending commands and rec
 You may close the TCP session by sending `exit` as a string.
 
 ## :pushpin: User-Friendly MQTT /set Topics
-**NEW FEATURE:** In addition to the command syntax above, you can now write values using simple, intuitive MQTT topics!
-
+In addition to the command syntax above, you can now write values using simple MQTT topics.
 For every datapoint published to MQTT (e.g., `vito/hk1_normal_temperature`), you can write to it using a `/set` suffix:
 ```bash
 # Reading (automatic, via poll_list)
@@ -176,20 +175,14 @@ Topic: vito/hk1_normal_temperature/set
 Payload: 21.0
 ```
 
-**Key benefits:**
-- ✅ Use the **same format** for writing as you see when reading
-- ✅ **Automatic scaling** - no manual calculations needed
-- ✅ Support for `ON`/`OFF`, boolean, and numeric values
-- ✅ Works with **Home Assistant**, **Node-RED**, and any MQTT client
-
 **Quick Examples:**
 ```bash
 # Set room temperature (automatic scaling applied)
 mosquitto_pub -t "vito/hk1_normal_temperature/set" -m "21.5"
 
-# Turn pump on/off
-mosquitto_pub -t "vito/circulation_pump/set" -m "ON"
-mosquitto_pub -t "vito/circulation_pump/set" -m "OFF"
+# State on/off
+mosquitto_pub -t "vito/hk1_partymode/set" -m "ON"
+mosquitto_pub -t "vito/hk1_partymode/set" -m "OFF"
 
 # Set hot water temperature
 mosquitto_pub -t "vito/hotwater_temperature/set" -m "50"

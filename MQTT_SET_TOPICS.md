@@ -88,7 +88,7 @@ mosquitto_pub -h your-broker -t "vito/hk1_mode/set" -m "0x02"
 
 ## Examples
 
-### Example 1: Setting Hot Water Temperature
+### Example Setting Hot Water Temperature
 
 **Poll list configuration:**
 ```python
@@ -104,50 +104,11 @@ mosquitto_sub -h your-broker -t "vito/hotwater_temperature"
 
 **Writing a new value:**
 ```bash
-# Old complex way:
+# Classic way:
 mosquitto_pub -h your-broker -t "vito/cmnd" -m "write;0x6300;1;50"
 
-# New simple way:
+# Via set topic:
 mosquitto_pub -h your-broker -t "vito/hotwater_temperature/set" -m "50"
-```
-
-### Example 2: Setting Room Temperature Setpoint
-
-**Poll list configuration:**
-```python
-("hk1_normal_temperature", 0x2000, 2, 0.1, False),
-```
-
-**Reading:**
-```bash
-mosquitto_sub -h your-broker -t "vito/hk1_normal_temperature"
-# Receives: 20.5
-```
-
-**Writing:**
-```bash
-# Old complex way (had to calculate: 21.0 / 0.1 = 210):
-mosquitto_pub -h your-broker -t "vito/cmnd" -m "write;0x2000;2;210"
-
-# New simple way:
-mosquitto_pub -h your-broker -t "vito/hk1_normal_temperature/set" -m "21.0"
-```
-
-### Example 3: Controlling Pumps and Switches
-
-**Poll list configuration:**
-```python
-("hk1_pump", 0x048D, 1, 'onoff'),
-("circulation_pump", 0x6515, 2, 'onoff'),
-```
-
-**Writing:**
-```bash
-# Turn on heating pump
-mosquitto_pub -h your-broker -t "vito/hk1_pump/set" -m "ON"
-
-# Turn off circulation pump
-mosquitto_pub -h your-broker -t "vito/circulation_pump/set" -m "OFF"
 ```
 
 ## Home Assistant Integration
@@ -172,36 +133,6 @@ mqtt:
       payload_on: "ON"
       payload_off: "OFF"
 ```
-
-## Comparison: Old vs New Method
-
-### Old Method (Still Supported)
-```bash
-# Complex command syntax required
-mosquitto_pub -t "vito/cmnd" -m "write;0x6300;1;45"      # Raw value
-mosquitto_pub -t "vito/cmnd" -m "write;0x2000;2;210"     # Had to scale 21.0 * 10
-mosquitto_pub -t "vito/cmnd" -m "writeraw;0x27d4;2A"     # Hex bytes
-```
-
-**Challenges:**
-- Must remember datapoint addresses
-- Manual scaling calculations required
-- Complex syntax prone to errors
-- Not human-readable
-
-### New Method
-```bash
-# Simple, intuitive topic pattern
-mosquitto_pub -t "vito/hotwater_temperature/set" -m "45"
-mosquitto_pub -t "vito/hk1_normal_temperature/set" -m "21.0"
-mosquitto_pub -t "vito/hk1_pump/set" -m "ON"
-```
-
-**Benefits:**
-- Use descriptive datapoint names
-- Automatic scaling
-- Same format as published values
-- Human-readable and intuitive
 
 ## Technical Details
 
