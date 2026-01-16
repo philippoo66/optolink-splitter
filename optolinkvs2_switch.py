@@ -461,12 +461,16 @@ def main():
         # show what we have
         publish_stat()
 
+        # Vitoconnect retry control
+        vicon_retry_skip = False
+        vicon_retry_count = 0
+
         # ------------------------
         # connection / re-connect loop
         # ------------------------        
         while(True):  #not shutdown_event.is_set():
             # run VS2 connection ------------------
-            if(serVitoConnnect is not None):
+            if(serVitoConnnect is not None) and (not vicon_retry_skip):
                 # reset vicon_request buffer
                 viconn_util.vicon_request = bytearray()
 
@@ -476,9 +480,32 @@ def main():
                         viconnlog.open_log()
 
                 # detect/init Protokol ++++++++++++
-                logger.info("awaiting Vitoconnect being operational...")
+                logger.info(f"awaiting Vitoconnect being operational... ({vicon_retry_count + 1}/{settings.vs2retries})")
                 if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):
-                    raise Exception("Vitoconnect not detected operational within timeout")
+                    vicon_retry_count += 1
+
+                    # retries exceeded -> disable Vitoconnect until restart
+                    if(vicon_retry_count >= settings.vs2retries):
+                        vicon_retry_skip = True
+                        logger.error(
+                            f"Vitoconnect not detected operational after {settings.vs2retries} tries "
+                            f"({settings.vs2timeout}s each). Continuing without Vitoconnect until restart."
+                        )
+
+                        if(serVitoConnnect is not None):
+                            logger.info("closing serVitoConnnect")
+                            serVitoConnnect.close()
+                            serVitoConnnect = None
+
+                        if(serOptolink is not None):
+                            if(serOptolink.is_open and (not isinstance(excptn, OSError))):
+                                logger.info("reset Optolink protocol")
+                                serOptolink.write(bytes([0x04]))
+
+                    continue
+
+                vicon_retry_count = 0
+
                 msg = "Vitoconnect detected operational"
                 viconnlog.do_log(msg)           
                 logger.info(msg)
