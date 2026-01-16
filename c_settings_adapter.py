@@ -41,7 +41,6 @@ class SettingsAdapter:
         self.port_vitoconnect = None            # Serial port for Vitoconnect (optional, default: '/dev/ttyAMA0', set None if no Vitoconnect) Pls check https://github.com/philippoo66/optolink-splitter/wiki/520-termios.error:-(22,-'Invalid-argument')
         self.vs2timeout = 120                   # Timeout (seconds) for VS2 protocol detection with Vitoconnect (default: 120)
         self.vs2retries = 5                     # Number of retries for VS2 protocol detection with Vitoconnect (default: 5)
-
         self.vs1protocol = False                # if True, VS1/KW protocol used
 
         # MQTT Connection ++++++++++++++++
@@ -139,6 +138,7 @@ class SettingsAdapter:
         self.port_optolink = getattr(self._settings_obj, 'port_optolink', self.port_optolink)
         self.port_vitoconnect = getattr(self._settings_obj, 'port_vitoconnect', self.port_vitoconnect)
         self.vs2timeout = getattr(self._settings_obj, 'vs2timeout', self.vs2timeout)
+        self.vs2retries = getattr(self._settings_obj, 'vs2retries', self.vs2retries)
         self.vs1protocol = getattr(self._settings_obj, 'vs1protocol', self.vs1protocol)
 
         # MQTT Connection ++++++++++++++++
