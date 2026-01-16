@@ -488,8 +488,7 @@ def main():
                     if(vicon_retry_count >= settings.vs2retries):
                         vicon_retry_skip = True
                         logger.error(
-                            f"Vitoconnect not detected operational after {settings.vs2retries} tries "
-                            f"({settings.vs2timeout}s each). Continuing without Vitoconnect until restart."
+                            f"Vitoconnect not detected operational. Continuing without Vitoconnect until restart."
                         )
 
                         if(serVitoConnnect is not None):
@@ -690,3 +689,4 @@ def main():
  
 if __name__ == "__main__":
     main()
+
