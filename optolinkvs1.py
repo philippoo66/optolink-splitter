@@ -18,6 +18,7 @@ import serial
 import sys
 import time
 
+from logger_util import logger
 import utils
 from c_settings_adapter import settings
 
@@ -82,7 +83,7 @@ def wait_for_05(ser:serial.Serial) -> bool:
         #print(buff)
         if(len(buff) > 0) and (int(buff[0]) == 0x05):
             return True
-    print("Timeout waiting for 0x05")
+    logger.error("Timeout waiting for 0x05")
     return False
     
 
