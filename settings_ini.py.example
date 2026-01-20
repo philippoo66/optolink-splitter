@@ -79,9 +79,4 @@ w1sensors = {
     # Addr: ('<w1_folder/sn>', '<slave_type>'),   # entry format
 #     0xFFF4: ('28-3ce1d4438fd4', 'ds18b20'),     # Example sensor
 #     0xFFFd: ('28-3ce1d443a4ed', 'ds18b20'),     # Another example sensor
-}
-
-
-
-
-
+}
