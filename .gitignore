@@ -5,12 +5,14 @@ __pycache__/
 *.log
 *.csv
 *.txt
+*.history
 # user specific files
 settings_ini.py
 ha_shared_config.py
+poll_list.py
 entities,json
 test.py
 allupdate.sh
 .vscode/
 old_test/
-venv
+*venv/
