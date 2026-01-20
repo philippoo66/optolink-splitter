@@ -479,7 +479,7 @@ def main():
                         viconnlog.open_log()
 
                 # detect/init Protokol ++++++++++++
-                logger.info(f"awaiting Vitoconnect being operational... ({vicon_retry_count + 1}/{settings.vs2retrylimit if settings.vs2retrylimit is not None else 'unlimited'})")
+                logger.info(f"awaiting Vitoconnect being operational... ({vicon_retry_count + 1}/{(settings.vs2retrylimit + 1) if settings.vs2retrylimit is not None else 'unlimited'})")
                 if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):
                     vicon_retry_count += 1
 
@@ -689,5 +689,6 @@ def main():
  
 if __name__ == "__main__":
     main()
+
 
 
