@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.9.1.2"
+VERSION = "1.10.0.0"
 
 import serial
 import time
@@ -90,6 +90,15 @@ def do_poll_item(poll_data, ser:serial.Serial, mod_mqtt=None) -> int:  # retcode
             item = poll_list.items[poll_pointer]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
             if(len(item) > 1 and isinstance(item[0], int)):
                 # this is poll_cycle item
+                # allow force refresh to override interval skipping
+                try:
+                    if (mod_mqtt is not None) and mod_mqtt.consume_force_refresh(item[1], item[2]):
+                        # remove PollCycle for further processing immediately
+                        item = item[1:]
+                        break
+                except Exception:
+                    pass
+
                 if((item[0] != 0) and (poll_cycle % item[0] != 0)) or ((item[0] == 0) and (poll_cycle != 0)):
                     # +++ do not poll this item this time +++
 
@@ -442,6 +451,8 @@ def main():
             mod_mqtt_util = importlib.import_module("mqtt_util")
             mod_mqtt_util.connect_mqtt()
             mod_mqtt_util.command_callback = do_special_command
+            # Set poll_list reference for /set topic handling
+            mod_mqtt_util.set_poll_list_reference(poll_list)
 
 
         # TCP/IP connection --------
@@ -566,19 +577,22 @@ def main():
                     # polling list --------
                     if(is_on == 0):              
                         if(settings.poll_interval >= 0):
-                            # force poll including onceonlies
-                            if force_poll_flag:
-                                poll_pointer = 0
-                                poll_cycle = 0
-                                force_poll_flag = False
-                            # reload poll list
-                            if reload_poll_flag:
-                                poll_list.make_list(reload=True)
-                                poll_data = [None] * poll_list.num_items
-                                publish_stat()
-                                poll_pointer = 0
-                                poll_cycle = 0
-                                reload_poll_flag = False
+                            # things not to be done while poll cycle not finished
+                            if(poll_pointer >= poll_list.num_items) or (poll_pointer == 0):
+                                # force poll including onceonlies
+                                if force_poll_flag:
+                                    poll_pointer = 0
+                                    poll_cycle = 0
+                                    force_poll_flag = False
+                                # reload poll list
+                                if reload_poll_flag:
+                                    poll_list.make_list(reload=True)
+                                    if(len(poll_data) != poll_list.num_items):
+                                        poll_data = [None] * poll_list.num_items
+                                    publish_stat()
+                                    poll_pointer = 0
+                                    poll_cycle = 0
+                                    reload_poll_flag = False
 
                             if(0 <= poll_pointer < poll_list.num_items):
                                 retcode = do_poll_item(poll_data, serOptolink, mod_mqtt_util)

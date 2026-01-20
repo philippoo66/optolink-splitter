@@ -34,11 +34,211 @@ reset_recent = False
 _sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 
 # callback for 'special' commands
-command_callback = None  
+command_callback = None
+
+# poll_list reference for /set topic handling
+poll_list_ref = None
+
+# datapoint metadata cache for /set topics
+datapoint_metadata = {}
+
+# datapoints that should be force-refreshed on next poll cycle
+_forced_refresh_names = set()
+_forced_refresh_addrs = set()
+
+
+def mark_force_refresh(dpname: str, addr: int | None = None):
+    """Mark a datapoint to be refreshed on the next polling opportunity."""
+    try:
+        if dpname:
+            _forced_refresh_names.add(dpname)
+        if addr is not None:
+            _forced_refresh_addrs.add(int(addr))
+    except Exception:
+        pass
+
+
+def consume_force_refresh(dpname: str | None, addr: int | None) -> bool:
+    """Return True once for a marked datapoint (by name or addr) and clear the mark; otherwise False."""
+    try:
+        hit = False
+        if dpname and dpname in _forced_refresh_names:
+            _forced_refresh_names.discard(dpname)
+            hit = True
+        if addr is not None and int(addr) in _forced_refresh_addrs:
+            _forced_refresh_addrs.discard(int(addr))
+            hit = True
+        return hit
+    except Exception:
+        return False
+
+
+def handle_set_topic(topic, payload):
+    """
+    Handle /set topic messages for writable datapoints.
+    Topic format: {mqtt_topic}/{dpname}/set
+    Converts human-readable values back to write commands.
+    """
+    try:
+        # Extract datapoint name from topic
+        # e.g., "vito/c1_temp_room_setpoint/set" -> "c1_temp_room_setpoint"
+        topic_parts = topic.split('/')
+        if len(topic_parts) < 3 or topic_parts[-1] != 'set':
+            logger.warning(f"Invalid /set topic format: {topic}")
+            return
+        
+        dpname = topic_parts[-2]
+        value_str = utils.bstr2str(payload).strip()
+        
+        logger.info(f"Received /set request: {dpname} = {value_str}")
+        
+        # Find datapoint in poll_list
+        if poll_list_ref is None:
+            logger.error("poll_list not initialized for /set topic handling")
+            return
+        
+        datapoint_info = find_datapoint_by_name(dpname)
+        if datapoint_info is None:
+            logger.warning(f"Datapoint '{dpname}' not found in poll_list")
+            return
+        
+        # datapoint_info: (Name, DpAddr, Len, Scale/Type, Signed) or with PollCycle
+        addr = datapoint_info['addr']
+        length = datapoint_info['len']
+        scale_type = datapoint_info.get('scale_type')
+        signed = datapoint_info.get('signed', False)
+        
+        # Convert value to bytes
+        byte_value = convert_value_to_bytes(value_str, length, scale_type, signed)
+        if byte_value is None:
+            logger.error(f"Failed to convert value '{value_str}' for datapoint '{dpname}'")
+            return
+        
+        # Create write command in the format: write;addr;len;value
+        # For multi-byte values, we need to convert to integer
+        int_value = int.from_bytes(byte_value, byteorder='little', signed=signed)
+        write_cmd = f"write;{addr:#x};{length};{int_value}"
+        
+        logger.info(f"Generated write command: {write_cmd}")
+        cmnd_queue.append(write_cmd)
+
+        # Ensure the affected datapoint is refreshed on the next poll cycle
+        # even if it normally skips due to its PollCycle interval.
+        mark_force_refresh(dpname, addr)
+        
+    except Exception as e:
+        logger.error(f"Error handling /set topic '{topic}': {e}")
+
+
+def find_datapoint_by_name(dpname):
+    """Find datapoint configuration by name in poll_list."""
+    if poll_list_ref is None or not hasattr(poll_list_ref, 'items'):
+        return None
+    
+    # Check cache first
+    if dpname in datapoint_metadata:
+        return datapoint_metadata[dpname]
+    
+    # Search in poll_list items
+    for item in poll_list_ref.items:
+        # Handle PollCycle entries: ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
+        if isinstance(item[0], int) and len(item) > 1:
+            # Has PollCycle prefix
+            name = item[1]
+            addr = item[2] if len(item) > 2 else None
+            dlen = item[3] if len(item) > 3 else 1
+            scale_type = item[4] if len(item) > 4 else None
+            signed = item[5] if len(item) > 5 else False
+        else:
+            # No PollCycle
+            name = item[0]
+            addr = item[1] if len(item) > 1 else None
+            dlen = item[2] if len(item) > 2 else 1
+            scale_type = item[3] if len(item) > 3 else None
+            signed = item[4] if len(item) > 4 else False
+        
+        if name == dpname and addr is not None:
+            metadata = {
+                'addr': addr,
+                'len': dlen,
+                'scale_type': scale_type,
+                'signed': signed
+            }
+            # Cache it
+            datapoint_metadata[dpname] = metadata
+            return metadata
+    
+    return None
+
+
+def convert_value_to_bytes(value_str, length, scale_type, signed):
+    """
+    Convert human-readable value string to bytes for writing.
+    Reverse operation of requests_util.get_value()
+    """
+    try:
+        # Handle different format types
+        scale_type_str = str(scale_type).lower() if scale_type else ''
+        
+        # Boolean types
+        if scale_type_str in ('bool', 'boolinv', 'onoff', 'offon'):
+            # Parse boolean-like values
+            value_upper = value_str.upper()
+            is_true = value_upper in ('1', 'TRUE', 'ON', 'YES')
+            is_false = value_upper in ('0', 'FALSE', 'OFF', 'NO')
+            
+            if not (is_true or is_false):
+                logger.warning(f"Invalid boolean value: {value_str}")
+                return None
+            
+            # Apply inversion logic
+            if scale_type_str == 'boolinv' or scale_type_str == 'offon':
+                bool_val = is_false  # inverted
+            else:
+                bool_val = is_true
+            
+            int_val = 1 if bool_val else 0
+            return int_val.to_bytes(length, byteorder='little', signed=False)
+        
+        # Numeric types with scaling
+        scale = utils.to_number(scale_type)
+        if scale is not None:
+            # Parse numeric value and reverse scaling
+            float_val = float(value_str)
+            int_val = int(round(float_val / scale))
+            return int_val.to_bytes(length, byteorder='little', signed=signed)
+        
+        # String types - not typically writable, but handle anyway
+        if scale_type_str in ('utf8', 'utf16'):
+            logger.warning(f"String types not typically writable: {scale_type_str}")
+            return None
+        
+        # Default: treat as raw integer
+        int_val = utils.get_int(value_str)
+        return int_val.to_bytes(length, byteorder='little', signed=signed)
+        
+    except Exception as e:
+        logger.error(f"Error converting value '{value_str}' with scale_type '{scale_type}': {e}")
+        return None
+
+
+def set_poll_list_reference(poll_list_obj):
+    """Set the poll_list reference for /set topic handling."""
+    global poll_list_ref
+    poll_list_ref = poll_list_obj
+    logger.info("poll_list reference set for /set topic handling")
+
+
+  
 
 def on_connect(client, userdata, flags, reason_code, properties):
     if settings.mqtt_listen != None:
         client.subscribe(settings.mqtt_listen)
+    # Subscribe to /set topics for writable datapoints
+    if settings.mqtt_topic != None:
+        set_topic = settings.mqtt_topic + "/+/set"
+        client.subscribe(set_topic)
+        logger.info(f"Subscribed to /set topic pattern: {set_topic}")
     mqtt_client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
     
 def on_disconnect(client, userdata, flags, reason_code, properties):
@@ -53,7 +253,11 @@ def on_message(client, userdata, msg):
         logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
     topic = str(msg.topic)            # Topic in String umwandeln
-    if topic == settings.mqtt_listen:
+    
+    # Check if this is a /set topic
+    if topic.endswith('/set') and settings.mqtt_topic and topic.startswith(settings.mqtt_topic + '/'):
+        handle_set_topic(topic, msg.payload)
+    elif topic == settings.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
         # if(rec.lower() in ('reset', 'resetrecent')):
@@ -140,11 +344,15 @@ def get_mqtt_request() -> str:
     return ret
 
 def publish_read(name, addr, value):
-    if(mqtt_client != None):
-        publishStr = settings.mqtt_fstr.format(dpaddr = addr, dpname = name)
+    if mqtt_client is not None:
+        # Round float values to 1 decimal to stabilize sensor jitter (esp. w1 sensors)
+        if isinstance(value, float):
+            value = round(value, 1)
+        publishStr = settings.mqtt_fstr.format(dpaddr=addr, dpname=name)
         # send
-        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)    
-        if(verbose): print(ret)
+        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)
+        if verbose:
+            print(ret)
 
 def publish_response(resp:str):
     if(mqtt_client != None):
