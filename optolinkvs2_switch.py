@@ -14,11 +14,7 @@
    limitations under the License.
 '''
 
-<<<<<<< HEAD
-VERSION = "1.9.1.3"
-=======
-VERSION = "1.9.1.0"
->>>>>>> manu
+VERSION = "1.10.0.0"
 
 import serial
 import time
