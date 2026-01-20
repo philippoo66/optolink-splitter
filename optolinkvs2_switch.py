@@ -462,7 +462,6 @@ def main():
         publish_stat()
 
         # Vitoconnect retry control
-        vicon_retry_skip = False
         vicon_retry_count = 0
 
         # ------------------------
@@ -470,7 +469,7 @@ def main():
         # ------------------------        
         while(True):  #not shutdown_event.is_set():
             # run VS2 connection ------------------
-            if(serVitoConnnect is not None) and (not vicon_retry_skip):
+            if(serVitoConnnect is not None):
                 # reset vicon_request buffer
                 viconn_util.vicon_request = bytearray()
 
@@ -480,13 +479,12 @@ def main():
                         viconnlog.open_log()
 
                 # detect/init Protokol ++++++++++++
-                logger.info(f"awaiting Vitoconnect being operational... ({vicon_retry_count + 1}/{settings.vs2retries})")
+                logger.info(f"awaiting Vitoconnect being operational... ({vicon_retry_count + 1}/{settings.vs2retrylimit if settings.vs2retrylimit is not None else 'unlimited'})")
                 if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):
                     vicon_retry_count += 1
 
-                    # retries exceeded -> disable Vitoconnect until restart
-                    if(vicon_retry_count >= settings.vs2retries):
-                        vicon_retry_skip = True
+                    # retries exceeded -> disable Vitoconnect until restart (0 => 1 try; None => unlimited)
+                    if(settings.vs2retrylimit is not None) and (vicon_retry_count > settings.vs2retrylimit):
                         logger.error(
                             f"Vitoconnect not detected operational. Continuing without Vitoconnect until restart."
                         )
@@ -501,8 +499,10 @@ def main():
                                 logger.info("reset Optolink protocol")
                                 serOptolink.write(bytes([0x04]))
 
+                    time.sleep(0.5)
                     continue
 
+                # Vitoconnect retry counter, reset on success
                 vicon_retry_count = 0
 
                 msg = "Vitoconnect detected operational"
@@ -689,4 +689,5 @@ def main():
  
 if __name__ == "__main__":
     main()
+
 
