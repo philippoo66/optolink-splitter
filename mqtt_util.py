@@ -271,9 +271,7 @@ def handle_set_topic(topic, payload):
         logger.debug(f"Generated write command: {write_cmd}")
         cmnd_queue.append(write_cmd)
 
-        # Ensure the affected datapoint is refreshed on the next poll cycle
-        # even if it normally skips due to its PollCycle interval.
-        #mark_force_refresh(dpname, addr)
+        # Ensure the affected datapoint is refreshed quite soon
         lst_force_refresh.append(list_index)
         
     except Exception as e:
@@ -331,24 +329,24 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):
         # Handle different format types
         scale_type_str = str(scale_type).lower() if scale_type else ''
         
-        # Boolean types
-        if scale_type_str in ('bool', 'boolinv', 'onoff', 'offon'):
+        # Boolean types   
+        if scale_type_str in ('bool', 'boolinv', 'onoff', 'offon'): 
             # Parse boolean-like values
             value_upper = value_str.upper()
             is_true = value_upper in ('1', 'TRUE', 'ON', 'YES')
             is_false = value_upper in ('0', 'FALSE', 'OFF', 'NO')
             
             if not (is_true or is_false):
-                logger.warning(f"Invalid boolean value: {value_str}")
+                logger.warning(f"Invalid boolean value: {value_str}")         #TODO make other nummerical values possibble
                 return None
             
-            # Apply inversion logic
-            if scale_type_str == 'boolinv' or scale_type_str == 'offon':
+            # Apply inverse logic
+            if scale_type_str in ('boolinv', 'offon'): 
                 bool_val = is_false  # inverted
             else:
                 bool_val = is_true
             
-            int_val = 1 if bool_val else 0
+            int_val = 1 if bool_val else 0                                     # ATTENTION! True may be anything except 0!!
             return int_val.to_bytes(length, byteorder='little', signed=False)
         
         # Numeric types with scaling
