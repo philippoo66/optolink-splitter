@@ -211,48 +211,14 @@ def exit_mqtt():
 # datapoint metadata cache for /set topics
 datapoint_metadata = {}
 
-# datapoints that should be force-refreshed on next poll cycle
-_forced_refresh_names = set()
-_forced_refresh_addrs = set()
-
+# list of indexes of poll_list items to get refreshed immediately after got written
 lst_force_refresh = []
 
-
-# def mark_force_refresh(dpname: str, addr: int = None):
-#     """Mark a datapoint to be refreshed on the next polling opportunity."""
-#     try:
-#         if dpname:
-#             _forced_refresh_names.add(dpname)
-#         if addr is not None:
-#             _forced_refresh_addrs.add(int(addr))
-#     except Exception:
-#         pass
-
-def mark_force_refresh(list_index: int):
-    # for itm in lst_force_refresh:
-    #     if itm == addr:
-    #         return
-    lst_force_refresh.append(list_index)
 
 def is_forced():
     if lst_force_refresh:
         return lst_force_refresh.pop(0)
     return None
-
-
-def consume_force_refresh(dpname: str = None, addr: int = None) -> bool:
-    """Return True once for a marked datapoint (by name or addr) and clear the mark; otherwise False."""
-    try:
-        hit = False
-        if dpname and dpname in _forced_refresh_names:
-            _forced_refresh_names.discard(dpname)
-            hit = True
-        if addr is not None and int(addr) in _forced_refresh_addrs:
-            _forced_refresh_addrs.discard(int(addr))
-            hit = True
-        return hit
-    except Exception:
-        return False
 
 
 def handle_set_topic(topic, payload):
@@ -335,8 +301,9 @@ def find_datapoint_by_name(dpname):
             item1 = item[0:]
 
         name = item1[0]
-        addr = item1[1] if len(item1) > 1 else None
-        dlen = item1[2] if len(item1) > 2 else 1
+        addr = item1[1] #if len(item1) > 1 else None
+        dlen = item1[2] #if len(item1) > 2 else 1
+        #TODO bbFilter...
         scale_type = item1[3] if len(item1) > 3 else None
         signed = item1[4] if len(item1) > 4 else False
         
