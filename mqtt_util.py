@@ -293,17 +293,14 @@ def find_datapoint_by_name(dpname):
         item = poll_list.items[lstidx]
         if len(item) > 1 and isinstance(item[0], int):
             # has PollCycle prefix
-            item1 = item[1:] 
-        else:
-            # no PollCycle
-            item1 = item[0:]
+            item = item[1:] 
 
-        name = item1[0]
-        addr = item1[1] #if len(item1) > 1 else None
-        dlen = item1[2] #if len(item1) > 2 else 1
+        name = item[0]
+        addr = item[1] #if len(item1) > 1 else None
+        dlen = item[2] #if len(item1) > 2 else 1
         #TODO bbFilter...
-        scale_type = item1[3] if len(item1) > 3 else None
-        signed = item1[4] if len(item1) > 4 else False
+        scale_type = item[3] if len(item) > 3 else None
+        signed = item[4] if len(item) > 4 else False
         
         if name == dpname and addr is not None:
             metadata = {
