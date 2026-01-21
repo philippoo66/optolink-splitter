@@ -57,4 +57,4 @@ try:
     no_file = settings.no_logger_file
 except:
     pass 
-logger = setup_logger(no_file=no_file)
+logger = setup_logger(no_file=no_file, level=logging.DEBUG)  #TEMP!

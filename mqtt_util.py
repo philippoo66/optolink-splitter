@@ -19,6 +19,7 @@ import paho.mqtt.client as paho
 
 import utils
 from c_settings_adapter import settings
+from c_polllist import poll_list
 
 from logger_util import logger
 
@@ -36,8 +37,176 @@ _sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 # callback for 'special' commands
 command_callback = None
 
-# poll_list reference for /set topic handling
-poll_list_ref = None
+
+def on_connect(client, userdata, flags, reason_code, properties):
+    # publish LWT online
+    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
+    # Subscribe to /set topics for writable datapoints
+    setlevels = [
+        (settings.mqtt_topic + "/+/set", 0),
+        (settings.mqtt_topic + "/+/+/set", 0),
+        (settings.mqtt_topic + "/+/+/+/set", 0),
+    ]
+    if settings.mqtt_listen != None:
+        setlevels.append((settings.mqtt_listen, 0))
+    client.subscribe(setlevels)
+    logger.debug(f"Subscribed to topic patterns: {setlevels}")
+    
+def on_disconnect(client, userdata, flags, reason_code, properties):
+    if reason_code != 0:
+        logger.warning('mqtt broker disconnected. reason_code = ' + str(reason_code))
+    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+
+def on_message(client, userdata, msg):
+    global reset_recent
+    #print("MQTT recd:", msg.topic, msg.payload)
+    if(settings.mqtt_listen is None):
+        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
+        return
+    topic = str(msg.topic)            # Topic in String umwandeln
+    
+    # Check if this is a /set topic
+    if topic.endswith('/set') and settings.mqtt_topic and topic.startswith(settings.mqtt_topic + '/'):
+        handle_set_topic(topic, msg.payload)
+    elif topic == settings.mqtt_listen:
+        rec = utils.bstr2str(msg.payload)
+        rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
+        # if(rec.lower() in ('reset', 'resetrecent')):
+        #     reset_recent = True
+        if(command_callback) and command_callback(rec):
+            pass
+        else:
+            cmnd_queue.append(rec) 
+    else:
+        # Ausgabe anderer eingehenden MQTT-Nachrichten
+        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
+
+def on_subscribe(client, userdata, mid, reason_code_list, properties):
+    # Since we subscribed only for a single channel, reason_code_list contains
+    # a single entry
+    if reason_code_list[0].is_failure:
+        logger.error(f"MQTT Broker rejected you subscription: {reason_code_list[0]}")
+    else:
+        logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
+
+def on_log(client, userdata, level, buf):
+    print("MQTT Log:", buf)
+
+
+def connect_mqtt(): 
+    global mqtt_client
+    try:
+        # Verbindung zu MQTT Broker herstellen ++++++++++++++
+        clientid = "olswitch_" + settings.mqtt_topic.replace("/", "").replace(" ", "")
+        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, clientid) # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
+        # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
+        creds = settings.mqtt_user
+        if creds is not None:
+            creds = str(creds).strip()
+            if creds != "":
+                if ":" in creds:
+                    user, pwd = creds.split(":", 1)  # split once; allows ":" inside password
+                    mqtt_client.username_pw_set(user, password=(pwd if pwd != "" else None))
+                else:
+                    mqtt_client.username_pw_set(creds, password=None)
+        mqtt_client.on_connect = on_connect
+        mqtt_client.on_disconnect = on_disconnect
+        mqtt_client.on_message = on_message
+        mqtt_client.will_set(settings.mqtt_topic + "/LWT", "offline", qos=0, retain=True)
+        if(settings.mqtt_listen != None):
+            mqtt_client.on_subscribe = on_subscribe
+        if(settings.mqtt_logging):
+            mqtt_client.on_log = on_log
+            mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
+            mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
+        # Optional TLS / SSL
+        if settings.mqtt_tls_enable:
+            import ssl
+            skip = bool(settings.mqtt_tls_skip_verify)
+            ca_path = settings.mqtt_tls_ca_certs
+            certfile = settings.mqtt_tls_certfile
+            keyfile  = settings.mqtt_tls_keyfile
+            if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
+                raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
+            mqtt_client.tls_set(
+                ca_certs=ca_path,  # None => OS CA store
+                certfile=certfile,
+                keyfile=keyfile,
+                cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
+                tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
+            )
+            # IP / hostname mismatch and for "skip verify" mode
+            mqtt_client.tls_insecure_set(skip)
+        mlst = settings.mqtt_broker.split(':')
+        mqtt_client.connect(mlst[0], int(mlst[1]))
+        mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
+        mqtt_client.loop_start()
+        # preparations
+        if(settings.mqtt_fstr is None):
+            settings.mqtt_fstr = "{dpname}"
+    except Exception as e:
+        raise Exception("Error connecting MQTT: " + str(e))
+
+
+def get_mqtt_request() -> str:
+    ret = ""
+    if len(cmnd_queue) > 0:
+        ret = cmnd_queue.pop(0)
+    return ret
+
+
+def publish_read(name, addr, value):
+    if mqtt_client is not None:
+        # Round float values to 1 decimal to stabilize sensor jitter (esp. w1 sensors)
+        if isinstance(value, float):
+            value = round(value, 1)
+        publishStr = settings.mqtt_fstr.format(dpaddr=addr, dpname=name)
+        # send
+        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)
+        if verbose:
+            print(ret)
+
+
+def publish_response(resp:str):
+    if(mqtt_client != None):
+        # always publish responses
+        ret = mqtt_client.publish(settings.mqtt_respond, resp)    
+        if(verbose): print(ret)
+
+
+def publish_smart(topic, value, qos=0, retain=False):
+    global reset_recent
+    if(mqtt_client != None):
+        if(settings.mqtt_no_redundant):
+            if(reset_recent):
+                recent_posts.clear()
+                reset_recent = False
+                publish_response("previous values cleared")
+            # Publish only if the value changed
+            last = recent_posts.get(topic, _sentinel)
+            if last == value:
+                return
+            recent_posts[topic] = value
+        ret = mqtt_client.publish(topic, value, qos=qos, retain=retain)
+        if(verbose): print(ret)
+
+
+def exit_mqtt():
+    if(mqtt_client != None):
+        logger.info("disconnect MQTT client")
+        if(mqtt_client.is_connected()):
+            mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+        mqtt_client.disconnect()
+
+
+######################################################
+# ++  /set funtionality  +++++++++++++++++++++++++++++
+# ++  Copyright 2026 manuboek, modified by philippoo66
+
+
+#TODO
+# - bbFilter sachen abfangen
+# - strings schreibbar
 
 # datapoint metadata cache for /set topics
 datapoint_metadata = {}
@@ -46,19 +215,32 @@ datapoint_metadata = {}
 _forced_refresh_names = set()
 _forced_refresh_addrs = set()
 
-
-def mark_force_refresh(dpname: str, addr: int | None = None):
-    """Mark a datapoint to be refreshed on the next polling opportunity."""
-    try:
-        if dpname:
-            _forced_refresh_names.add(dpname)
-        if addr is not None:
-            _forced_refresh_addrs.add(int(addr))
-    except Exception:
-        pass
+lst_force_refresh = []
 
 
-def consume_force_refresh(dpname: str | None, addr: int | None) -> bool:
+# def mark_force_refresh(dpname: str, addr: int = None):
+#     """Mark a datapoint to be refreshed on the next polling opportunity."""
+#     try:
+#         if dpname:
+#             _forced_refresh_names.add(dpname)
+#         if addr is not None:
+#             _forced_refresh_addrs.add(int(addr))
+#     except Exception:
+#         pass
+
+def mark_force_refresh(list_index: int):
+    # for itm in lst_force_refresh:
+    #     if itm == addr:
+    #         return
+    lst_force_refresh.append(list_index)
+
+def is_forced():
+    if lst_force_refresh:
+        return lst_force_refresh.pop(0)
+    return None
+
+
+def consume_force_refresh(dpname: str = None, addr: int = None) -> bool:
     """Return True once for a marked datapoint (by name or addr) and clear the mark; otherwise False."""
     try:
         hit = False
@@ -90,16 +272,16 @@ def handle_set_topic(topic, payload):
         dpname = topic_parts[-2]
         value_str = utils.bstr2str(payload).strip()
         
-        logger.info(f"Received /set request: {dpname} = {value_str}")
+        logger.debug(f"Received /set request: {dpname} = {value_str}")
         
         # Find datapoint in poll_list
-        if poll_list_ref is None:
+        if poll_list is None:
             logger.error("poll_list not initialized for /set topic handling")
             return
         
         datapoint_info = find_datapoint_by_name(dpname)
         if datapoint_info is None:
-            logger.warning(f"Datapoint '{dpname}' not found in poll_list")
+            logger.warning(f"/set Datapoint '{dpname}' not found in poll_list")
             return
         
         # datapoint_info: (Name, DpAddr, Len, Scale/Type, Signed) or with PollCycle
@@ -107,6 +289,7 @@ def handle_set_topic(topic, payload):
         length = datapoint_info['len']
         scale_type = datapoint_info.get('scale_type')
         signed = datapoint_info.get('signed', False)
+        list_index = datapoint_info['list_index']
         
         # Convert value to bytes
         byte_value = convert_value_to_bytes(value_str, length, scale_type, signed)
@@ -119,12 +302,13 @@ def handle_set_topic(topic, payload):
         int_value = int.from_bytes(byte_value, byteorder='little', signed=signed)
         write_cmd = f"write;{addr:#x};{length};{int_value}"
         
-        logger.info(f"Generated write command: {write_cmd}")
+        logger.debug(f"Generated write command: {write_cmd}")
         cmnd_queue.append(write_cmd)
 
         # Ensure the affected datapoint is refreshed on the next poll cycle
         # even if it normally skips due to its PollCycle interval.
-        mark_force_refresh(dpname, addr)
+        #mark_force_refresh(dpname, addr)
+        lst_force_refresh.append(list_index)
         
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
@@ -132,7 +316,7 @@ def handle_set_topic(topic, payload):
 
 def find_datapoint_by_name(dpname):
     """Find datapoint configuration by name in poll_list."""
-    if poll_list_ref is None or not hasattr(poll_list_ref, 'items'):
+    if poll_list is None or not hasattr(poll_list, 'items'):
         return None
     
     # Check cache first
@@ -140,29 +324,29 @@ def find_datapoint_by_name(dpname):
         return datapoint_metadata[dpname]
     
     # Search in poll_list items
-    for item in poll_list_ref.items:
-        # Handle PollCycle entries: ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
-        if isinstance(item[0], int) and len(item) > 1:
-            # Has PollCycle prefix
-            name = item[1]
-            addr = item[2] if len(item) > 2 else None
-            dlen = item[3] if len(item) > 3 else 1
-            scale_type = item[4] if len(item) > 4 else None
-            signed = item[5] if len(item) > 5 else False
+    for lstidx in range(poll_list.num_items):
+        # Handle PollCycle entries: ([PollCycle,] Name, DpAddr, Len, [bbFilter,] Scale/Type, Signed)
+        item = poll_list.items[lstidx]
+        if len(item) > 1 and isinstance(item[0], int):
+            # has PollCycle prefix
+            item1 = item[1:] 
         else:
-            # No PollCycle
-            name = item[0]
-            addr = item[1] if len(item) > 1 else None
-            dlen = item[2] if len(item) > 2 else 1
-            scale_type = item[3] if len(item) > 3 else None
-            signed = item[4] if len(item) > 4 else False
+            # no PollCycle
+            item1 = item[0:]
+
+        name = item1[0]
+        addr = item1[1] if len(item1) > 1 else None
+        dlen = item1[2] if len(item1) > 2 else 1
+        scale_type = item1[3] if len(item1) > 3 else None
+        signed = item1[4] if len(item1) > 4 else False
         
         if name == dpname and addr is not None:
             metadata = {
                 'addr': addr,
                 'len': dlen,
                 'scale_type': scale_type,
-                'signed': signed
+                'signed': signed,
+                'list_index': lstidx
             }
             # Cache it
             datapoint_metadata[dpname] = metadata
@@ -222,170 +406,6 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):
         return None
 
 
-def set_poll_list_reference(poll_list_obj):
-    """Set the poll_list reference for /set topic handling."""
-    global poll_list_ref
-    poll_list_ref = poll_list_obj
-    logger.info("poll_list reference set for /set topic handling")
-
-
-  
-
-def on_connect(client, userdata, flags, reason_code, properties):
-    if settings.mqtt_listen != None:
-        client.subscribe(settings.mqtt_listen)
-    # Subscribe to /set topics for writable datapoints
-    if settings.mqtt_topic != None:
-        set_topic = settings.mqtt_topic + "/+/set"
-        client.subscribe(set_topic)
-        logger.info(f"Subscribed to /set topic pattern: {set_topic}")
-    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
-    
-def on_disconnect(client, userdata, flags, reason_code, properties):
-    if reason_code != 0:
-        logger.warning('mqtt broker disconnected. reason_code = ' + str(reason_code))
-    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
-
-def on_message(client, userdata, msg):
-    global reset_recent
-    #print("MQTT recd:", msg.topic, msg.payload)
-    if(settings.mqtt_listen is None):
-        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
-        return
-    topic = str(msg.topic)            # Topic in String umwandeln
-    
-    # Check if this is a /set topic
-    if topic.endswith('/set') and settings.mqtt_topic and topic.startswith(settings.mqtt_topic + '/'):
-        handle_set_topic(topic, msg.payload)
-    elif topic == settings.mqtt_listen:
-        rec = utils.bstr2str(msg.payload)
-        rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
-        # if(rec.lower() in ('reset', 'resetrecent')):
-        #     reset_recent = True
-        if(command_callback) and command_callback(rec):
-            pass
-        else:
-            cmnd_queue.append(rec) 
-    else:
-        # Ausgabe anderer eingehenden MQTT-Nachrichten
-        logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
-
-
-def on_subscribe(client, userdata, mid, reason_code_list, properties):
-    # Since we subscribed only for a single channel, reason_code_list contains
-    # a single entry
-    if reason_code_list[0].is_failure:
-        logger.error(f"MQTT Broker rejected you subscription: {reason_code_list[0]}")
-    else:
-        logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
-
-def on_log(client, userdata, level, buf):
-    print("MQTT Log:", buf)
-
-
-def connect_mqtt(): 
-    global mqtt_client
-    try:
-        # Verbindung zu MQTT Broker herstellen ++++++++++++++
-        clientid = "olswitch_" + settings.mqtt_topic.replace("/", "").replace(" ", "")
-        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, clientid) # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
-        # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
-        creds = settings.mqtt_user
-        if creds is not None:
-            creds = str(creds).strip()
-            if creds != "":
-                if ":" in creds:
-                    user, pwd = creds.split(":", 1)  # split once; allows ":" inside password
-                    mqtt_client.username_pw_set(user, password=(pwd if pwd != "" else None))
-                else:
-                    mqtt_client.username_pw_set(creds, password=None)
-        mqtt_client.on_connect = on_connect
-        mqtt_client.on_disconnect = on_disconnect
-        mqtt_client.on_message = on_message
-        mqtt_client.will_set(settings.mqtt_topic + "/LWT", "offline", qos=0,  retain=True)
-        if(settings.mqtt_listen != None):
-            mqtt_client.on_subscribe = on_subscribe
-        if(settings.mqtt_logging):
-            mqtt_client.on_log = on_log
-            mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
-            mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
-        # Optional TLS / SSL
-        if settings.mqtt_tls_enable:
-            import ssl
-            skip = bool(settings.mqtt_tls_skip_verify)
-            ca_path = settings.mqtt_tls_ca_certs
-            certfile = settings.mqtt_tls_certfile
-            keyfile  = settings.mqtt_tls_keyfile
-            if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
-                raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
-            mqtt_client.tls_set(
-                ca_certs=ca_path,  # None => OS CA store
-                certfile=certfile,
-                keyfile=keyfile,
-                cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
-                tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
-            )
-            # IP / hostname mismatch and for "skip verify" mode
-            mqtt_client.tls_insecure_set(skip)
-        mlst = settings.mqtt_broker.split(':')
-        mqtt_client.connect(mlst[0], int(mlst[1]))
-        mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
-        mqtt_client.loop_start()
-        # preparations
-        if(settings.mqtt_fstr is None):
-            settings.mqtt_fstr = "{dpname}"
-    except Exception as e:
-        raise Exception("Error connecting MQTT: " + str(e))
-
-def get_mqtt_request() -> str:
-    ret = ""
-    if len(cmnd_queue) > 0:
-        ret = cmnd_queue.pop(0)
-    return ret
-
-def publish_read(name, addr, value):
-    if mqtt_client is not None:
-        # Round float values to 1 decimal to stabilize sensor jitter (esp. w1 sensors)
-        if isinstance(value, float):
-            value = round(value, 1)
-        publishStr = settings.mqtt_fstr.format(dpaddr=addr, dpname=name)
-        # send
-        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)
-        if verbose:
-            print(ret)
-
-def publish_response(resp:str):
-    if(mqtt_client != None):
-        # always publish responses
-        ret = mqtt_client.publish(settings.mqtt_respond, resp)    
-        if(verbose): print(ret)
-
-
-def publish_smart(topic, value, qos=0, retain=False):
-    global reset_recent
-    if(mqtt_client != None):
-        if(settings.mqtt_no_redundant):
-            if(reset_recent):
-                recent_posts.clear()
-                reset_recent = False
-                publish_response("previous values cleared")
-            # Publish only if the value changed
-            last = recent_posts.get(topic, _sentinel)
-            if last == value:
-                return
-            recent_posts[topic] = value
-        ret = mqtt_client.publish(topic, value, qos=qos, retain=retain)
-        if(verbose): print(ret)
-
-
-def exit_mqtt():
-    if(mqtt_client != None):
-        logger.info("disconnect MQTT client")
-        if(mqtt_client.is_connected()):
-            mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
-        mqtt_client.disconnect()
-
-    
 # ------------------------
 # main for test only
 # ------------------------
