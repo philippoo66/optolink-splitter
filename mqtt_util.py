@@ -15,6 +15,7 @@
 '''
 
 import time
+import threading
 import paho.mqtt.client as paho
 
 import utils
@@ -40,26 +41,25 @@ command_callback = None
 
 def on_connect(client, userdata, flags, reason_code, properties):
     # publish LWT online
-    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
+    client.publish(settings.mqtt_topic + "/LWT" , "online", qos=0,  retain=True)
     # Subscribe to /set topics for writable datapoints
-    setlevels = [
+    subscriptions = [
         (settings.mqtt_topic + "/+/set", 0),
         (settings.mqtt_topic + "/+/+/set", 0),
         (settings.mqtt_topic + "/+/+/+/set", 0),
     ]
     if settings.mqtt_listen != None:
-        setlevels.append((settings.mqtt_listen, 0))
-    client.subscribe(setlevels)
-    logger.debug(f"Subscribed to topic patterns: {setlevels}")
+        subscriptions.append((settings.mqtt_listen, 0))
+    client.subscribe(subscriptions)
+    logger.debug(f"Subscribed to topic patterns: {subscriptions}")
     
 def on_disconnect(client, userdata, flags, reason_code, properties):
     if reason_code != 0:
         logger.warning('mqtt broker disconnected. reason_code = ' + str(reason_code))
-    mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
+    client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
 
 def on_message(client, userdata, msg):
-    global reset_recent
-    #print("MQTT recd:", msg.topic, msg.payload)
+    logger.debug(f"MQTT recd: {msg.topic}, {msg.payload}")
     if(settings.mqtt_listen is None):
         logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")  # ErrMsg oder so?
         return
@@ -149,10 +149,9 @@ def connect_mqtt():
 
 
 def get_mqtt_request() -> str:
-    ret = ""
-    if len(cmnd_queue) > 0:
-        ret = cmnd_queue.pop(0)
-    return ret
+    if cmnd_queue:
+        return cmnd_queue.pop(0)
+    return ""
 
 
 def publish_read(name, addr, value):
@@ -221,6 +220,17 @@ def is_forced():
     return None
 
 
+def force_delayed(value, delay=1):
+    # im Zweifesfalle können 4-5 Comm cycles
+    def worker():
+        time.sleep(delay)
+        lst_force_refresh.append(value)
+
+    t = threading.Thread(target=worker)
+    t.start()
+    return t  # optional
+
+
 def handle_set_topic(topic, payload):
     """
     Handle /set topic messages for writable datapoints.
@@ -272,8 +282,9 @@ def handle_set_topic(topic, payload):
         cmnd_queue.append(write_cmd)
 
         # Ensure the affected datapoint is refreshed quite soon
-        lst_force_refresh.append(list_index)
-        
+        #lst_force_refresh.append(list_index)
+        force_delayed(list_index)
+
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
 
@@ -296,13 +307,13 @@ def find_datapoint_by_name(dpname):
             item = item[1:] 
 
         name = item[0]
-        addr = item[1] #if len(item1) > 1 else None
-        dlen = item[2] #if len(item1) > 2 else 1
-        #TODO bbFilter...
-        scale_type = item[3] if len(item) > 3 else None
-        signed = item[4] if len(item) > 4 else False
         
-        if name == dpname and addr is not None:
+        if name == dpname:
+            addr = item[1] #if len(item1) > 1 else None
+            dlen = item[2] #if len(item1) > 2 else 1
+            #TODO bbFilter...
+            scale_type = item[3] if len(item) > 3 else None
+            signed = item[4] if len(item) > 4 else False
             metadata = {
                 'addr': addr,
                 'len': dlen,
@@ -312,8 +323,7 @@ def find_datapoint_by_name(dpname):
             }
             # Cache it
             datapoint_metadata[dpname] = metadata
-            return metadata
-    
+            return metadata    
     return None
 
 

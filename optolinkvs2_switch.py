@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.0.1"
+VERSION = "1.10.0.2"
 
 import serial
 import time
@@ -126,7 +126,6 @@ def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # r
                     while((list_index + 1) < poll_list.num_items):
                         list_index += 1
                         next_item = poll_list.items[list_index]
-                        print("check item", list_index)
                         # remove PollCycle in case
                         if(isinstance(item[0], int)):
                             next_item = next_item[1:]
@@ -407,7 +406,6 @@ def main():
 
     try:
     #if True:
-
         poll_list.make_list()
         # buffer for read data for writing viessdata.csv 
         poll_data = [None] * poll_list.num_items
@@ -549,7 +547,8 @@ def main():
                                 poll_pointer = 0
                                 poll_cycle = 0
                                 force_poll_flag = False
-                                if(mod_mqtt): mod_mqtt.lst_force_refresh = []
+                                if(mod_mqtt): 
+                                    mod_mqtt.lst_force_refresh = []
                             # reload poll list, including onceonlies
                             if reload_poll_flag:
                                 poll_list.make_list(reload=True)
@@ -564,8 +563,8 @@ def main():
                                     mod_mqtt.datapoint_metadata = {}
 
                             # check if something is forced
-                            if(mod_mqtt) and ((force_idx := mod_mqtt.is_forced()) is not None):
-                                retcode = do_poll_item(poll_data, serOptolink, item_index=force_idx)
+                            if mod_mqtt and ((force_refresh_index := mod_mqtt.is_forced()) is not None):
+                                retcode = do_poll_item(poll_data, serOptolink, item_index=force_refresh_index)
                                 # we did something
                                 did_secodary_request = True
 

@@ -46,7 +46,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     ----------
     resptelegr : bool
         Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
-        Wenn False, wird ein regulaeres Datentelegramm erwartet.
+        Wenn False, wird ein Master Request Telegramm erwartet.
     raw : bool
         Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
         True = Rohdatenmodus (keine Protokollauswertung),
