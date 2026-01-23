@@ -15,8 +15,8 @@
 '''
 
 # ---------------------------------------------------------------
-# This module is used for the application logging
-# (console and optolinkvs2_switch.log)
+# This module is used for the application logging,
+# console and optolinkvs2_switch.log
 # settings: no_logger_file
 # ---------------------------------------------------------------
 
@@ -27,7 +27,7 @@ from c_settings_adapter import settings
 logger = LoggerUtil(
                 name = "optolinkvs2_switch",
                 level = 10, #TEMP!  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,  
-                max_bytes = 10*1024*1024,
+                max_bytes = 10*1024*1024, # 10 MB
                 backup_count = 1,
                 no_file = settings.no_logger_file
             ).logger

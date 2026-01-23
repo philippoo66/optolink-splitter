@@ -113,18 +113,18 @@ class SettingsAdapter:
 
         if settings_module:
             # try:
-                 self._settings_obj = importlib.import_module(settings_module)
+                self._settings_obj = importlib.import_module(settings_module)
             # except Exception as e:
             #     logger.error(f"importing settings module: {e}")
             #     return
         
-        if not self._settings_obj:
-            # logger.error("set_settings: no settings object set")
-            return
+        # if not self._settings_obj:
+        #     logger.error("set_settings: no settings object set")
+        #     return
         
         if reload:
             # try:
-                 self._settings_obj = importlib.reload(self._settings_obj)
+                self._settings_obj = importlib.reload(self._settings_obj)
             # except Exception as e:
             #     logger.error(f"reload settings module: {e}")
             #     return
@@ -195,5 +195,5 @@ class SettingsAdapter:
         self.poll_interval = getattr(self._settings_obj, 'poll_interval', self.poll_interval)
 
 
-# +++ for global use +++++++++++++++
+# === for global use ==================
 settings = SettingsAdapter()

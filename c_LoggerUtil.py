@@ -31,33 +31,29 @@ class LoggerUtil:
     def __init__(
             self,
             name: str = "logger_util",
-            # ++ level constants:  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
+            # == level constants: DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
             level=logging.INFO,
-            # ++ fmt examples: +++++++++++++++++++++++++++
-            # "%(asctime)s [%(levelname)s]: %(message)s"
+            # == fmt examples: ===========================
             # "%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s"    mit Millisekunden
             # "%(created).3f [%(levelname)s]: %(message)s"              Unix-Zeitstempel in Sekunden (float)
-            # "%(relativeCreated)d [%(levelname)s]: %(message)s"        ms seit Start des Logging-Systems
+            # "%(relativeCreated)d [%(levelname)s]: %(message)s"        Millisekunden seit Start des Logging-Systems
             fmt: str = "%(asctime)s [%(levelname)s]: %(message)s",
             datefmt: str = "%Y-%m-%d %H:%M:%S",
+            no_console: bool = False,
             no_file: bool = False,
             log_file: str = None,
             max_bytes: int = 5 * 1024 * 1024,  # 5 MB
             backup_count: int = 1,
-            no_console: bool = False,
         ):
 
         self.name = name
 
-        self.logger = logging.getLogger(self.name)
-        
+        self.logger = logging.getLogger(self.name)       
         self.logger.setLevel(level)
         self.logger.propagate = False
+        self.logger.handlers.clear() # doppelte Handler vermeiden
 
         formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
-
-        # doppelte Handler vermeiden
-        self.logger.handlers.clear()
 
         if not no_file:
             base_dir = self.get_base_dir()
