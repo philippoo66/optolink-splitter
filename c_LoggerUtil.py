@@ -31,14 +31,14 @@ class LoggerUtil:
     def __init__(
             self,
             name: str = "logger_util",
-            # level constants:  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
+            # ++ level constants:  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
             level=logging.INFO,
-            # fmt examples:
+            # ++ fmt examples: +++++++++++++++++++++++++++
             # "%(asctime)s [%(levelname)s]: %(message)s"
             # "%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s"    mit Millisekunden
             # "%(created).3f [%(levelname)s]: %(message)s"              Unix-Zeitstempel in Sekunden (float)
             # "%(relativeCreated)d [%(levelname)s]: %(message)s"        ms seit Start des Logging-Systems
-            fmt: str = "%(asctime)s.%(msecs)03d: %(message)s",
+            fmt: str = "%(asctime)s [%(levelname)s]: %(message)s",
             datefmt: str = "%Y-%m-%d %H:%M:%S",
             no_file: bool = False,
             log_file: str = None,
@@ -48,45 +48,31 @@ class LoggerUtil:
         ):
 
         self.name = name
-        self.level = level
-        self.no_console = no_console
-        self.no_file = no_file
-        self.max_bytes = max_bytes
-        self.backup_count = backup_count
 
-        base_dir = self.get_base_dir()
-        self.log_file = log_file or os.path.join(base_dir, f"{name}.log")
-
-        self.formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
         self.logger = logging.getLogger(self.name)
         
-        self._setup_logger()
-
-
-    # === Setup ===========================================================
-    def _setup_logger(self): #, no_file=None):
-        self.logger.setLevel(self.level)
+        self.logger.setLevel(level)
         self.logger.propagate = False
+
+        formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
 
         # doppelte Handler vermeiden
         self.logger.handlers.clear()
 
-        ##self.no_file = no_file if no_file else self.no_file
-        if not self.no_file:
+        if not no_file:
+            base_dir = self.get_base_dir()
+            self.log_file = log_file or os.path.join(base_dir, f"{name}.log")
+
             file_handler = RotatingFileHandler(
                 self.log_file,
-                maxBytes=self.max_bytes,
-                backupCount=self.backup_count,
+                maxBytes=max_bytes,
+                backupCount=backup_count,
                 encoding="utf-8",
             )
-            file_handler.setFormatter(self.formatter)
+            file_handler.setFormatter(formatter)
             self.logger.addHandler(file_handler)
 
-        if not self.no_console:
+        if not no_console:
             console_handler = logging.StreamHandler()
-            console_handler.setFormatter(self.formatter)
+            console_handler.setFormatter(formatter)
             self.logger.addHandler(console_handler)
-
-    # # === Zugriff =========================================================
-    # def get_logger(self) -> logging.Logger:
-    #     return self.logger
