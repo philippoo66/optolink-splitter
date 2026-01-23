@@ -70,6 +70,7 @@ class SettingsAdapter:
 
         # Optolink Logging ++++++++++++++
         self.show_opto_rx = True                # Console output of received Optolink data (default: True, no output when run as service)
+        self.log_optolink = False               # Enable logging of Optolink rx+tx communication (default: False)
         self.log_vitoconnect = False            # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
         self.viconn_to_mqtt = True              # Vitoconnect traffic published on MQTT
 
@@ -168,6 +169,7 @@ class SettingsAdapter:
 
         # Optolink Logging ++++++++++++++
         self.show_opto_rx = getattr(self._settings_obj, 'show_opto_rx', self.show_opto_rx)
+        self.log_optolink = getattr(self._settings_obj, 'log_optolink', self.log_optolink)
         self.log_vitoconnect = getattr(self._settings_obj, 'log_vitoconnect', self.log_vitoconnect)
         self.viconn_to_mqtt = getattr(self._settings_obj, 'viconn_to_mqtt', self.viconn_to_mqtt)
 

@@ -323,7 +323,7 @@ def find_datapoint_by_name(dpname):
             }
             # Cache it
             datapoint_metadata[dpname] = metadata
-            return metadata    
+            return metadata
     return None
 
 

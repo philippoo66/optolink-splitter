@@ -322,6 +322,7 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
     last_receive_time = start_time
 
     while True:
+        time.sleep(0.005)
         # Zeichen vom Serial Port lesen
         inbytes = ser.read_all()
 
@@ -337,7 +338,6 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
                 print("rx", utils.bbbstr(inbuff))
             return 0x01, bytearray(inbuff)
 
-        time.sleep(0.005)
         if((time.time() - start_time) > timeout):
             if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))

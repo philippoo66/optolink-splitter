@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.0.2"
+VERSION = "1.10.1.0"
 
 import serial
 import time
@@ -34,6 +34,7 @@ from c_logging import viconnlog
 from c_polllist import poll_list
 import utils
 import wo1c_energy
+import c_LoggingSerial
 
 # exit flag e.g. to stop endless loops
 progr_exit_flag = False
@@ -406,24 +407,47 @@ def main():
 
     try:
     #if True:
+        # ---------------------
+        # init the poll list 
+        # ---------------------
+        
         poll_list.make_list()
         # buffer for read data for writing viessdata.csv 
         poll_data = [None] * poll_list.num_items
 
-        # serielle Verbidungen mit Vitoconnect und dem Optolink Kopf aufbauen ++++++++++++++
+        # ---------------------
+        # open serial ports 
+        # ---------------------
 
+        # serielle Verbindungen mit dem Optolink Kopf oeffnen ++++++++++++++
         if(settings.port_optolink is not None):
-            serOptolink = serial.Serial(settings.port_optolink,
-                        baudrate=4800,
-                        parity=serial.PARITY_EVEN,
-                        stopbits=serial.STOPBITS_TWO,
-                        bytesize=serial.EIGHTBITS,
-                        exclusive=True,
-                        timeout=0)
+            serial_args = dict(
+                port=settings.port_optolink,
+                baudrate=4800,
+                parity=serial.PARITY_EVEN,
+                stopbits=serial.STOPBITS_TWO,
+                bytesize=serial.EIGHTBITS,
+                exclusive=True,
+                timeout=0,
+            )
+
+            if settings.log_optolink:
+                logger.info("Optolink using LoggingSerial")
+                serOptolink = c_LoggingSerial.LoggingSerial(**serial_args,
+                        # specials
+                        logger_name="optolink",
+                        logger_fmt="%(relativeCreated)d: %(message)s",
+                        logger_no_console = True,
+                        logger_max_bytes = 25 * 1024 * 1024  # 25 MB
+                    )
+            else:
+                serOptolink = serial.Serial(**serial_args)
+
             logger.info("Optolink serial port opened")
         else:
-            raise Exception("Error: Optolink device is mandatory!")
+            raise Exception("ERROR: Optolink device is mandatory!")
 
+        # serielle Verbindungen mit dem Vitoconnect oeffnen ++++++++++++++
         if(settings.port_vitoconnect is not None):
             serVitoConnnect = serial.Serial(settings.port_vitoconnect,
                         baudrate=4800,
@@ -434,7 +458,9 @@ def main():
                         timeout=0)
             logger.info("Vitoconnect serial port opened")
 
-        # Empfangstask der sekundaeren Master starten (TcpIp, MQTT) ++++++++++++++
+        # -------------------------------------------------------------
+        # run the receive tasks of 'secondary masters' (MQTT, TcpIp) 
+        # -------------------------------------------------------------
 
         # MQTT --------
         if(settings.mqtt_broker is not None):
@@ -442,8 +468,6 @@ def main():
             mod_mqtt = importlib.import_module("mqtt_util")
             mod_mqtt.connect_mqtt()
             mod_mqtt.command_callback = do_special_command
-            # # Set poll_list reference for /set topic handling
-            # mod_mqtt_util.set_poll_list_reference(poll_list)
 
 
         # TCP/IP connection --------
@@ -451,8 +475,9 @@ def main():
             tcp_thread = threading.Thread(target=tcp_connection_loop, daemon=True)
             tcp_thread.start()
 
-
-        # some inits ++++++++++++++
+        # ---------------------
+        # some inits 
+        # ---------------------
 
         # one wire value check init
         requests_util.init_w1_values_check()
@@ -463,11 +488,15 @@ def main():
         # show what we have
         publish_stat()
 
-        # ------------------------
+        # -------------------------------
         # connection / re-connect loop
-        # ------------------------        
+        # -------------------------------        
         while(True):  #not shutdown_event.is_set():
-            # run VS2 connection ------------------
+            
+            # ----------------------
+            # run VS2 connection 
+            # ----------------------
+
             if(serVitoConnnect is not None):
                 # reset vicon_request buffer
                 viconn_util.vicon_request = bytearray()
@@ -503,9 +532,9 @@ def main():
             if(settings.poll_interval > 0) and (poll_list.num_items > 0):
                 startPollTimer(settings.poll_interval)
 
-            # ------------------------
-            # Main Loop starten und Sachen abarbeiten ++++++++++++
-            # ------------------------
+            # ------------------------------------------
+            # Main Loop starten und Sachen abarbeiten 
+            # ------------------------------------------
             logger.info("enter main loop")
             num_tasks = 3
             request_pointer = 0
