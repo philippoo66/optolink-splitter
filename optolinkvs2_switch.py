@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.1.0"
+VERSION = "1.10.1.1"
 
 import serial
 import time
@@ -395,11 +395,15 @@ def main():
     signal.signal(signal.SIGTERM, handle_exit)
     signal.signal(signal.SIGINT, handle_exit)
 
+    # if(settings.no_logger_file):
+    #     import logging
+    #     for handler in list(logger.handlers):
+    #         if isinstance(handler, logging.FileHandler):
+    #             logger.removeHandler(handler)
+    #             handler.close()
+
     serOptolink = None  # Viessmann Device (Slave)
     serVitoConnnect = None  # Vitoconnect (Master)
-
-    # #temp!!
-    # optolinkvs2.temp_callback = publish_viconn
 
     excptn = None
 

@@ -21,8 +21,9 @@
 ###########################################
 
 import importlib
-from logger_util import logger
+#from logger_util import logger
 
+SETTINGS_MODULE = "settings_ini"
 
 class SettingsAdapter:
     def __init__(self):
@@ -100,34 +101,33 @@ class SettingsAdapter:
         self.poll_interval = 30                 # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #  now we apply given settings from settings_ini.py
-        self.set_settings("settings_ini")
+        #  now we apply given settings from settings_ini.py or any other parser
+        self.set_settings(SETTINGS_MODULE)
 
 
     def set_settings(self, settings_module:str = '', reload:bool = False):
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #  Here we take the settings from a module if exist there, 
         #  otherwise keep value unchanged 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if settings_module:
-            try:
-                self._settings_obj = importlib.import_module(settings_module)
-            except Exception as e:
-                logger.error(f"importing settings module: {e}")
-                return
+            # try:
+                 self._settings_obj = importlib.import_module(settings_module)
+            # except Exception as e:
+            #     logger.error(f"importing settings module: {e}")
+            #     return
         
         if not self._settings_obj:
-            logger.error("set_settings: no settings object set")
+            # logger.error("set_settings: no settings object set")
             return
         
         if reload:
-            try:
-                self._settings_obj = importlib.reload(self._settings_obj)
-            except Exception as e:
-                logger.error(f"reload settings module: {e}")
-                return
+            # try:
+                 self._settings_obj = importlib.reload(self._settings_obj)
+            # except Exception as e:
+            #     logger.error(f"reload settings module: {e}")
+            #     return
 
 
         # General Settings +++++++++++
@@ -195,6 +195,5 @@ class SettingsAdapter:
         self.poll_interval = getattr(self._settings_obj, 'poll_interval', self.poll_interval)
 
 
-
-# for global use
+# +++ for global use +++++++++++++++
 settings = SettingsAdapter()

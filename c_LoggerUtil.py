@@ -49,33 +49,34 @@ class LoggerUtil:
 
         self.name = name
         self.level = level
-        self.no_file = no_file
         self.no_console = no_console
+        self.no_file = no_file
+        self.max_bytes = max_bytes
+        self.backup_count = backup_count
 
         base_dir = self.get_base_dir()
-        self.log_file = log_file or os.path.join(
-            base_dir, f"{name}.log"
-        )
+        self.log_file = log_file or os.path.join(base_dir, f"{name}.log")
 
         self.formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
-
-        self.logger = logging.getLogger(name)
-        self._setup_logger(max_bytes, backup_count)
+        self.logger = logging.getLogger(self.name)
+        
+        self._setup_logger()
 
 
     # === Setup ===========================================================
-    def _setup_logger(self, max_bytes, backup_count):
+    def _setup_logger(self): #, no_file=None):
         self.logger.setLevel(self.level)
         self.logger.propagate = False
 
         # doppelte Handler vermeiden
         self.logger.handlers.clear()
 
+        ##self.no_file = no_file if no_file else self.no_file
         if not self.no_file:
             file_handler = RotatingFileHandler(
                 self.log_file,
-                maxBytes=max_bytes,
-                backupCount=backup_count,
+                maxBytes=self.max_bytes,
+                backupCount=self.backup_count,
                 encoding="utf-8",
             )
             file_handler.setFormatter(self.formatter)
@@ -86,6 +87,6 @@ class LoggerUtil:
             console_handler.setFormatter(self.formatter)
             self.logger.addHandler(console_handler)
 
-    # === Zugriff =========================================================
-    def get_logger(self) -> logging.Logger:
-        return self.logger
+    # # === Zugriff =========================================================
+    # def get_logger(self) -> logging.Logger:
+    #     return self.logger

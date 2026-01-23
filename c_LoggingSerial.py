@@ -34,7 +34,7 @@ class LoggingSerial:
         logger_no_file = kwargs.pop("logger_no_file", False)
         logger_no_console = kwargs.pop("logger_no_console", False)
 
-        self.logger = LoggerUtil(
+        loggerutil = LoggerUtil(
             name = logger_name,
             level = logger_level,
             fmt = logger_fmt,
@@ -42,7 +42,9 @@ class LoggingSerial:
             backup_count = logger_backup_count,
             no_file = logger_no_file,
             no_console = logger_no_console,
-        ).get_logger()
+        )
+        #loggerutil.setup_logger()
+        self.logger = loggerutil.logger
 
         # --- echtes Serial-Objekt -------------------------------------
         self._serial = serial.Serial(*args, **kwargs)
