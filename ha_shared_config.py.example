@@ -38,6 +38,7 @@ shared_config = {
         "manufacturer": "Viessmann"
     },
     "node_id": "vitocal",
+    "entity_prefix": "vitocal_200g",
     "beautifier" : {"search"  : ["primaer","sekundaer","rueck","energy", "heating","water", "thermal",  "electric", "kaelte", "kuehl", "ueber", "fluessig", "oeff"],
                     "replace" : ["primär", "sekundär", "rück", "energie","heizen", "wasser","thermisch","elektrisch", "kälte", "kühl", "über", "flüssig", "öff"],
                     },

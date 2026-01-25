@@ -71,6 +71,7 @@ def publish_ha_discovery():
     # Device-Info
     node_id = shared_config["node_id"]
     device = shared_config["device"]
+    entity_prefix = f"{shared_config["entity_prefix"]}_" if "entity_prefix" in shared_config else ""
     
     total_published = 0
     
@@ -92,7 +93,8 @@ def publish_ha_discovery():
             
             discovery_config = {
                 "name" : beautify(item[1].replace("_", " ")).title(),
-                "unique_id": f"{item[1]}_{address_hex}",
+                "unique_id": f"{node_id}_{item[1]}".lower(),
+                "default_entity_id": f"{domain}.{entity_prefix}{item[1]}".lower(),
                 "state_topic": f"{mqtt_base}/{item[1]}",
                 "device": device,
                 "availability_topic": f"{mqtt_base}/LWT"
@@ -111,8 +113,8 @@ def publish_ha_discovery():
                              .replace("%bytelength%", str(byte_length))
                     )
             # print (json.dumps(discovery_config))
-            # Publish
-            topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
+            # Publish: <discovery_prefix>/<component>/<node_id>/<object_id>/config
+            topic = f"{ha_prefix}/{domain}/{node_id}/{item[1]}/config"
             mod_mqtt_util.mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
             print(f"Published {domain}: {discovery_config['name']} ({address_hex}) -> {discovery_config['unique_id']}")
             total_published += 1
@@ -125,15 +127,16 @@ def publish_ha_discovery():
         command_config_clean.pop("name", None)
         discovery_config = {
             "name" : beautify(command_config["name"].replace("_", " ")).title(),
-            "unique_id": f"command_{command_config["name"]}",
+            "unique_id": f"{node_id}_command_{command_config["name"]}".lower(),
+            "default_entity_id": f"{domain}.{entity_prefix}{command_config["name"]}".lower(),
             "command_topic" : settings.mqtt_listen,
             "device": device
         }
         discovery_config.update(command_config_clean)
             
         #print (json.dumps(discovery_config))
-        # Publish
-        topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
+        # Publish: <discovery_prefix>/<component>/<node_id>/<object_id>/config
+        topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['name']}/config"
         mod_mqtt_util.mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
         print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
         total_published += 1
