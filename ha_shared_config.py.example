@@ -175,11 +175,22 @@ shared_config = {
             #"domain": "number",
             "suggested_display_precision": 0,
             "poll": [
-                ( 15,"betriebsart", 0xb000, 3, "b:0:0", 1),                                #WPR_WO1H_HK1_Betriebsart~0xB000 0=0 – Abschaltbetrieb,1=1 – Nur WW,2=2 – Heizen/Kühlen/WW,4=4 – dauernd reduziert,5=5 – dauernd normal,6=6 – normal Abschalt,7=7 – nur Kühlen
-                ( 15,"partybetrieb", 0xb000, 3, "b:1:1", 1),
-                ( 15,"sparbetrieb", 0xb000, 3, "b:2:2", 1),
-                (  5,"warmwasser_1x_laden", 0xb020, 1, 1),                                 #einmalige Aufladung
+                 (  5,"warmwasser_1x_laden", 0xb020, 1, 1),                                 #einmalige Aufladung
                 (999,"anlagenschema", 0x7000, 1, 1),                                       #WPR_Anlagenkonfig_Anlagenschema~0x7000 0: WW,1: 1 HK,2: 1 HK WW,3: 0 HK 1 MHK,4: 0 HK 1 MHK WW,5: 1 HK 1 MHK,6: 1 HK 1 MHK WW,7: 0 HK 1 MHK 1 MHK,8: 0 HK 1 MHK 1 MHK WW,9: 1 HK 1 MHK 1 MHK,10: 1 HK 1 MHK 1 MHK WW,11: Fremdansteuerung
+           ]
+        },
+        {
+            "domain" : "select",
+            "options": [
+                "Aus",
+                "Warmwasser",
+                "Warmwasser + Heizen"
+              ],
+            "command_template": "{% if value == 'Aus' %}w;0xb000;1;0{% elif value == 'Warmwasser' %}w;0xb000;1;1{% elif value == 'Warmwasser + Heizen' %}w;0xb000;1;2{% endif %}",
+            "value_template": "{% set v = value | int(0) %}{% if v == 0 %}Aus{% elif v == 1 %}Warmwasser{% elif v == 2 %}Warmwasser + Heizen{% else %}Unbekannt{% endif %}",
+            "optimistic": False,
+            "poll": [
+                ( 15,"betriebsart", 0xb000, 1, 1),                                #WPR_WO1H_HK1_Betriebsart~0xB000 0=0 – Abschaltbetrieb,1=1 – Nur WW,2=2 – Heizen/Kühlen/WW,4=4 – dauernd reduziert,5=5 – dauernd normal,6=6 – normal Abschalt,7=7 – nur Kühlen
            ]
         },
         {
@@ -312,11 +323,19 @@ shared_config = {
             ]
         },        
     ],
-    "commands" : [
+    "commands" : "commands" : [
         {
             "name" : "refresh",
             "payload_press" : "forcepoll",
-        }
+        },
+        {
+            "name" : "warmwasser_1x_laden",
+            "payload_press" : "w;0xb020;1;2",
+        },
+        {
+            "name" : "warmwasser_1x_aus",
+            "payload_press" : "w;0xb020;1;0",
+        },
     ]
 }
 
