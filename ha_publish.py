@@ -31,7 +31,7 @@
 '''
 
 import json
-import paho.mqtt.client as paho
+import importlib
 import time
 
 from c_settings_adapter import settings
@@ -39,47 +39,7 @@ from c_settings_adapter import settings
 from ha_shared_config import shared_config
 
 # Global MQTT Client
-mqtt_client = None
-
-def connect_mqtt(retries=3, delay=5):
-    """Global MQTT Client für dieses Script."""
-    global mqtt_client
-    
-    if mqtt_client is None:
-        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "datapoints_" + str(int(time.time()*1000)))
-    
-    if mqtt_client.is_connected():
-        print(" MQTT client is already connected. Skipping reconnection.")
-        return True
-    
-    try:
-        mqtt_credentials = settings.mqtt_broker.split(':')
-        MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
-        
-        mqtt_user_pass = settings.mqtt_user
-        if mqtt_user_pass and mqtt_user_pass.lower() != "none":
-            mqtt_user, mqtt_password = mqtt_user_pass.split(":")
-            mqtt_client.username_pw_set(mqtt_user, mqtt_password)
-            print(f"Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER}:{MQTT_PORT}...")
-        else:
-            print(f"Connecting anonymously to MQTT broker {MQTT_BROKER}:{MQTT_PORT}...")
-        
-        for attempt in range(retries):
-            try:
-                mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-                mqtt_client.loop_start()
-                print(" ✓ MQTT connected successfully.")
-                return True
-            except Exception as retry_error:
-                print(f" ERROR: MQTT connection failed (Attempt {attempt+1}/{retries}): {retry_error}")
-                time.sleep(delay)
-        
-        print(" ERROR: Could not establish MQTT connection after multiple retries.")
-        return False
-        
-    except Exception as e:
-        print(f" ERROR connecting to MQTT broker: {e}")
-        return False
+mod_mqtt_util = None
 
 def beautify(text):
     result = text
@@ -96,8 +56,12 @@ def beautify(text):
     
 def publish_ha_discovery():
     """Veröffentlicht HA Discovery mit neuer Array-Struktur."""
+    global mod_mqtt_util
+
     # MQTT verbinden und prüfen
-    if not connect_mqtt():
+    mod_mqtt_util = importlib.import_module("mqtt_util")
+    mod_mqtt_util.connect_mqtt()
+    if (mod_mqtt_util is None) or (not mod_mqtt_util.mqtt_client.is_connected):
         print(" ERROR: MQTT connection failed. Exiting.")
         return
 
@@ -149,7 +113,7 @@ def publish_ha_discovery():
             # print (json.dumps(discovery_config))
             # Publish
             topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+            mod_mqtt_util.mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
             print(f"Published {domain}: {discovery_config['name']} ({address_hex}) -> {discovery_config['unique_id']}")
             total_published += 1
             time.sleep(0.1)  # Rate limiting
@@ -170,7 +134,7 @@ def publish_ha_discovery():
         #print (json.dumps(discovery_config))
         # Publish
         topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-        mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+        mod_mqtt_util.mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
         print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
         total_published += 1
         time.sleep(0.1)  # Rate limiting
@@ -178,8 +142,8 @@ def publish_ha_discovery():
     print(f"\n✓ {total_published} entities published successfully!")
     
     # Graceful shutdown
-    mqtt_client.loop_stop()
-    mqtt_client.disconnect()
+    mod_mqtt_util.mqtt_client.loop_stop()
+    mod_mqtt_util.mqtt_client.disconnect()
 
 if __name__ == "__main__":
     publish_ha_discovery()
