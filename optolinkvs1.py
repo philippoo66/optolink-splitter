@@ -33,10 +33,10 @@ last_comm = 0.0
 
 def reset_sync():
     global last_comm
-    last_comm = time.time()
+    last_comm = time.monotonic()
 
 def sync_elapsed(timeout = SYNC_TIMEOUT) -> bool:
-    return (time.time() - last_comm > timeout) 
+    return (time.monotonic() > last_comm + timeout) 
 
 # protocol -----------
 
@@ -187,7 +187,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
 def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
     # times in seconds
     inbuff = b''
-    start_time = time.time()
+    start_time = time.monotonic()
     last_receive_time = start_time
 
     while True:
@@ -197,10 +197,10 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         if inbytes:
             # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
-            last_receive_time = time.time()
+            last_receive_time = time.monotonic()
             if(ser2 is not None):
                 ser2.write(inbytes)
-        elif inbuff and ((time.time() - last_receive_time) > eot_time):
+        elif inbuff and (time.monotonic() > last_receive_time + eot_time):
             # if data received and no further receive since more than eot_time
             if(settings.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
@@ -208,12 +208,19 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             return 0x01, bytearray(inbuff)
 
         time.sleep(0.005)
-        if((time.time() - start_time) > timeout):
+        if(time.monotonic() > start_time + timeout):
             if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))
             return 0xFF, bytearray(inbuff)
 
 
+comm_errors = 0
+def count_errors(up:bool):
+    global comm_errors
+    if up:
+        comm_errors += 2
+    elif comm_errors > 0:
+        comm_errors -= 1
 
 
 

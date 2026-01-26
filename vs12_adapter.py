@@ -109,3 +109,11 @@ def wait_for_vicon(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float)
         return viconn_util.detect_vs2(serVicon, serOpto, timeout)
     else:
         return viconn_util.detect_vs1(serVicon, serOpto, timeout)
+
+
+def comm_failure() -> bool:
+    if(VS2):
+        return (optolinkvs2.comm_errors >= 2 * settings.max_comm_errors)
+    else:
+        return (optolinkvs1.comm_errors >= 2 * settings.max_comm_errors)
+        

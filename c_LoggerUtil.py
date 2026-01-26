@@ -30,7 +30,7 @@ class LoggerUtil:
     # === Initialisierung ================================================
     def __init__(
             self,
-            name: str = "logger_util",
+            name: str = "loggerutil",
             # == level constants: DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
             level=logging.INFO,
             # == fmt examples: ===========================
@@ -41,7 +41,7 @@ class LoggerUtil:
             datefmt: str = "%Y-%m-%d %H:%M:%S",
             no_console: bool = False,
             no_file: bool = False,
-            log_file: str = None,
+            log_file: str = "",
             max_bytes: int = 5 * 1024 * 1024,  # 5 MB
             backup_count: int = 1,
         ):

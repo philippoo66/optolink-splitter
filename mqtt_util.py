@@ -95,57 +95,61 @@ def on_log(client, userdata, level, buf):
 
 def connect_mqtt(): 
     global mqtt_client
+    #try:  # exception handled in calling proc
+    # Verbindung zu MQTT Broker herstellen ++++++++++++++
+    clientid = "olswitch_" + settings.mqtt_topic.replace("/", "").replace(" ", "")
     try:
-        # Verbindung zu MQTT Broker herstellen ++++++++++++++
-        clientid = "olswitch_" + settings.mqtt_topic.replace("/", "").replace(" ", "")
         mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, clientid) # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
-        # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
-        creds = settings.mqtt_user
-        if creds is not None:
-            creds = str(creds).strip()
-            if creds != "":
-                if ":" in creds:
-                    user, pwd = creds.split(":", 1)  # split once; allows ":" inside password
-                    mqtt_client.username_pw_set(user, password=(pwd if pwd != "" else None))
-                else:
-                    mqtt_client.username_pw_set(creds, password=None)
-        mqtt_client.on_connect = on_connect
-        mqtt_client.on_disconnect = on_disconnect
-        mqtt_client.on_message = on_message
-        mqtt_client.will_set(settings.mqtt_topic + "/LWT", "offline", qos=0, retain=True)
-        if(settings.mqtt_listen != None):
-            mqtt_client.on_subscribe = on_subscribe
-        if(settings.mqtt_logging):
-            mqtt_client.on_log = on_log
-            mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
-            mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
-        # Optional TLS / SSL
-        if settings.mqtt_tls_enable:
-            import ssl
-            skip = bool(settings.mqtt_tls_skip_verify)
-            ca_path = settings.mqtt_tls_ca_certs
-            certfile = settings.mqtt_tls_certfile
-            keyfile  = settings.mqtt_tls_keyfile
-            if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
-                raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
-            mqtt_client.tls_set(
-                ca_certs=ca_path,  # None => OS CA store
-                certfile=certfile,
-                keyfile=keyfile,
-                cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
-                tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
-            )
-            # IP / hostname mismatch and for "skip verify" mode
-            mqtt_client.tls_insecure_set(skip)
-        mlst = settings.mqtt_broker.split(':')
-        mqtt_client.connect(mlst[0], int(mlst[1]))
-        mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
-        mqtt_client.loop_start()
-        # preparations
-        if(settings.mqtt_fstr is None):
-            settings.mqtt_fstr = "{dpname}"
-    except Exception as e:
-        raise Exception("Error connecting MQTT: " + str(e))
+    except:
+        mqtt_client = paho.Client(client_id=clientid) # + '_' + str(int(time.time()*1000)))  # Unique mqtt id using timestamp
+
+    # MQTT Username/Password (mqtt_user = "<user>:<pwd>" or None for anonymous)
+    creds = settings.mqtt_user
+    if creds is not None:
+        creds = str(creds).strip()
+        if creds != "":
+            if ":" in creds:
+                user, pwd = creds.split(":", 1)  # split once; allows ":" inside password
+                mqtt_client.username_pw_set(user, password=(pwd if pwd != "" else None))
+            else:
+                mqtt_client.username_pw_set(creds, password=None)
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_disconnect = on_disconnect
+    mqtt_client.on_message = on_message
+    mqtt_client.will_set(settings.mqtt_topic + "/LWT", "offline", qos=0, retain=True)
+    if(settings.mqtt_listen != None):
+        mqtt_client.on_subscribe = on_subscribe
+    if(settings.mqtt_logging):
+        mqtt_client.on_log = on_log
+        mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
+        mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
+    # Optional TLS / SSL
+    if settings.mqtt_tls_enable:
+        import ssl
+        skip = bool(settings.mqtt_tls_skip_verify)
+        ca_path = settings.mqtt_tls_ca_certs
+        certfile = settings.mqtt_tls_certfile
+        keyfile  = settings.mqtt_tls_keyfile
+        if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
+            raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
+        mqtt_client.tls_set(
+            ca_certs=ca_path,  # None => OS CA store
+            certfile=certfile,
+            keyfile=keyfile,
+            cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
+            tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
+        )
+        # IP / hostname mismatch and for "skip verify" mode
+        mqtt_client.tls_insecure_set(skip)
+    mlst = settings.mqtt_broker.split(':')
+    mqtt_client.connect(mlst[0], int(mlst[1]))
+    mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
+    mqtt_client.loop_start()
+    # preparations
+    if(settings.mqtt_fstr is None):
+        settings.mqtt_fstr = "{dpname}"
+    #except Exception as e:
+    #    raise Exception("Error connecting MQTT: " + str(e))
 
 
 def get_mqtt_request() -> str:

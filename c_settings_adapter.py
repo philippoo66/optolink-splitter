@@ -87,9 +87,12 @@ class SettingsAdapter:
         self.buffer_to_write =  60              # Buffer size before writing CSV (default: 60)
         self.dec_separator =  ","               # Decimal separator for CSV output (default: ",")
 
-
         # General Settings +++++++++++
         self.no_logger_file =  False            # if True the optolinksvs2_switch.log will not get written
+        self.max_restarts = 5                   # re-start limit. counter gets reset after 100 succesful poll cycles 
+        self.restart_delay = 10                 # seconds delay before re-starting 
+        self.max_vicon_tries = 3                # limit for vicon tries. if exceeded, continuing without vitoconnect. should be less than max_restarts
+        self.max_comm_errors = 10               
 
         # special for wo1c: read daily/weekly energy statistics +++++++++++
         self.wo1c_energy = 0                    # 0:disabled, €N: every n-th cycle
@@ -133,6 +136,9 @@ class SettingsAdapter:
         # General Settings +++++++++++
         # a later change of no_logger_file will not be effective since logger is already up then 
         self.no_logger_file = getattr(self._settings_obj, 'no_logger_file', self.no_logger_file)
+        self.max_restarts = getattr(self._settings_obj, 'max_restarts', self.max_restarts)
+        self.max_vicon_tries = getattr(self._settings_obj, 'max_vicon_tries', self.max_vicon_tries)
+        self.max_comm_errors = getattr(self._settings_obj, 'max_comm_errors', self.max_comm_errors)               
 
         # Serial Ports +++++++++++++++++++
         self.port_optolink = getattr(self._settings_obj, 'port_optolink', self.port_optolink)
