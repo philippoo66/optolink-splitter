@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.2.1"
+VERSION = "1.10.2.2"
 
 import serial
 import time
@@ -749,14 +749,14 @@ def main():
             logger.error(excptn)
         finally:
             close_everything()
-            if shutdown_event.is_set():
+            if do_not_restart or shutdown_event.is_set():
                 return
-            if num_restarts < settings.max_restarts:
-                time.sleep(settings.restart_delay)
-            else:
-                do_not_restart = True
+            elif num_restarts >= settings.max_restarts:
                 logger.error("too many restarts - exit script")
+                return
+            else:
+                time.sleep(settings.restart_delay)
 
- 
+
 if __name__ == "__main__":
     main()
