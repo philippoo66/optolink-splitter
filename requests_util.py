@@ -16,12 +16,12 @@
 
 from typing import Any
 
+from c_settings_adapter import settings
 from logger_util import logger
 import utils
 import vs12_adapter
 import onewire_util
 import c_w1value
-from c_settings_adapter import settings
 
 
 

@@ -18,11 +18,11 @@ import time
 import threading
 import paho.mqtt.client as paho
 
-import utils
 from c_settings_adapter import settings
-from c_polllist import poll_list
-
 from logger_util import logger
+from c_polllist import poll_list
+import utils
+
 
 
 verbose = False
@@ -211,8 +211,6 @@ def exit_mqtt():
 # - bbFilter sachen abfangen
 # - strings schreibbar
 
-# datapoint metadata cache for /set topics
-datapoint_metadata = {}
 
 # list of indexes of poll_list items to get refreshed immediately after got written
 lst_force_refresh = []
@@ -254,12 +252,7 @@ def handle_set_topic(topic, payload):
         
         logger.debug(f"Received /set request: {dpname} = {value_str}")
         
-        # Find datapoint in poll_list
-        if poll_list is None:
-            logger.error("poll_list not initialized for /set topic handling")
-            return
-        
-        datapoint_info = find_datapoint_by_name(dpname)
+        datapoint_info = poll_list.find_datapoint_by_name(dpname)
         if datapoint_info is None:
             logger.warning(f"/set Datapoint '{dpname}' not found in poll_list")
             return
@@ -291,44 +284,6 @@ def handle_set_topic(topic, payload):
 
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
-
-
-def find_datapoint_by_name(dpname):
-    """Find datapoint configuration by name in poll_list."""
-    if poll_list is None or not hasattr(poll_list, 'items'):
-        return None
-    
-    # Check cache first
-    if dpname in datapoint_metadata:
-        return datapoint_metadata[dpname]
-    
-    # Search in poll_list items
-    for lstidx in range(poll_list.num_items):
-        # Handle PollCycle entries: ([PollCycle,] Name, DpAddr, Len, [bbFilter,] Scale/Type, Signed)
-        item = poll_list.items[lstidx]
-        if len(item) > 1 and isinstance(item[0], int):
-            # has PollCycle prefix
-            item = item[1:] 
-
-        name = item[0]
-        
-        if name == dpname:
-            addr = item[1] #if len(item1) > 1 else None
-            dlen = item[2] #if len(item1) > 2 else 1
-            #TODO bbFilter...
-            scale_type = item[3] if len(item) > 3 else None
-            signed = item[4] if len(item) > 4 else False
-            metadata = {
-                'addr': addr,
-                'len': dlen,
-                'scale_type': scale_type,
-                'signed': signed,
-                'list_index': lstidx
-            }
-            # Cache it
-            datapoint_metadata[dpname] = metadata
-            return metadata
-    return None
 
 
 def convert_value_to_bytes(value_str, length, scale_type, signed):

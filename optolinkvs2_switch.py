@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.2.0"
+VERSION = "1.10.2.1"
 
 import serial
 import time
@@ -649,7 +649,6 @@ def main():
                                 reload_poll_flag = False
                                 if(mod_mqtt): 
                                     mod_mqtt.lst_force_refresh = []
-                                    mod_mqtt.datapoint_metadata = {}
 
                             # === check if something is forced =================
                             if mod_mqtt and ((force_refresh_index := mod_mqtt.is_forced()) is not None):
@@ -750,6 +749,8 @@ def main():
             logger.error(excptn)
         finally:
             close_everything()
+            if shutdown_event.is_set():
+                return
             if num_restarts < settings.max_restarts:
                 time.sleep(settings.restart_delay)
             else:
