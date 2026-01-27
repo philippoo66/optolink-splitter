@@ -18,9 +18,9 @@ import serial
 import sys
 import time
 
+from c_settings_adapter import settings
 from logger_util import logger
 import utils
-from c_settings_adapter import settings
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -140,7 +140,7 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
 
 
 # mainly internal, receive a response @ known length
-def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:  # type: ignore
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
     # receives the V1 response to a Virtual_READ or Virtual_WRITE request @ known length
@@ -177,14 +177,14 @@ def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Seria
 
 
 # receives anything...
-def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:        # type: ignore
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
     retcode, data = receive_fullraw(settings.fullraw_eot_time, settings.fullraw_timeout, ser, ser2)
     return retcode, 0, data  # 0x01?!?
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:        # type: ignore
     # times in seconds
     inbuff = b''
     start_time = time.monotonic()
@@ -212,15 +212,6 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))
             return 0xFF, bytearray(inbuff)
-
-
-comm_errors = 0
-def count_errors(up:bool):
-    global comm_errors
-    if up:
-        comm_errors += 2
-    elif comm_errors > 0:
-        comm_errors -= 1
 
 
 

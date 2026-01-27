@@ -78,7 +78,7 @@ class LoggingSerial:
         data = self._serial.read_all()
         if data:
             self.logger.info("rx %s", data.hex())
-        return data
+        return data     # type: ignore
 
     # -----------------------------------------------------------------
     # Schliessen

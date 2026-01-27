@@ -38,7 +38,7 @@ def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'
         raise NotImplementedError("request command not supported with VS1/KW, use raw instead")
 
 
-def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:       # type: ignore
     """
     Empfaengt ein Optolink-Telegramm als Antwort auf ein Optolink Request.
 
@@ -92,7 +92,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
         return optolinkvs1.receive_telegr(resptelegr, raw, ser, ser2)
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:        # type: ignore
     # same everywhere, only one to service
     return optolinkvs2.receive_fullraw(eot_time, timeout, ser, ser2) 
     # if(VS2):
@@ -110,10 +110,3 @@ def wait_for_vicon(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float)
     else:
         return viconn_util.detect_vs1(serVicon, serOpto, timeout)
 
-
-def comm_failure() -> bool:
-    if(VS2):
-        return (optolinkvs2.comm_errors >= 2 * settings.max_comm_errors)
-    else:
-        return (optolinkvs1.comm_errors >= 2 * settings.max_comm_errors)
-        

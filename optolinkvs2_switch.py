@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.2.2"
+VERSION = "1.10.5.0"
 
 import serial
 import time
@@ -43,21 +43,21 @@ progr_exit_flag = False
 mod_mqtt = None
 tcp_server = None
 
-# Threading-Events zur Steuerung des Neustarts und Beenden
-restart_event = threading.Event()
-shutdown_event = threading.Event()
 
 last_vs1_comm = 0
 
 force_poll_flag = False
 reload_poll_flag = False
 
+num_vicon_tries = 0
+num_restarts = 0
+
 
 # === polling =============================
 poll_pointer = 0
 poll_cycle = 0
 
-def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # retcode
+def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # retcode      # type: ignore
     # set item_index to force poll
     global poll_pointer
     val = "?"
@@ -185,7 +185,7 @@ def vicon_thread_func(serViCon, serViDev):
         logger.error(f"{msg} -> re-init")
         mqtt_publ_debug(msg)
         viconn_util.exit_flag = True
-        restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart noetig ist
+        utils.restart_event.set()  # Hauptprogramm signalisiert, dass ein Neustart noetig ist
         return  # Thread wird beendet
 
 
@@ -194,7 +194,7 @@ def tcp_connection_loop():
     global tcp_server
     while(not progr_exit_flag):
         tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port) #, verbose=True)
-        tcp_server.command_callback = do_special_command
+        tcp_server.command_callback = do_special_command        # type: ignore
         tcp_server.run()
         tcp_server = None
         if progr_exit_flag: return
@@ -210,7 +210,7 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
     #print("do_special_command",cmnd)
     if cmnd in ('reset', 'resetrecent'):
         if(mod_mqtt is not None):
-            mod_mqtt.reset_recent = True
+            mod_mqtt.reset_recent = True        # type: ignore
             resp = f"{cmnd} triggered"
     elif cmnd in ('forcepoll',):
         force_poll_flag = True
@@ -250,6 +250,18 @@ def publish_stat():
                 "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
                 "Poll List Make" : str(poll_list.module_date)}
         mod_mqtt.publish_smart(topic, json.dumps(jdata))
+
+
+def reset_retry_counters_in(delay_minutes=30):
+    global num_restarts, num_vicon_tries
+    
+    def reset():
+        global num_restarts, num_vicon_tries
+        num_restarts = 0
+        num_vicon_tries = 0
+
+    timer = threading.Timer(delay_minutes * 60, reset)
+    timer.start()
 
 
 def mqtt_publ_debug(msg:str):
@@ -380,7 +392,7 @@ dicFunctionCodesVS1 = {
 # signal handling
 def handle_exit(sig, frame):
     logger.info(f"received signal {sig}")
-    shutdown_event.set()
+    utils.shutdown_event.set()
     raise(SystemExit)
 
 
@@ -390,7 +402,8 @@ def handle_exit(sig, frame):
 def main():
     global mod_mqtt
     global poll_pointer, poll_cycle
-    global progr_exit_flag, force_poll_flag, reload_poll_flag
+    global force_poll_flag, reload_poll_flag
+    global num_restarts, num_vicon_tries, progr_exit_flag
 
     # Signale abfangen fuer sauberes Beenden
     signal.signal(signal.SIGTERM, handle_exit)
@@ -403,9 +416,6 @@ def main():
 
     excptn = None
     first_time = True
-    do_not_restart = False
-    num_vicon_tries = 0
-    num_restarts = 0
 
 
     # === the method for a clean exit =============================
@@ -446,13 +456,13 @@ def main():
     # ++++++++++++++++++++
     # the re-start loop
     # ++++++++++++++++++++      
-    while not (do_not_restart or shutdown_event.is_set()):
+    while not utils.shutdown_event.is_set():
         try:
         #if True:
 
             if first_time:
                 # do not restart in case of poll list problem
-                do_not_restart = True
+                utils.shutdown_event.set()
                 # ---------------------
                 # init the poll list 
                 # ---------------------
@@ -460,7 +470,7 @@ def main():
                 # buffer for read data for writing viessdata.csv 
                 poll_data = [None] * poll_list.num_items
 
-                do_not_restart = False
+                utils.shutdown_event.clear()
                 first_time = False
             else:
                 # === this is a re-start ======
@@ -469,8 +479,9 @@ def main():
                     # continue without vitoconnect 
                     settings.port_vitoconnect = None
                 progr_exit_flag = False
-                restart_event.clear()
+                utils.restart_event.clear()
                 excptn = None
+                reset_retry_counters_in(30)
                 logger.info(f"re-start #{num_restarts}")
 
             # ---------------------
@@ -499,12 +510,12 @@ def main():
                             logger_max_bytes = 25 * 1024 * 1024  # 25 MB
                         )
                 else:
-                    serOptolink = serial.Serial(**serial_args)
+                    serOptolink = serial.Serial(**serial_args)      # type: ignore
 
                 # open went fine
                 logger.info("Optolink serial port opened")
             else:
-                do_not_restart = True
+                utils.shutdown_event.set()
                 raise Exception("ERROR: Optolink device is mandatory!")
 
             # serielle Verbindungen mit dem Vitoconnect oeffnen ++++++++++++++
@@ -528,7 +539,7 @@ def main():
                 # avoid paho.mqtt required if not used
                 mod_mqtt = importlib.import_module("mqtt_util")
                 mod_mqtt.connect_mqtt()
-                mod_mqtt.command_callback = do_special_command
+                mod_mqtt.command_callback = do_special_command      # type: ignore
 
 
             # TCP/IP connection --------
@@ -566,7 +577,7 @@ def main():
 
                 # detect/init Protokol ++++++++++++
                 logger.info("awaiting Vitoconnect being operational...")
-                if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):
+                if not vs12_adapter.wait_for_vicon(serVitoConnnect, serOptolink, settings.vs2timeout):      # type: ignore
                     raise Exception("Vitoconnect not detected operational within timeout")
                 msg = "Vitoconnect detected operational"
                 viconnlog.do_log(msg)           
@@ -581,7 +592,7 @@ def main():
             else:
                 # Protokoll/Kommunikation am Slave initialisieren
                 spr = "VS2/300" if not settings.vs1protocol else "VS1/KW"
-                if(not vs12_adapter.init_protocol(serOptolink)):
+                if(not vs12_adapter.init_protocol(serOptolink)):        # type: ignore
                     raise Exception(f"init_protocol {spr} failed")  # schlecht fuer KW Protokoll
                 logger.info(f"{spr} protocol initialized")
 
@@ -599,7 +610,7 @@ def main():
             # +++++++++++++++++++++++++++            
             # main loop - Sachen abarbeiten 
             # +++++++++++++++++++++++++++            
-            while not restart_event.is_set():  #and not shutdown_event.is_set():
+            while not utils.restart_event.is_set():  #and not shutdown_event.is_set():
                 # inits
                 did_vicon_request = False
                 did_secodary_request = False
@@ -615,7 +626,7 @@ def main():
                         viconnlog.do_log(vidata, "M")
                         # recive response an pass bytes directly back to VitoConnect, 
                         # returns when response is complete (or error or timeout) 
-                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serOptolink, serVitoConnnect, vicon_publ_callback)
+                        retcode, _, redata = vs12_adapter.receive_telegr(True, True, serOptolink, serVitoConnnect, vicon_publ_callback)     # type: ignore
                         viconnlog.do_log(redata, f"S {retcode:02x}")
                         olbreath(retcode)
                         did_vicon_request = True
@@ -637,28 +648,28 @@ def main():
                                 poll_cycle = 0
                                 force_poll_flag = False
                                 if(mod_mqtt): 
-                                    mod_mqtt.lst_force_refresh = []
+                                    mod_mqtt.lst_force_refresh = []     # type: ignore
                             # reload poll list, including onceonlies
                             if reload_poll_flag:
                                 poll_list.make_list(reload=True)
-                                if(len(poll_data) != poll_list.num_items):
+                                if(len(poll_data) != poll_list.num_items):          # type: ignore
                                     poll_data = [None] * poll_list.num_items
                                 publish_stat()
                                 poll_pointer = 0
                                 poll_cycle = 0
                                 reload_poll_flag = False
                                 if(mod_mqtt): 
-                                    mod_mqtt.lst_force_refresh = []
+                                    mod_mqtt.lst_force_refresh = []     # type: ignore
 
                             # === check if something is forced =================
                             if mod_mqtt and ((force_refresh_index := mod_mqtt.is_forced()) is not None):
-                                retcode = do_poll_item(poll_data, serOptolink, item_index=force_refresh_index)
+                                retcode = do_poll_item(poll_data, serOptolink, item_index=force_refresh_index)      # type: ignore
                                 # we did something
                                 did_secodary_request = True
 
                             # === else do common poll if is on =================
                             elif(0 <= poll_pointer < poll_list.num_items):
-                                retcode = do_poll_item(poll_data, serOptolink)
+                                retcode = do_poll_item(poll_data, serOptolink)      # type: ignore
                                 # increment poll pointer
                                 poll_pointer += 1
 
@@ -666,13 +677,13 @@ def main():
                                 if(poll_pointer >= poll_list.num_items):
                                     # Viessdata csv
                                     if(settings.write_viessdata_csv):
-                                        viessdata_util.buffer_csv_line(poll_data)
+                                        viessdata_util.buffer_csv_line(poll_data)       # type: ignore
                                     
                                     # wo1c energy
                                     if(settings.wo1c_energy > 0) and (poll_cycle % settings.wo1c_energy == 0):
                                         if(not settings.vs1protocol):
                                             olbreath(retcode)
-                                            retcode = wo1c_energy.read_energy(serOptolink)
+                                            retcode = wo1c_energy.read_energy(serOptolink)      # type: ignore
                                         else:
                                             logger.warning("wo1c_energy not supported with VS1/KW protocol")
                                             settings.wo1c_energy = 0
@@ -736,7 +747,7 @@ def main():
                 # keep-alive with vs1 
                 if(settings.vs1protocol):
                     if(time.monotonic() > last_vs1_comm + 0.5):
-                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serOptolink)
+                        retcode,_,_ = vs12_adapter.read_datapoint_ext(0xf8, 2, serOptolink)     # type: ignore
                         olbreath(retcode)
                         did_secodary_request = True
 
@@ -749,7 +760,7 @@ def main():
             logger.error(excptn)
         finally:
             close_everything()
-            if do_not_restart or shutdown_event.is_set():
+            if utils.shutdown_event.is_set():
                 return
             elif num_restarts >= settings.max_restarts:
                 logger.error("too many restarts - exit script")

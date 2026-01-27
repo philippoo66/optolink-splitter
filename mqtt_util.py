@@ -122,7 +122,7 @@ def connect_mqtt():
     if(settings.mqtt_logging):
         mqtt_client.on_log = on_log
         mqtt_client.enable_logger()  # Muss VOR dem connect() aufgerufen werden
-        mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen
+        mqtt_client._logger.setLevel("DEBUG")  # Optional – Level auf DEBUG setzen  # type: ignore
     # Optional TLS / SSL
     if settings.mqtt_tls_enable:
         import ssl
@@ -141,7 +141,7 @@ def connect_mqtt():
         )
         # IP / hostname mismatch and for "skip verify" mode
         mqtt_client.tls_insecure_set(skip)
-    mlst = settings.mqtt_broker.split(':')
+    mlst = settings.mqtt_broker.split(':')      # type: ignore
     mqtt_client.connect(mlst[0], int(mlst[1]))
     mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
     mqtt_client.loop_start()
