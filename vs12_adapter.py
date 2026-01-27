@@ -38,7 +38,7 @@ def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'
         raise NotImplementedError("request command not supported with VS1/KW, use raw instead")
 
 
-def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:       # type: ignore
     """
     Empfaengt ein Optolink-Telegramm als Antwort auf ein Optolink Request.
 
@@ -46,7 +46,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     ----------
     resptelegr : bool
         Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
-        Wenn False, wird ein regulaeres Datentelegramm erwartet.
+        Wenn False, wird ein Master Request Telegramm erwartet.
     raw : bool
         Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
         True = Rohdatenmodus (keine Protokollauswertung),
@@ -92,7 +92,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
         return optolinkvs1.receive_telegr(resptelegr, raw, ser, ser2)
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:        # type: ignore
     # same everywhere, only one to service
     return optolinkvs2.receive_fullraw(eot_time, timeout, ser, ser2) 
     # if(VS2):
@@ -109,3 +109,4 @@ def wait_for_vicon(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float)
         return viconn_util.detect_vs2(serVicon, serOpto, timeout)
     else:
         return viconn_util.detect_vs1(serVicon, serOpto, timeout)
+

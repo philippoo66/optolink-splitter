@@ -8,14 +8,11 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 For latest developments always check the [Version-Log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log)
 
 ## 🎉 Announcements
+- [**Version 1.10.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11000) **New Feature: User-Friendly MQTT /set Topics!** Write values using the same format they're published in! Example: Publish `vito/c1_temp_room_setpoint/set` with payload `21.5` instead of complex command syntax. Supports ON/OFF, boolean, and numeric values with automatic scaling. See [MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md) for details.
+
 - [**Version 1.9.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1902) **Home Assistant integration** simplified! Define Entities and poll_list together in `ha_shared_config.py` and run `ha_publish.py` once and everything is fine! Thank you @matthias-oe, @EarlSneedSinclair!
 
 - [**Version 1.8.3.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1601) Adds MQTT TLS support (optional). TLS/SSL mode for the MQTT client possible. Thank you @EarlSneedSinclair!
-
-- [**Version 1.7.1.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1710) New TCP solution. Properly cleans up and releases all connections. Switch to disable writing of optolinkvs2_switch.log file (protects SD card). Inverse boolean format specifiers introduced.
-
-
-
 
 - Need **VS1 / KW protocol support**? It got implemented in the main tree since V1.8.0.0. Just set `vs1protocol = True`<br>
 Still **TESTERS WANTED with KW device and Vitoconnnect!**
@@ -34,6 +31,7 @@ Still **TESTERS WANTED with KW device and Vitoconnnect!**
 - [Updating to a new Version](#updating-to-a-new-version)
 - [Connecting Optolink & Vitoconnect](#electric_plug-connecting-optolink--vitoconnect)
 - [Command Syntax: MQTT & TCP/IP](#receipt-command-syntax-mqtt--tcpip)
+- [User-Friendly MQTT /set Topics](#pushpin-user-friendly-mqtt-set-topics)
 - [Smart Home Integration (e.g. Home Assistant)](#house-smart-home-integration-eg-home-assistant)
 - [Questions & Issues](#interrobang-questions--issues)
 - [3D-Printable Case for Raspberry Pi & USB-TTL Adapter](#printer-3d-printable-case-for-raspberry-pi--usb-ttl-adapter)
@@ -158,6 +156,34 @@ Optolink Splitter can connect to an **MQTT Broker** for sending commands and rec
 
 **Note for TCP/IP Connections:**  
 You may close the TCP session by sending `exit` as a string.
+
+## :pushpin: User-Friendly MQTT /set Topics
+In addition to the command syntax above, you can now write values using simple MQTT topics.
+For every datapoint published to MQTT (e.g., `vito/hk1_normal_temperature`), you can write to it using a `/set` suffix:
+```bash
+# Reading (automatic, via poll_list)
+Topic: vito/hk1_normal_temperature
+Payload: 20.5
+
+# Writing (simple and intuitive!)
+Topic: vito/hk1_normal_temperature/set
+Payload: 21.0
+```
+
+**Quick Examples:**
+```bash
+# Set room temperature (automatic scaling applied)
+mosquitto_pub -t "vito/hk1_normal_temperature/set" -m "21.5"
+
+# State on/off
+mosquitto_pub -t "vito/hk1_partymode/set" -m "ON"
+mosquitto_pub -t "vito/hk1_partymode/set" -m "OFF"
+
+# Set hot water temperature
+mosquitto_pub -t "vito/hotwater_temperature/set" -m "50"
+```
+
+For complete documentation with more examples, see **[MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md)**.
 
 ## :house: Smart Home Integration (e.g. Home Assistant)
 Optolink Splitter seamlessly integrates into your smart home setup via **MQTT**, allowing you to monitor and control your Viessmann heating system using platforms like **Home Assistant**, **ioBroker**, or **Node-RED**. All available heating system data can be visualized in dashboards, automated with custom rules, and integrated into broader smart home routines. With Optolink Splitter’s command-sending capability, you can locally adjust heating modes, temperature setpoints, or pump states directly from your favorite smart home system.

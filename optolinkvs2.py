@@ -18,13 +18,10 @@ import serial
 import sys
 import time
 
+from c_settings_adapter import settings
 from logger_util import logger
 import utils
-from c_settings_adapter import settings
 
-
-# #temp!!
-# temp_callback = None
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Optolink VS2 / 300 Protocol, mainly virtual r/w datapoints
@@ -152,7 +149,7 @@ def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'
     return receive_telegr(True, False, ser)
 
 
-def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:       # type: ignore
     """
     Empfaengt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
 
@@ -160,7 +157,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     ----------
     resptelegr : bool
         Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
-        Wenn False, wird ein regulaeres Datentelegramm erwartet.
+        Wenn False, wird ein Master Request Telegramm erwartet.
     raw : bool
         Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
         True = Rohdatenmodus (keine Protokollauswertung),
@@ -221,7 +218,8 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
             if(inbytes):
                 inbuff += inbytes
                 alldata += inbytes
-        except: 
+        except:
+            utils.comm_error(True)
             return 0xAA, 0, retdata
 
         # ggf. gleich durchleiten 
@@ -242,12 +240,14 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x15, addr, retdata, msgid, msqn, fctcd, dlen)
+                        utils.comm_error(True)
                         return 0x15, 0, retdata       # hier muesste ggf noch ein eventueller Rest des Telegrams abgewartet werden 
                     else:
-                        logger.error("VS2 unknown first byte Error")
+                        logger.error(f"VS2 unknown first byte Error, {inbuff[0]:02X}")
                         retdata = alldata
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x20, addr, retdata, msgid, msqn, fctcd, dlen)
+                        utils.comm_error(True)
                         return 0x20, 0, retdata
                     # erstes Byte abtrennen
                     inbuff = inbuff[1:]
@@ -258,11 +258,12 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
         if(state == 1):
             if(len(inbuff) > 0):
                 if(inbuff[0] != 0x41): # STX
-                    logger.error("VS2 STX Error", format(inbuff[0], settings.data_hex_format))
+                    logger.error(f"VS2 STX Error, {inbuff[0]:02X}")
                     retdata = alldata
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0x41, addr, retdata, msgid, msqn, fctcd, dlen)
                     #if(raw): retdata = alldata
+                    utils.comm_error(True)
                     return 0x41, 0, retdata  # hier muesste ggf noch ein eventueller Rest des Telegrams abgewartet werden
                 state = 2
 
@@ -271,13 +272,14 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                 pllen = inbuff[1]
                 if(pllen < 5):  # protocol_Id + MsgId|FnctCode + AddrHi + AddrLo + BlkLen
                     print("rx", utils.bbbstr(inbuff))
-                    logger.error("VS2 Len Error", pllen)
+                    logger.error(f"VS2 Len Error, {pllen}")
                     retdata = alldata
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0xFD, addr, retdata, msgid, msqn, fctcd, dlen)
                     #if(raw): retdata = alldata
+                    utils.comm_error(True)
                     return 0xFD, 0, retdata  # alldata?!
-                if(len(inbuff) >= pllen+3):  # STX + Len + Payload + CRC
+                if(len(inbuff) >= pllen + 3):  # STX + Len + Payload + CRC
                     # receive complete
                     if(settings.show_opto_rx):
                         print("rx", utils.bbbstr(inbuff))
@@ -288,22 +290,26 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                     addr = (inbuff[4] << 8) + inbuff[5]  # may be bullshit in case of raw
                     dlen = inbuff[6]
                     retdata = inbuff[7:pllen+2]   # STX + Len + ProtId + MsgId|FnctCode + AddrHi + AddrLo + BlkLen (+ Data) + CRC
-                    if(inbuff[-1] != calc_crc(inbuff)):
-                        logger.error("VS2 CRC Error")
+                    crc = calc_crc(inbuff)
+                    if(inbuff[-1] != crc):
+                        logger.error(f"VS2 CRC Error, {inbuff[-1]:02X}/{crc:02X}")
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0xFE, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata
+                        utils.comm_error(True)
                         return 0xFE, addr, retdata
                     if(inbuff[2] & 0x0F == 0x03):
                         #logger.info(f"Error Message {utils.bbbstr(retdata)} on 0x{addr:04x}")
                         if(mqtt_publ_callback):
                             mqtt_publ_callback(0x03, addr, retdata, msgid, msqn, fctcd, dlen)
                         if(raw): retdata = alldata
+                        utils.comm_error(False)
                         return 0x03, addr, retdata
                     #success
                     if(mqtt_publ_callback):
                         mqtt_publ_callback(0x01, addr, retdata, msgid, msqn, fctcd, dlen)
                     if(raw): retdata = alldata
+                    utils.comm_error(False)
                     return 0x01, addr, retdata
     # timout if get to here
     if(settings.show_opto_rx):
@@ -311,35 +317,38 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     if(mqtt_publ_callback):
         mqtt_publ_callback(0xFF, addr, retdata, msgid, msqn, fctcd, dlen)
     if(raw): retdata = alldata
+    utils.comm_error(True)
     return 0xFF, addr, retdata
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:        # type: ignore
     # times in seconds
     inbuff = b''
-    start_time = time.time()
+    start_time = time.monotonic()
     last_receive_time = start_time
 
     while True:
+        time.sleep(0.005)
         # Zeichen vom Serial Port lesen
         inbytes = ser.read_all()
 
         if inbytes:
             # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
-            last_receive_time = time.time()
+            last_receive_time = time.monotonic()
             if(ser2 is not None):
                 ser2.write(inbytes)
-        elif inbuff and ((time.time() - last_receive_time) > eot_time):
+        elif inbuff and (time.monotonic() > last_receive_time + eot_time):
             # if data received and no further receive since more than eot_time
             if(settings.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
+            utils.comm_error(False)
             return 0x01, bytearray(inbuff)
 
-        time.sleep(0.005)
-        if((time.time() - start_time) > timeout):
+        if(time.monotonic() > start_time + timeout):
             if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))
+            utils.comm_error(True)
             return 0xFF, bytearray(inbuff)
 
 

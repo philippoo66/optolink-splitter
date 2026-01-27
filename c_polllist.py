@@ -30,6 +30,9 @@ class cPollList:
         self.items = []
         self.num_items = 0
         self.module_date = "0"
+        # datapoint metadata cache for /set topics
+        self.datapoint_metadata = {}
+
 
     def make_list(self, reload = False):
         try:
@@ -50,6 +53,9 @@ class cPollList:
             self.num_items = len(self.items)
             self.module_date = utils.get_module_modified_datetime(listmodule)
 
+            # reset cache
+            self.datapoint_metadata = {}
+
             # apply poll interval if given
             settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
 
@@ -59,5 +65,43 @@ class cPollList:
             logger.error(f"make_list: {e}")
 
 
-# for global use
+    def find_datapoint_by_name(self, dpname):
+        """Find datapoint configuration by name in poll_list."""
+        if not self.items:
+            return None
+        
+        # Check cache first
+        if dpname in self.datapoint_metadata:
+            return self.datapoint_metadata[dpname]
+        
+        # Search in poll_list items
+        for lstidx in range(self.num_items):
+            # Handle PollCycle entries: ([PollCycle,] Name, DpAddr, Len, [bbFilter,] Scale/Type, Signed)
+            item = self.items[lstidx]
+            if len(item) > 1 and isinstance(item[0], int):
+                # has PollCycle prefix
+                item = item[1:] 
+
+            name = item[0]
+            
+            if name == dpname:
+                addr = item[1] #if len(item1) > 1 else None
+                dlen = item[2] #if len(item1) > 2 else 1
+                #TODO bbFilter...
+                scale_type = item[3] if len(item) > 3 else None
+                signed = item[4] if len(item) > 4 else False
+                metadata = {
+                    'addr': addr,
+                    'len': dlen,
+                    'scale_type': scale_type,
+                    'signed': signed,
+                    'list_index': lstidx
+                }
+                # Cache it
+                self.datapoint_metadata[dpname] = metadata
+                return metadata
+        return None
+
+
+# === for global use ================
 poll_list = cPollList()

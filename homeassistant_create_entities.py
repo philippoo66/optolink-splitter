@@ -106,8 +106,8 @@ def verify_mqtt_optolink_lwt(timeout=10):
         print(f"Subscribing to {LWT_TOPIC}...")
         mqtt_client.subscribe(LWT_TOPIC)
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+        start_time = time.monotonic()
+        while time.monotonic() < start_time + timeout:
             if lwt_status["online"]:
                 return True
             time.sleep(1)
