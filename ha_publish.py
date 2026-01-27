@@ -33,37 +33,74 @@
 import json
 import paho.mqtt.client as paho
 import time
+import ssl
 
 from c_settings_adapter import settings
 
 from ha_shared_config import shared_config
 
 # Global MQTT Client
-mqtt_client = None
+mqtt_client = None # Earl: MQTT-Client kann pro Lauf erstellt werden, Global unnötig
 
 def connect_mqtt(retries=3, delay=5):
-    """Global MQTT Client für dieses Script."""
+    """ Global MQTT Client for this script. 
+        Connects to the MQTT broker using credentials from settings.py """
     global mqtt_client
-    
+
     if mqtt_client is None:
-        mqtt_client = paho.Client(paho.CallbackAPIVersion.VERSION2, "datapoints_" + str(int(time.time()*1000)))
-    
+        mqtt_client = paho.Client(
+            paho.CallbackAPIVersion.VERSION2,
+            "datapoints_" + str(int(time.time() * 1000))
+        )
+
     if mqtt_client.is_connected():
         print(" MQTT client is already connected. Skipping reconnection.")
         return True
-    
+
     try:
+        # MQTT broker and port
         mqtt_credentials = settings.mqtt_broker.split(':')
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
-        
+
+        # MQTT authentication (optional)
         mqtt_user_pass = settings.mqtt_user
-        if mqtt_user_pass and mqtt_user_pass.lower() != "none":
-            mqtt_user, mqtt_password = mqtt_user_pass.split(":")
+        if mqtt_user_pass and str(mqtt_user_pass).lower() != "none":
+            mqtt_user, mqtt_password = str(mqtt_user_pass).split(":", 1)
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
-            print(f"Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER}:{MQTT_PORT}...")
+            print(f"Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER}:{MQTT_PORT}.")
         else:
-            print(f"Connecting anonymously to MQTT broker {MQTT_BROKER}:{MQTT_PORT}...")
-        
+            print(f"Connecting anonymously to MQTT broker {MQTT_BROKER}:{MQTT_PORT}.")
+
+        # TLS / SSL configuration (optional)
+        if settings.mqtt_tls_enable:
+            import ssl
+
+            # Skip certificate verification (INSECURE, for testing only)
+            skip = bool(settings.mqtt_tls_skip_verify)
+
+            # CA certificate path (None = use OS default CA store)
+            ca_path = settings.mqtt_tls_ca_certs
+
+            # Client certificate & key for mutual TLS (optional)
+            certfile = settings.mqtt_tls_certfile
+            keyfile  = settings.mqtt_tls_keyfile
+
+            # Validate mTLS configuration
+            if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
+                raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
+
+            mqtt_client.tls_set(
+                ca_certs=ca_path,
+                certfile=certfile,
+                keyfile=keyfile,
+                cert_reqs=(ssl.CERT_NONE if skip else ssl.CERT_REQUIRED),
+                tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
+            )
+
+            # Allow insecure connections (e.g. hostname mismatch or skipped verification)
+            mqtt_client.tls_insecure_set(skip)
+
+        # Connect with retry logic
         for attempt in range(retries):
             try:
                 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
@@ -73,13 +110,14 @@ def connect_mqtt(retries=3, delay=5):
             except Exception as retry_error:
                 print(f" ERROR: MQTT connection failed (Attempt {attempt+1}/{retries}): {retry_error}")
                 time.sleep(delay)
-        
+
         print(" ERROR: Could not establish MQTT connection after multiple retries.")
         return False
-        
+
     except Exception as e:
         print(f" ERROR connecting to MQTT broker: {e}")
         return False
+
 
 def beautify(text):
     result = text
