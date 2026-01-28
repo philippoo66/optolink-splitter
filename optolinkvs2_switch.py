@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.10.5.0"
+VERSION = "1.11.0.2"
 
 import serial
 import time
@@ -63,29 +63,30 @@ def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # r
     val = "?"
     item = "?"
 
+#    print("do_poll_item",item_index)
     try:
         # handle PollCycle option +++++++++++++++++++++++
         # loop though poll items until find one to be done this cycle
         while(True):
             list_index = item_index if item_index else poll_pointer
-            item = poll_list.items[list_index]  # ([PollCycle,] Name, DpAddr, Len, Scale/Type, Signed)
-            if(len(item) > 1 and isinstance(item[0], int)):
-                # this is poll_cycle item
-                if(item_index is None) and (((item[0] != 0) and (poll_cycle % item[0] != 0)) or ((item[0] == 0) and (poll_cycle != 0))):
-                    # +++ do not poll this item this time +++
+            item = poll_list.items[list_index]  # (PollCycleGroupKey, Name, DpAddr, Len, Scale/Type, Signed)
+            item_cycle = poll_list.cycle_groups[item[0]]
 
-                    # leave poll_data[poll_pointer] unchanged
+            if(item_index is None) and ((item_cycle < 0) or ((item_cycle > 0) and (poll_cycle % item_cycle != 0)) or ((item_cycle == 0) and (poll_cycle != 0))):
+                # ---------------------------------------
+                # +++ do NOT poll this item this time +++
+                # ---------------------------------------
 
-                    poll_pointer += 1
-                    if(poll_pointer == poll_list.num_items):
-                        # no further item this cycle                    
-                        return 0xAB
-                else:
-                    # remove PollCycle for further processing
-                    item = item[1:]
-                    break
+                # leave poll_data[poll_pointer] unchanged
+
+                poll_pointer += 1
+                if(poll_pointer == poll_list.num_items):
+                    # no further item this cycle
+                    return 0xAB
+
             else:
-                # not poll_cycle item, perform it
+                # remove PollCycleGroupKey for further processing
+                item = item[1:]
                 break
 
         retcode, data, val, _ = requests_util.response_to_request(item, ser)
@@ -106,8 +107,7 @@ def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # r
                         list_index += 1
                         next_item = poll_list.items[list_index]
                         # remove PollCycle in case
-                        if(isinstance(item[0], int)):
-                            next_item = next_item[1:]
+                        next_item = next_item[1:]
                         
                         # if next address same AND next len same AND next type starts with 'b:'
                         if((len(next_item) > 3) and (next_item[1] == item[1]) and (next_item[2] == item[2]) and (str(next_item[3]).lower()).startswith('b:')):
@@ -206,32 +206,45 @@ def tcp_connection_loop():
 def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP, 0:no response
     global force_poll_flag, reload_poll_flag
 
-    resp =  f"{cmnd} failed"
-    #print("do_special_command",cmnd)
-    if cmnd in ('reset', 'resetrecent'):
-        if(mod_mqtt is not None):
-            mod_mqtt.reset_recent = True        # type: ignore
-            resp = f"{cmnd} triggered"
-    elif cmnd in ('forcepoll',):
-        force_poll_flag = True
-        resp = f"{cmnd} triggered"
-    elif cmnd in ('reloadpoll',):   
-        reload_poll_flag = True
-        resp = f"{cmnd} triggered"
-    elif cmnd in ("exit", "resettcp"):
-        if tcp_server:
-            tcp_server.stop()
-            resp = f"{cmnd} triggered" if source != 2 else ''
-    elif cmnd in ("flushcsv",):
-        if settings.write_viessdata_csv:
-            viessdata_util.buffer_csv_line([], True)
-            resp = f"{cmnd} triggered"
-    elif cmnd in ("reini", "reloadini"):
-        # some changes (like ser ports) will not take effect...
-        settings.set_settings(reload=True)
-        resp = f"ini settings reloaded"
-    else:
-        return False
+    try:
+        resp =  f"{cmnd} failed"
+        cmnd = cmnd.replace(" ", "")
+        if not cmnd: 
+            return False
+        parts = cmnd.split(";")
+        #print("do_special_command",cmnd)
+        if parts[0] in ('reset', 'resetrecent'):
+            if(mod_mqtt is not None):
+                mod_mqtt.reset_recent = True        # type: ignore
+                resp = f"{parts[0]} triggered"
+        elif parts[0] in ('forcepoll',):
+            force_poll_flag = True
+            resp = f"{parts[0]} triggered"
+        elif parts[0] in ('reloadpoll',):   
+            reload_poll_flag = True
+            resp = f"{parts[0]} triggered"
+        elif parts[0] in ("exit", "resettcp"):
+            if tcp_server:
+                tcp_server.stop()
+                resp = f"{parts[0]} triggered" if source != 2 else ''
+        elif parts[0] in ("flushcsv",):
+            if settings.write_viessdata_csv:
+                viessdata_util.buffer_csv_line([], True)
+                resp = f"{parts[0]} triggered"
+        elif parts[0] in ("reini", "reloadini"):
+            # some changes (like ser ports) will not take effect...
+            settings.set_settings(reload=True)
+            resp = f"ini settings reloaded"
+        elif parts[0] in ("setpollcycle", "setcycle"):
+            if poll_list.set_pollcycle(parts[1], parts[2]):
+                resp = f"cycle_group {parts[1]} set to {parts[2]}"
+        elif parts[0] in ("setpollinterval", "setinterval"):
+            settings.poll_interval = int(parts[1])
+            resp = f"poll_interval set to {parts[1]}"
+        else:
+            return False
+    except Exception as e:
+        resp = str(e)
     # responde
     if(resp):
         if(source == 1):
@@ -481,7 +494,7 @@ def main():
                 progr_exit_flag = False
                 utils.restart_event.clear()
                 excptn = None
-                reset_retry_counters_in(30)
+                reset_retry_counters_in(settings.retry_counters_reset)
                 logger.info(f"re-start #{num_restarts}")
 
             # ---------------------
@@ -640,7 +653,7 @@ def main():
 
                     # polling list --------
                     if(is_on == 0):
-                        if(poll_list):
+                        if(poll_list.items):
                             # === action commands =================
                             # force poll including onceonlies
                             if force_poll_flag:
@@ -692,11 +705,6 @@ def main():
                                     poll_cycle += 1
                                     if(poll_cycle == 479001600):  # 1*2*3*4*5*6*7*8*9*10*11*12 < 32 bits
                                         poll_cycle = 0
-                                    elif poll_cycle == 100:  #TODO hier eigentlich nicht richtig
-                                        # reset error counters after 100 successful poll cycles
-                                        num_restarts = 0
-                                        #if settings.port_vitoconnect:  #TODO allways?!?
-                                        num_vicon_tries = 0
 
                                     # poll pointer control
                                     poll_pointer += 1  # wegen  on_polltimer(): if(poll_pointer > poll_list.num_items)
@@ -754,7 +762,7 @@ def main():
                 # let cpu take a breath if there was nothing to do
                 if not (did_vicon_request or did_secodary_request):
                     time.sleep(0.005) 
-
+                
         except Exception as e:
             excptn = e
             logger.error(excptn)

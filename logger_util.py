@@ -26,8 +26,8 @@ from c_settings_adapter import settings
 # === Globale Loggerinstanz ===============================================
 logger = LoggerUtil(
                 name = "optolinkvs2_switch",
-                level = 10, #TEMP!  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,  
-                max_bytes = 10*1024*1024, # 10 MB
+                level = settings.log_level, # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,  
+                max_bytes = 5*1024*1024, # 5 MB
                 backup_count = 1,
                 no_file = settings.no_logger_file
             ).logger
