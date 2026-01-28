@@ -32,7 +32,7 @@ class LoggerUtil:
             self,
             name: str = "loggerutil",
             # == level constants: DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
-            level=logging.INFO,
+            level = logging.INFO,
             # == fmt examples: ===========================
             # "%(asctime)s.%(msecs)03d [%(levelname)s]: %(message)s"    mit Millisekunden
             # "%(created).3f [%(levelname)s]: %(message)s"              Unix-Zeitstempel in Sekunden (float)

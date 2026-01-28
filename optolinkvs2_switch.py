@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.0.1"
+VERSION = "1.11.0.2"
 
 import serial
 import time
@@ -494,7 +494,7 @@ def main():
                 progr_exit_flag = False
                 utils.restart_event.clear()
                 excptn = None
-                reset_retry_counters_in(30)
+                reset_retry_counters_in(settings.retry_counters_reset)
                 logger.info(f"re-start #{num_restarts}")
 
             # ---------------------

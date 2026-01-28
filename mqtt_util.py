@@ -79,6 +79,7 @@ def on_message(client, userdata, msg):
         # Ausgabe anderer eingehenden MQTT-Nachrichten
         logger.warning(f"MQTT recd: Topic = {msg.topic}, Payload = {msg.payload}")
 
+
 def on_subscribe(client, userdata, mid, reason_code_list, properties):
     # Since we subscribed only for a single channel, reason_code_list contains
     # a single entry
@@ -88,7 +89,7 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
         logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
 
 def on_log(client, userdata, level, buf):
-    print("MQTT Log:", buf)
+    logger.info(f"MQTT [{level}]:", buf)
 
 
 def connect_mqtt(): 
