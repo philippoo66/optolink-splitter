@@ -121,21 +121,27 @@ class cPollList:
 
             name = item[1]
             
-            if name == dpname:  #TODO cse-insesitive?!
+            if name == dpname:  #TODO case-insesitive?!
                 addr = item[2] #if len(item1) > 1 else None
                 dlen = item[3] #if len(item1) > 2 else 1
-                #TODO bbFilter...
-                scale_type = item[4] if len(item) > 4 else None
-                signed = item[5] if len(item) > 5 else False
+                bbfilter = None
+                offset = 0
+                if isinstance(item[4], str) and str(item[4]).startswith('b:'):
+                    # is bb-filter
+                    bbfilter = item[4]
+                    offset = 1
+                scale_type = item[4 + offset] if len(item) > 4 + offset else None
+                signed = item[5 + offset] if len(item) > 5 + offset else False
                 metadata = {
                     'addr': addr,
                     'len': dlen,
+                    'bbfilter': bbfilter,
                     'scale_type': scale_type,
                     'signed': signed,
                     'list_index': lstidx
                 }
-                # Cache it
-                self.datapoint_metadata[dpname] = metadata
+                # cache it
+                self.datapoint_metadata[name] = metadata
                 return metadata
         return None
 

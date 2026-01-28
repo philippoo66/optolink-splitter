@@ -71,8 +71,6 @@ def on_message(client, userdata, msg):
     elif topic == settings.mqtt_listen:
         rec = utils.bstr2str(msg.payload)
         rec = rec.replace(' ','').replace('\0','').replace('\n','').replace('\r','').replace('"','').replace("'","")
-        # if(rec.lower() in ('reset', 'resetrecent')):
-        #     reset_recent = True
         if(command_callback) and command_callback(rec):
             pass
         else:
@@ -223,7 +221,7 @@ def is_forced():
 
 
 def force_delayed(value, delay=1):
-    # im Zweifesfalle können 4-5 Comm cycles
+    # im Zweifesfalle koennen 4-5 Comm cycles dazwischen liegen
     def worker():
         time.sleep(delay)
         lst_force_refresh.append(value)
@@ -257,6 +255,10 @@ def handle_set_topic(topic, payload):
             logger.warning(f"/set Datapoint '{dpname}' not found in poll_list")
             return
         
+        if datapoint_info['bbfilter']:
+            logger.warning(f"/set not possible with bb-filter datapoint '{dpname}'")
+            return
+
         # datapoint_info: (Name, DpAddr, Len, Scale/Type, Signed) or with PollCycle
         addr = datapoint_info['addr']
         length = datapoint_info['len']
@@ -278,8 +280,7 @@ def handle_set_topic(topic, payload):
         logger.debug(f"Generated write command: {write_cmd}")
         cmnd_queue.append(write_cmd)
 
-        # Ensure the affected datapoint is refreshed quite soon
-        #lst_force_refresh.append(list_index)
+        # Ensure the affected datapoint will be refreshed quite soon
         force_delayed(list_index)
 
     except Exception as e:

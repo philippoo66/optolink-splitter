@@ -20,7 +20,7 @@ poll_interval = 30
 
 # === define your groups here. you may extend the dict!
 poll_groups = {
-    "ONCEONLY"  :  0,           # polled only once on start-up and on reception og forcepoll command
+    "ONCEONLY"  :  0,           # polled only once on start-up and on reception of forcepoll command
     "ALWAYS"    :  1,           # on each polling, same as ommitted
     "OFTEN"     :  5,
     "SOMETIMES" :  60,
