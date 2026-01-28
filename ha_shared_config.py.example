@@ -26,7 +26,13 @@
    Topic: 
    {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
    Value:
-   {"object_id": "{dp_prefix}{name}", "unique_id": "{dp_prefix}[name(converted)]", "device": [...] , "availability_topic": "{mqtt_optolink_base_topic}/LWT", "state_topic": "{mqtt_optolink_base_topic}/[name(converted)]", "name": "[name]", [...]}
+   {"default_entity_id": "[domain].{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
+    "unique_id": "{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
+    "device": [...],
+    "availability_topic": "{mqtt_optolink_base_topic}/LWT",
+    "state_topic": "{mqtt_base}/[name(converted)][_{address_hex} if dp_suffix_address]",
+    "name": "[name]",
+    ...}
    
 '''
 
@@ -38,6 +44,9 @@ shared_config = {
         "manufacturer": "Viessmann"
     },
     "node_id": "vitocal",
+    "dp_prefix": "vitocal_",
+    "dp_suffix_address": True,
+
     "beautifier" : {"search"  : ["primaer","sekundaer","rueck","energy", "heating","water", "thermal",  "electric", "kaelte", "kuehl", "ueber", "fluessig", "oeff"],
                     "replace" : ["primär", "sekundär", "rück", "energie","heizen", "wasser","thermisch","elektrisch", "kälte", "kühl", "über", "flüssig", "öff"],
                     },
@@ -339,6 +348,7 @@ def extract_poll_items(shared_config):              #
                                                     #
 poll_items = extract_poll_items(shared_config)      #
 #####################################################
+
 
 
 
