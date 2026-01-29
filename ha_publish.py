@@ -26,12 +26,12 @@
    Topic:
    {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
    Value:
-   {"default_entity_id": "[domain].{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "unique_id": "{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "state_topic": "{mqtt_base}/[name(converted)][_{address_hex} if dp_suffix_address]",
+   {"default_entity_id": "[domain].{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
+    "unique_id": "{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
+    "state_topic": "{mqtt_base}/[name][_{address_hex} if dp_suffix_address]",
     "device": [...],
     "availability_topic": "{mqtt_optolink_base_topic}/LWT",
-    "name": "[name]",
+    "name": "[name(beautified)]",
     ...}
 
 '''
@@ -40,29 +40,16 @@ import json
 import paho.mqtt.client as paho
 import time
 import ssl
+from copy import deepcopy
 
 from c_settings_adapter import settings
 from ha_shared_config import shared_config
 
-# Global MQTT Client
-mqtt_client = None  # Earl: MQTT-Client kann pro Lauf erstellt werden, Global unnötig
-
-
 def connect_mqtt(retries=3, delay=5):
-    """Global MQTT Client for this script.
-    Connects to the MQTT broker using credentials from settings.py
-    """
-    global mqtt_client
-
-    if mqtt_client is None:
-        mqtt_client = paho.Client(
-            paho.CallbackAPIVersion.VERSION2,
-            "datapoints_" + str(int(time.time() * 1000)),
-        )
-
-    if mqtt_client.is_connected():
-        print(" MQTT client is already connected. Skipping reconnection.")
-        return True
+    mqtt_client = paho.Client(
+        paho.CallbackAPIVersion.VERSION2,
+        "datapoints_" + str(int(time.time() * 1000)),
+    )
 
     try:
         # MQTT broker and port
@@ -111,18 +98,39 @@ def connect_mqtt(retries=3, delay=5):
                 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
                 mqtt_client.loop_start()
                 print(" ✓ MQTT connected successfully.")
-                return True
+                return mqtt_client
             except Exception as retry_error:
                 print(f" ERROR: MQTT connection failed (Attempt {attempt+1}/{retries}): {retry_error}")
                 time.sleep(delay)
 
         print(" ERROR: Could not establish MQTT connection after multiple retries.")
-        return False
+        return None
 
     except Exception as e:
         print(f" ERROR connecting to MQTT broker: {e}")
-        return False
+        return None
+        
+def expand_domain_groups(domains: dict) -> dict:
+    """
+      eliminate group inside domains and create a separate domain per group
+      The generated domain contains all attributes of the original domain, 
+      supplemented with the attributes of the group. If the group contains 
+      an attribute of the domain, the domain attribute will be overridden.
+    """
 
+    new_domains = []
+    for dom in shared_config.get("domains", []):
+        groups = dom.get("groups")
+        if not groups:
+            new_domains.append(deepcopy(dom))
+            continue
+        base = {k: v for k, v in dom.items() if k != "groups"}
+        for group in groups:
+            merged = deepcopy(base)
+            merged.update(group)
+            new_domains.append(merged)
+    #print(json.dumps(new_domains, indent=2, ensure_ascii=False))
+    return new_domains
 
 def beautify(text):
     result = text
@@ -140,12 +148,12 @@ def beautify(text):
 
 def publish_ha_discovery():
     """Publishes Home Assistant MQTT discovery config from the shared_config arrays."""
-
     # MQTT verbinden und prüfen
-    if not connect_mqtt():
+    mqtt_client = connect_mqtt()
+    if mqtt_client is None:
         print(" ERROR: MQTT connection failed. Exiting.")
         return
-
+        
     mqtt_base = settings.mqtt_topic
     ha_prefix = "homeassistant"
 
@@ -171,7 +179,7 @@ def publish_ha_discovery():
 
     total_published = 0
 
-    for domain_config in shared_config["domains"]:
+    for domain_config in expand_domain_groups(shared_config.get("domains", [])):
         domain = domain_config["domain"]
 
         # Domain-Config bereinigen
