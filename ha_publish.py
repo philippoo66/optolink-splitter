@@ -36,6 +36,7 @@
 
 '''
 
+import argparse
 import json
 import paho.mqtt.client as paho
 import time
@@ -148,11 +149,18 @@ def beautify(text):
 
 def publish_ha_discovery():
     """Publishes Home Assistant MQTT discovery config from the shared_config arrays."""
+    parser = argparse.ArgumentParser(description="make Optolink-Splitter datapoints available in Home Assistant by publishing them via MQTT")
+    parser.add_argument('-c', '--console', dest='console', action='store_true', help='Console Output only')
+    args = parser.parse_args()
+    if args.console:
+        print("Console Output only")
+    
     # MQTT verbinden und prüfen
-    mqtt_client = connect_mqtt()
-    if mqtt_client is None:
-        print(" ERROR: MQTT connection failed. Exiting.")
-        return
+    if not args.console:
+        mqtt_client = connect_mqtt()
+        if mqtt_client is None:
+            print(" ERROR: MQTT connection failed. Exiting.")
+            return
         
     mqtt_base = settings.mqtt_topic
     ha_prefix = "homeassistant"
@@ -223,7 +231,10 @@ def publish_ha_discovery():
 
             # Publish
             topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+            if args.console:
+                print (f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
+            else:
+                mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
             print(
                 f"Published {domain}: {discovery_config['name']} ({address_hex}) -> {discovery_config['unique_id']}"
             )
@@ -250,16 +261,21 @@ def publish_ha_discovery():
         discovery_config.update(command_config_clean)
 
         topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-        mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+        if args.console:
+            print (f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
+        else:
+            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
         print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
         total_published += 1
-        time.sleep(0.1)  # Rate limiting
+        if not args.console:
+            time.sleep(0.1)  # Rate limiting
 
     print(f"\n✓ {total_published} entities published successfully!")
 
     # Graceful shutdown
-    mqtt_client.loop_stop()
-    mqtt_client.disconnect()
+    if not args.console:
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
 
 
 if __name__ == "__main__":
