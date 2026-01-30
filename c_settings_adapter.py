@@ -90,11 +90,12 @@ class SettingsAdapter:
         # General Settings +++++++++++
         self.no_logger_file =  False            # if True the optolinksvs2_switch.log will not get written
         self.log_level = 20                     # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
-        self.max_restarts = 5                   # re-start limit. counter gets reset after 100 succesful poll cycles 
+        self.max_restarts = 5                   # re-start limit. counter gets reset after sucessful {retry_counters_reset} minutes successful operation 
         self.restart_delay = 10                 # seconds delay before re-starting 
         self.max_vicon_tries = 3                # limit for vicon tries. if exceeded, continuing without vitoconnect. should be less than max_restarts
         self.max_comm_errors = 10               # optolink comm error threshold to init restart
         self.retry_counters_reset = 30          # minutes of sucessful operation to reset the retry counters 
+        self.readback_delay_set = 1             # seconds delay between wirte via /set and reading back 
 
         # special for wo1c: read daily/weekly energy statistics +++++++++++
         self.wo1c_energy = 0                    # 0:disabled, €N: every n-th cycle

@@ -495,7 +495,7 @@ def main():
                 utils.restart_event.clear()
                 excptn = None
                 reset_retry_counters_in(settings.retry_counters_reset)
-                logger.info(f"re-start #{num_restarts}")
+                logger.warning(f"re-start #{num_restarts}")
 
             # ---------------------
             # open serial ports 

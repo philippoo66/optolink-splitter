@@ -282,7 +282,7 @@ def handle_set_topic(topic, payload):
         cmnd_queue.append(write_cmd)
 
         # Ensure the affected datapoint will be refreshed quite soon
-        force_delayed(list_index)
+        force_delayed(list_index, settings.readback_delay_set)
 
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
