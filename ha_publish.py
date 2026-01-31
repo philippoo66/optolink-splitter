@@ -1,4 +1,4 @@
-'''
+''' 
    Copyright 2026 matthias-oe
 
    Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
@@ -26,71 +26,51 @@
    Topic:
    {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
    Value:
-   {"default_entity_id": "[domain].{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "unique_id": "{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "state_topic": "{mqtt_base}/[name(converted)][_{address_hex} if dp_suffix_address]",
+   {"default_entity_id": "[domain].{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
+    "unique_id": "{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
+    "state_topic": "{mqtt_base}/[name][_{address_hex} if dp_suffix_address]",
     "device": [...],
     "availability_topic": "{mqtt_optolink_base_topic}/LWT",
-    "name": "[name]",
+    "name": "[name(beautified)]",
     ...}
 
 '''
 
+import argparse
 import json
 import paho.mqtt.client as paho
 import time
 import ssl
+from copy import deepcopy
 
 from c_settings_adapter import settings
 from ha_shared_config import shared_config
 
-# Global MQTT Client
-mqtt_client = None  # Earl: MQTT-Client kann pro Lauf erstellt werden, Global unnötig
-
 
 def connect_mqtt(retries=3, delay=5):
-    """Global MQTT Client for this script.
-    Connects to the MQTT broker using credentials from settings.py
-    """
-    global mqtt_client
-
-    if mqtt_client is None:
-        mqtt_client = paho.Client(
-            paho.CallbackAPIVersion.VERSION2,
-            "datapoints_" + str(int(time.time() * 1000)),
-        )
-
-    if mqtt_client.is_connected():
-        print(" MQTT client is already connected. Skipping reconnection.")
-        return True
+    mqtt_client = paho.Client(
+        paho.CallbackAPIVersion.VERSION2,
+        "ha_publish" + str(int(time.time() * 1000)),
+    )
 
     try:
-        # MQTT broker and port
         mqtt_credentials = settings.mqtt_broker.split(":")
         MQTT_BROKER, MQTT_PORT = mqtt_credentials[0], int(mqtt_credentials[1])
 
-        # MQTT authentication (optional)
         mqtt_user_pass = settings.mqtt_user
         if mqtt_user_pass and str(mqtt_user_pass).lower() != "none":
             mqtt_user, mqtt_password = str(mqtt_user_pass).split(":", 1)
             mqtt_client.username_pw_set(mqtt_user, mqtt_password)
-            print(f"Connecting as {mqtt_user} to MQTT broker {MQTT_BROKER}:{MQTT_PORT}.")
+            print(f"Connecting as user {mqtt_user} to MQTT broker {MQTT_BROKER}:{MQTT_PORT}.")
         else:
             print(f"Connecting anonymously to MQTT broker {MQTT_BROKER}:{MQTT_PORT}.")
 
-        # TLS / SSL configuration (optional)
         if settings.mqtt_tls_enable:
-            # Skip certificate verification (INSECURE, for testing only)
             skip = bool(settings.mqtt_tls_skip_verify)
-
-            # CA certificate path (None = use OS default CA store)
             ca_path = settings.mqtt_tls_ca_certs
-
-            # Client certificate & key for mutual TLS (optional)
             certfile = settings.mqtt_tls_certfile
             keyfile = settings.mqtt_tls_keyfile
 
-            # Validate mTLS configuration
             if (certfile is not None and keyfile is None) or (keyfile is not None and certfile is None):
                 raise Exception("For mTLS you must set mqtt_tls_certfile AND mqtt_tls_keyfile")
 
@@ -102,26 +82,78 @@ def connect_mqtt(retries=3, delay=5):
                 tls_version=getattr(ssl, "PROTOCOL_TLS_CLIENT", ssl.PROTOCOL_TLS),
             )
 
-            # Allow insecure connections (e.g. hostname mismatch or skipped verification)
             mqtt_client.tls_insecure_set(skip)
 
-        # Connect with retry logic
         for attempt in range(retries):
             try:
                 mqtt_client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
                 mqtt_client.loop_start()
                 print(" ✓ MQTT connected successfully.")
-                return True
+                return mqtt_client
             except Exception as retry_error:
                 print(f" ERROR: MQTT connection failed (Attempt {attempt+1}/{retries}): {retry_error}")
                 time.sleep(delay)
 
         print(" ERROR: Could not establish MQTT connection after multiple retries.")
-        return False
+        return None
 
     except Exception as e:
         print(f" ERROR connecting to MQTT broker: {e}")
+        return None
+
+
+def verify_mqtt_optolink_lwt(mqtt_client, mqtt_base, timeout=10):
+    if mqtt_client is None:
+        print(" ERROR: MQTT client is not initialized.")
         return False
+
+    if mqtt_base is None or str(mqtt_base).strip() == "":
+        print(" ERROR: settings.mqtt_topic is not set. Cannot determine Optolink base topic.")
+        return False
+
+    LWT_TOPIC = f"{mqtt_base}/LWT"
+
+    try:
+        lwt_status = {"online": False}
+
+        def on_message(client, userdata, message):
+            payload = message.payload.decode()
+            if payload == "online":
+                print(" MQTT is connected. Optolink-Splitter LWT reports 'online'.")
+                lwt_status["online"] = True
+
+        mqtt_client.on_message = on_message
+        print(f"Subscribing to {LWT_TOPIC}...")
+        mqtt_client.subscribe(LWT_TOPIC)
+
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if lwt_status["online"]:
+                return True
+            time.sleep(1)
+
+        print(" ERROR: Optolink-Splitter LWT did not report 'online'.")
+        print(" Ensure optolinkvs2_switch.py (or the corresponding service) is running.")
+        return False
+
+    except Exception as e:
+        print(f" ERROR: Failed to verify Optolink-Splitter LWT: {e}")
+        return False
+
+
+def expand_domain_groups(domains: dict) -> dict:
+    new_domains = []
+    for dom in shared_config.get("domains", []):
+        groups = dom.get("groups")
+        if not groups:
+            new_domains.append(deepcopy(dom))
+            continue
+        base = {k: v for k, v in dom.items() if k != "groups"}
+        for group in groups:
+            merged = deepcopy(base)
+            merged.update(group)
+            new_domains.append(merged)
+    return new_domains
 
 
 def beautify(text):
@@ -138,91 +170,158 @@ def beautify(text):
     return result
 
 
-def publish_ha_discovery():
-    """Publishes Home Assistant MQTT discovery config from the shared_config arrays."""
+def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_address, device_config):
+    META_FIELDS = {"poll", "domain", "address", "factor", "signed", "byte_length"}
 
-    # MQTT verbinden und prüfen
-    if not connect_mqtt():
-        print(" ERROR: MQTT connection failed. Exiting.")
-        return
+    def set_if_missing(cfg: dict, key: str, value) -> None:
+        if key not in cfg:
+            cfg[key] = value
+
+    def merge_item_dict_set_if_missing(dst: dict, src: dict) -> None:
+        for key, value in src.items():
+            if key == "name" or key in META_FIELDS:
+                continue
+            set_if_missing(dst, key, value)
+
+    def to_name_id(name) -> str:
+        return str(name).lower().replace(" ", "_")
+
+    def to_address_hex(address):
+        if address is None:
+            return None
+        if isinstance(address, int):
+            return f"0x{address:04x}"
+        return str(address)
+
+    def address_suffix(address_hex):
+        return f"_{address_hex}" if (dp_suffix_address and address_hex is not None) else ""
+
+    def make_unique_id(name_id, address_hex):
+        return f"{dp_prefix}{name_id}{address_suffix(address_hex)}"
+
+    if isinstance(item_config, (tuple, list)):
+        Name = item_config[1] if len(item_config) > 1 else "unknown"
+        DpAddr = item_config[2] if len(item_config) > 2 else None
+        item_dict = None
+    else:
+        Name = item_config.get("name", "unknown")
+        DpAddr = item_config.get("address")
+        item_dict = item_config
+
+    name_id = to_name_id(Name)
+    address_hex = to_address_hex(DpAddr)
+    unique_id = make_unique_id(name_id, address_hex)
+
+    discovery_config = {
+        "name": beautify(str(Name).replace("_", " ")).title(),
+        "unique_id": unique_id,
+        "default_entity_id": f"{domain}.{unique_id}",
+        "device": device_config,
+        "availability_topic": f"{mqtt_base}/LWT",
+    }
+
+    if item_dict:
+        normalized = {}
+        for key, value in item_dict.items():
+            if isinstance(value, str):
+                value = value.replace("{mqtt_base}", mqtt_base)
+            normalized[key] = value
+        merge_item_dict_set_if_missing(discovery_config, normalized)
+
+    return discovery_config, name_id, address_hex
+
+
+def publish_ha_discovery():
+    parser = argparse.ArgumentParser(
+        description="make Optolink-Splitter datapoints available in Home Assistant by publishing them via MQTT"
+    )
+    parser.add_argument("-c", "--console", dest="console", action="store_true", help="Console Output only")
+    args = parser.parse_args()
+    if args.console:
+        print("Console Output only")
+
+    if not args.console:
+        mqtt_client = connect_mqtt()
+        if mqtt_client is None:
+            print(" ERROR: MQTT connection failed. Exiting.")
+            return
+    else:
+        mqtt_client = None
 
     mqtt_base = settings.mqtt_topic
-    ha_prefix = "homeassistant"
+    ha_prefix = shared_config.get("mqtt_ha_discovery_prefix") or "homeassistant"
 
-    # Device-Info
+    if not args.console:
+        if not verify_mqtt_optolink_lwt(mqtt_client, mqtt_base):
+            print("ERROR: Optolink-Splitter is offline. Exiting script to prevent MQTT discovery issues.")
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
+            return
+
     node_id = shared_config["node_id"]
     device = shared_config["device"]
 
-    # ID mechanics (compatible with legacy homeassistant_create_entities.py)
     dp_prefix = shared_config.get("dp_prefix", "")
     dp_suffix_address = bool(shared_config.get("dp_suffix_address", True))
 
-    # --- unified helpers for prefix/suffix mechanics ---
-    def dp_address_suffix(address_hex: str) -> str:
-        return f"_{address_hex}" if dp_suffix_address else ""
-
-    def dp_full_id(name: str, address_hex: str) -> str:
-        # used for unique_id + default_entity_id + discovery topic path
-        return f"{dp_prefix}{name}{dp_address_suffix(address_hex)}"
-
-    def dp_state_topic(mqtt_base_: str, name: str, address_hex: str) -> str:
-        # keep name unprefixed (like before), but suffix consistent
-        return f"{mqtt_base_}/{name}{dp_address_suffix(address_hex)}"
-
     total_published = 0
 
-    for domain_config in shared_config["domains"]:
+    for domain_config in expand_domain_groups(shared_config.get("domains", [])):
         domain = domain_config["domain"]
 
-        # Domain-Config bereinigen
         domain_config_clean = domain_config.copy()
         domain_config_clean.pop("poll", None)
         domain_config_clean.pop("nopoll", None)
         domain_config_clean.pop("domain", None)
+        domain_config_clean.pop("groups", None)
 
         poll_items = domain_config.get("poll", [])
         nopoll_items = domain_config.get("nopoll", [])
         all_items = poll_items + nopoll_items
 
         for item in all_items:
-            address_hex = f"0x{item[2]:04x}"
-            byte_length = item[3] if len(item) > 3 else 1
-
-            name_converted = item[1]
-            id_full = dp_full_id(name_converted, address_hex)
-
-            discovery_config = {
-                "name": beautify(item[1].replace("_", " ")).title(),
-                "unique_id": id_full,
-                "default_entity_id": f"{domain}.{id_full}",
-                # BREAKING CHANGE when dp_suffix_address=True: suffix is now part of state_topic as well
-                "state_topic": dp_state_topic(mqtt_base, item[1], address_hex),
-                "device": device,
-                "availability_topic": f"{mqtt_base}/LWT",
-            }
-
-            # Domain-Config mergen
-            discovery_config.update(domain_config_clean)
-
-            # replace placeholders in '*_template' Entries
-            for key, value in list(discovery_config.items()):
-                if key.endswith("_template") and isinstance(value, str):
-                    if "command_topic" not in discovery_config:
-                        discovery_config["command_topic"] = settings.mqtt_listen
-                    discovery_config[key] = (
-                        value.replace("%address%", address_hex).replace("%bytelength%", str(byte_length))
-                    )
-
-            # Publish
-            topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
-            print(
-                f"Published {domain}: {discovery_config['name']} ({address_hex}) -> {discovery_config['unique_id']}"
+            discovery_config, name_id, address_hex = build_discovery_config(
+                domain=domain,
+                item_config=item,
+                mqtt_base=mqtt_base,
+                dp_prefix=dp_prefix,
+                dp_suffix_address=dp_suffix_address,
+                device_config=device,
             )
-            total_published += 1
-            time.sleep(0.1)  # Rate limiting
 
-    # Commands (no address -> prefix only, no address-suffix)
+            for k, v in domain_config_clean.items():
+                if k not in discovery_config:
+                    discovery_config[k] = v
+                 
+            if isinstance(item, (tuple, list)):
+                byte_length = item[3] if len(item) > 3 else 1
+            else:
+                byte_length = item.get("byte_length", 1)
+
+            if address_hex is not None:
+                for key, value in list(discovery_config.items()):
+                    if isinstance(value, str):
+                        if "%address%" in value or "%bytelength%" in value:
+                            discovery_config[key] = (
+                                value.replace("%address%", address_hex)
+                                     .replace("%bytelength%", str(byte_length))
+                            )
+
+            if domain != "button":
+                has_state_topics = any(k.endswith("_state_topic") for k in discovery_config.keys())
+                if "state_topic" not in discovery_config and not has_state_topics:
+                    suffix = f"_{address_hex}" if (dp_suffix_address and address_hex is not None) else ""
+                    discovery_config["state_topic"] = f"{mqtt_base}/{name_id}{suffix}"
+
+            topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
+            if args.console:
+                print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
+            else:
+                mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+            print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
+            total_published += 1
+            time.sleep(0.1)
+
     for command_config in shared_config.get("commands", []):
         domain = "button"
 
@@ -242,16 +341,19 @@ def publish_ha_discovery():
         discovery_config.update(command_config_clean)
 
         topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-        mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+        if args.console:
+            print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
+        else:
+            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
         print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
         total_published += 1
-        time.sleep(0.1)  # Rate limiting
+        time.sleep(0.1)
 
     print(f"\n✓ {total_published} entities published successfully!")
 
-    # Graceful shutdown
-    mqtt_client.loop_stop()
-    mqtt_client.disconnect()
+    if not args.console:
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
 
 
 if __name__ == "__main__":
