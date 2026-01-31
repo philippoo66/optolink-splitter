@@ -319,7 +319,15 @@ shared_config = {
                 ( 15,"pufferspeicher_hysterese", 0x7203, 2, 0.1),                          #WPR_Hysterese_Pufferspeicher_HK~0x7203
                 ( 15,"warmwasser_hysterese", 0x6007, 2, 0.1),                              #WPR_WW_Hysterese_Warmwasser~0x6007", 0x6007,
             ]
-        },        
+        },
+		{
+			"domain": "button",
+			"command_topic": settings.mqtt_listen,
+			"payload_press": "w;%address%;%bytelength%;2",
+			"nopoll": [
+				(0, "ww_einmalig_aufladen", 0xB020, 1, 1, False),
+			]
+		},
     ],
     "commands" : [
         {
