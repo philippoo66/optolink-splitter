@@ -8,7 +8,10 @@ Make your Viessmann heating locally available via MQTT and TCP/IP while keeping 
 For latest developments always check the [Version-Log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log)
 
 ## 🎉 Announcements
-- [**Version 1.10.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11000) **New Feature: User-Friendly MQTT /set Topics!** Write values using the same format they're published in! Example: Publish `vito/c1_temp_room_setpoint/set` with payload `21.5` instead of complex command syntax. Supports ON/OFF, boolean, and numeric values with automatic scaling. See [MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md) for details.
+- [**Version 1.11.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11100) **Poll cycle groups** implemented and the possibility to alter the cycles at run-time using action command `setpollcycle;<groupkey>;<value>`<br>
+Since V1.10.1 the entire Optolink communikation with the heating device can get logged. Up from V1.10.5 a 'global re-start loop' got implemented to restart the splitter in case of problems.
+
+- [**Version 1.10.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11000) **New Feature: User-Friendly MQTT /set Topics!** Write values using the same format they're published in! Example: Publish `vito/c1_temp_room_setpoint/set` with payload `21.5` instead of complex command syntax. Supports ON/OFF, boolean, and numeric values with automatic scaling. See [MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md) for details. Thank you @manuboek!
 
 - [**Version 1.9.0.2**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-1902) **Home Assistant integration** simplified! Define Entities and poll_list together in `ha_shared_config.py` and run `ha_publish.py` once and everything is fine! Thank you @matthias-oe, @EarlSneedSinclair!
 
@@ -96,9 +99,15 @@ pip install paho-mqtt  # Only if MQTT is used
 *NOTE:* After installation, the environment must be activated before running the script.
 
 ### 3. Configure the Settings
-Modify `settings_ini.py` according to your heating (/ datapoints):
-- Refer to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
-- Refer to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
+On initial install
+- copy `settings_ini.py.example` to `settings_ini.py`. Modify `settings_ini.py` according to your heating device. 
+- copy `poll_list.py.example` to `poll_list.py` and modify it according to your desired datapoints.
+
+If you're using **Home Assistant** consider to utilize `ha_shared_config.py` for combined datapoints and entities definition!
+
+Regading datapoints refer  
+- to [Wiki | Parameter Addresses](https://github.com/philippoo66/optolink-splitter/wiki/310-Parameter-Addresses), [poll_list samples](https://github.com/philippoo66/optolink-splitter/wiki/350-Poll-Configuration-Samples)
+- to [Wiki | ViessData21](https://github.com/philippoo66/ViessData21?tab=readme-ov-file#dp_listen_2zip)
 
 ### 4. Run the Script
 ```sh
@@ -110,10 +119,9 @@ For automatic startup, set up a service. See the [Wiki Guide](https://github.com
 ## Updating to a new Version
 If you want to update your installation to a new version, the recommended way is to
 - make a backup copy of your current installation (folder)
-- from the new version repo, clone **all files except settings_ini.py** into your original folder (replace existing files)
-- check the [version log](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log) for added or changed entries in the settings_ini and apply (only) those changes to your existing settings_ini.py 
+- from the new version repo, clone **all files** into your original folder (replace existing files)
 
-Alternatively you might clone all files and apply your original settings to the new settings_ini afterwards.
+Since version 1.8.4 it is not necessary anymore to add new settings to your settings_ini since there are default values used for every setting. also your settings_ini.py, poll_list.py and ha_shared_config.py will not get overwritten anymore since all those files got the extension .example in the repo since V1.9. 
 
 Don't forget to restart the script / the service afterwards.
 
