@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 '''
    Copyright 2024 philippoo66
    
