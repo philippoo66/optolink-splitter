@@ -17,11 +17,11 @@
 import datetime
 import os
 
-from logger_util import logger
 from c_settings_adapter import settings
+from logger_util import logger
+from c_polllist import poll_list
 
 import utils
-import c_polllist
 
 
 def get_filename() -> str:
@@ -33,7 +33,7 @@ def get_headline() -> str:
     now = datetime.datetime.now()
     dt =  "{2:04d}-{1:02d}-{0:02d}".format(now.day, now.month, now.year)
     cols = []
-    for itm in c_polllist.poll_list.items:
+    for itm in poll_list.items:
         # get addr as column caption
         if(isinstance(itm[0], int)):
             if(itm[0] != 0):
@@ -84,8 +84,10 @@ def buffer_csv_line(data, force_write=False):
 
         # decimal separator
         tbreplaced = "." if settings.dec_separator == "," else ","
-        for i in range(0, c_polllist.poll_list.num_items):
-            if not utils.is_onceonly(c_polllist.poll_list.items[i]):
+        for i in range(0, poll_list.num_items):
+            item = poll_list.items[i]
+            cycle = poll_list.cycle_groups[item[0]]
+            if(cycle != 0):
                 sval = str(data[i]) if data[i] else "0"  # wg. None wg. once_onlies.... alles Pfusch
                 if(utils.to_number(data[i]) != None):
                     # format number, anything else left like it is

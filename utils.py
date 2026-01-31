@@ -17,6 +17,28 @@
 from pathlib import Path
 from datetime import datetime
 from c_settings_adapter import settings
+from logger_util import logger
+import threading
+
+
+# hier zur Vermeidung von circular imports und weil hier von fast überall erreichbar
+# Threading-Events zur Steuerung von Neustarts und Beenden
+restart_event = threading.Event()
+shutdown_event = threading.Event()
+
+
+comm_errors = 0
+def comm_error(is_error:bool):
+    """Count OL comm errors and initiate re-start on threshold"""
+    global comm_errors
+    if is_error:
+        comm_errors += 2
+        if comm_errors >= 2 * settings.max_comm_errors:
+            logger.error("Optolink comm error threshold reached - initiate re-start")
+            restart_event.set()
+    elif comm_errors > 0:
+        comm_errors -= 1
+
 
 
 # utils +++++++++++++++++++++++++++++
@@ -149,7 +171,4 @@ def get_module_modified_datetime(module) -> datetime:
     except:
         return datetime.min
     
-
-def is_onceonly(item) -> bool:
-    return (isinstance(item[0], int) and item[0] == 0)
 

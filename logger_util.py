@@ -1,60 +1,33 @@
-import logging
-import os
-#import sys
-from logging.handlers import RotatingFileHandler
+'''
+   Copyright 2025 philippoo66
+   
+   Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
 
-# === Base Dir robust bestimmen ============================================
-def get_base_dir():
-    # if getattr(sys, "frozen", False):  # PyInstaller-Umgebung
-    #     return os.path.dirname(sys.executable)
-    return os.path.dirname(os.path.abspath(__file__))
+       https://www.gnu.org/licenses/gpl-3.0.html
 
-BASE_DIR = get_base_dir()
-LOG_FILE = os.path.join(BASE_DIR, "optolinkvs2_switch.log")
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+'''
 
+# ---------------------------------------------------------------
+# This module is used for the application logging,
+# console and optolinkvs2_switch.log
+# settings: no_logger_file
+# ---------------------------------------------------------------
 
-# === Logger-Setup =========================================================
-def setup_logger(
-    name: str = "optolinkvs2_switch",
-    level=logging.INFO,
-    fmt: str = "%(asctime)s [%(levelname)s]: %(message)s",
-    datefmt: str = "%d.%m.%Y %H:%M:%S",
-    no_file = False,
-) -> logging.Logger:
-
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    logger.propagate = False
-
-    # Vorherige Handler entfernen → verhindert doppelte Logs
-    logger.handlers.clear()
-
-    formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
-
-    if not no_file:
-        # Rotierendes Logfile
-        file_handler = RotatingFileHandler(
-            LOG_FILE,
-            maxBytes=20*1024,   #5 * 1024 * 1024,   # 5 MB
-            backupCount=1,      #3,
-            encoding="utf-8",
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-    # Konsole
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    return logger
-
+from c_LoggerUtil import LoggerUtil
+from c_settings_adapter import settings 
 
 # === Globale Loggerinstanz ===============================================
-no_file = False
-try:
-    from c_settings_adapter import settings
-    no_file = settings.no_logger_file
-except:
-    pass 
-logger = setup_logger(no_file=no_file)
+logger = LoggerUtil(
+                name = "optolinkvs2_switch",
+                level = settings.log_level, # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,  
+                max_bytes = 5*1024*1024, # 5 MB
+                backup_count = 1,
+                no_file = settings.no_logger_file
+            ).logger

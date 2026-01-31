@@ -18,8 +18,9 @@ import serial
 import sys
 import time
 
-import utils
 from c_settings_adapter import settings
+from logger_util import logger
+import utils
 
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -32,10 +33,10 @@ last_comm = 0.0
 
 def reset_sync():
     global last_comm
-    last_comm = time.time()
+    last_comm = time.monotonic()
 
 def sync_elapsed(timeout = SYNC_TIMEOUT) -> bool:
-    return (time.time() - last_comm > timeout) 
+    return (time.monotonic() > last_comm + timeout) 
 
 # protocol -----------
 
@@ -82,7 +83,7 @@ def wait_for_05(ser:serial.Serial) -> bool:
         #print(buff)
         if(len(buff) > 0) and (int(buff[0]) == 0x05):
             return True
-    print("Timeout waiting for 0x05")
+    logger.error("Timeout waiting for 0x05")
     return False
     
 
@@ -139,7 +140,7 @@ def write_datapoint_ext(addr:int, data:bytes, ser:serial.Serial) -> tuple[int, i
 
 
 # mainly internal, receive a response @ known length
-def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:  # type: ignore
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
     # receives the V1 response to a Virtual_READ or Virtual_WRITE request @ known length
@@ -176,17 +177,17 @@ def receive_resp_telegr(rlen:int, addr:int, ser:serial.Serial, ser2:serial.Seria
 
 
 # receives anything...
-def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:
+def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, int, bytearray]:        # type: ignore
     # returns: ReturnCode, Addr, Data
     # ReturnCode: 01=success, AA=HandleLost, FF=TimeOut (all hex)
     retcode, data = receive_fullraw(settings.fullraw_eot_time, settings.fullraw_timeout, ser, ser2)
     return retcode, 0, data  # 0x01?!?
 
 
-def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:
+def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=None) -> tuple[int, bytearray]:        # type: ignore
     # times in seconds
     inbuff = b''
-    start_time = time.time()
+    start_time = time.monotonic()
     last_receive_time = start_time
 
     while True:
@@ -196,10 +197,10 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
         if inbytes:
             # Daten zum Datenpuffer hinzufuegen
             inbuff += inbytes
-            last_receive_time = time.time()
+            last_receive_time = time.monotonic()
             if(ser2 is not None):
                 ser2.write(inbytes)
-        elif inbuff and ((time.time() - last_receive_time) > eot_time):
+        elif inbuff and (time.monotonic() > last_receive_time + eot_time):
             # if data received and no further receive since more than eot_time
             if(settings.show_opto_rx):
                 print("rx", utils.bbbstr(inbuff))
@@ -207,12 +208,10 @@ def receive_fullraw(eot_time, timeout, ser:serial.Serial, ser2:serial.Serial=Non
             return 0x01, bytearray(inbuff)
 
         time.sleep(0.005)
-        if((time.time() - start_time) > timeout):
+        if(time.monotonic() > start_time + timeout):
             if(settings.show_opto_rx):
                 print("rx fullraw timeout", utils.bbbstr(inbuff))
             return 0xFF, bytearray(inbuff)
-
-
 
 
 

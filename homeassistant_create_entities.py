@@ -106,8 +106,8 @@ def verify_mqtt_optolink_lwt(timeout=10):
         print(f"Subscribing to {LWT_TOPIC}...")
         mqtt_client.subscribe(LWT_TOPIC)
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
+        start_time = time.monotonic()
+        while time.monotonic() < start_time + timeout:
             if lwt_status["online"]:
                 return True
             time.sleep(1)
@@ -130,11 +130,11 @@ def read_poll_list_datapoints():
         print(f"Reading poll_list from poll_list.py or settings.py")
         for item in poll_items:
             if len(item) > 1:
-                # Checks if the first value is PollCycle (an integer). If so, it takes the next value as the name.
-                if isinstance(item[0], int):
-                    name = item[1]
-                else:
-                    name = item[0]  # If first value is not an integer, it's the name
+                # # Checks if the first value is PollCycle (an integer). If so, it takes the next value as the name.
+                # if isinstance(item[0], int):
+                name = item[1]  # since 1.10.6 always item[0] is PollCycleGroupKey
+                # else:
+                #     name = item[0]  # If first value is not an integer, it's the name
 
                 poll_list_datapoints.append(name)
     except Exception as e:

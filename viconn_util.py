@@ -35,7 +35,7 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
     bufferVicon = bytearray([0xFF, 0xFF, 0xFF])
     bufferOpto = bytearray([0xFF, 0xFF, 0xFF, 0xFF])
 
-    timestart = time.time()
+    timestart = time.monotonic()
 
     viconnlog.do_log("detect_vs2...")
 
@@ -69,14 +69,14 @@ def detect_vs2(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
                         viconnlog.do_log("vs2 detected")
                         return True
         time.sleep(0.001)
-        if(time.time() > timestart + timeout):
+        if(time.monotonic() > timestart + timeout):
             return False
 
 
 def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> bool:
     bufferVicon = [] #bytearray()
     bufferOpto = [] #bytearray()
-    timestart = time.time()
+    timestart = time.monotonic()
     expctdlen = -1
 
     while True:
@@ -115,7 +115,7 @@ def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
             # reset viconn buffer
             bufferVicon = []
         time.sleep(0.001)
-        if(time.time() > timestart + timeout):
+        if(time.monotonic() > timestart + timeout):
             return False
 
 

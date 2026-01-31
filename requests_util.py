@@ -16,12 +16,12 @@
 
 from typing import Any
 
+from c_settings_adapter import settings
 from logger_util import logger
 import utils
 import vs12_adapter
 import onewire_util
 import c_w1value
-from c_settings_adapter import settings
 
 
 
@@ -172,7 +172,6 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             serViDev.reset_input_buffer()
             serViDev.write(bstr)
             #print("sent to OL:", bbbstr(retstr))
-            #retcode, _, data = optolinkvs2.receive_vs2telegr(True, True, serViDev)
             retcode, _, data = vs12_adapter.receive_telegr(True, True, serViDev)
             #print(f"recd fr OL: {utils.bbbstr(data)}, retcode {retcode:02x}") #temp
             val = utils.arr2hexstr(data)
@@ -188,7 +187,6 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
                 val = w1values[addr].checked(val)
             else:
                 # Optolink item
-                #retcode, addr, data = optolinkvs2.read_datapoint_ext(addr, int(parts[2]), serViDev)
                 retcode, addr, data = vs12_adapter.read_datapoint_ext(addr, int(parts[2]), serViDev)
                 if(retcode==1):
                     if(numelms > 3):
@@ -218,7 +216,6 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             #raise Exception("write noch nicht fertig") #TODO scaling und so
             ival = utils.get_int(parts[3])
             bval = ival.to_bytes(int(parts[2]), 'little', signed=(ival < 0))
-            #retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             retcode, addr, data = vs12_adapter.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
                 val = int.from_bytes(bval, 'little', signed=(ival < 0))
@@ -233,7 +230,6 @@ def response_to_request(request, serViDev) -> tuple[int, bytearray, Any, str]:  
             # write raw +++++++++++++++++++
             hexstr = str(parts[2]).replace('0x','').replace(' ','')
             bval = utils.hexstr2arr(hexstr)
-            #retcode, addr, data = optolinkvs2.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             retcode, addr, data = vs12_adapter.write_datapoint_ext(utils.get_int(parts[1]), bval, serViDev)
             if(retcode == 1): 
                 val = hexstr   #int.from_bytes(bval, 'big')

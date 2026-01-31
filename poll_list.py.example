@@ -15,25 +15,39 @@
 '''
 
 
-# Datapoint Polling List +++++++++
-poll_interval = 30              # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
-poll_items = [                  # Datapoints defined here will be polled; ignored if poll_list.py is found in the working directory
+# === base polling interval [seconds], 0 for continuous, -1 to disable (default: 30)
+poll_interval = 30              
+
+# === define your groups here. you may extend the dict!
+poll_groups = {
+    "ONCEONLY"  :  0,           # polled only once on start-up and on reception of forcepoll command
+    "ALWAYS"    :  1,           # on each polling, same as ommitted
+    "OFTEN"     :  5,
+    "SOMETIMES" :  60,
+    "RARELY"    :  1000,
+    "DEBUG"     :  -1,          # < 0 for never
+}
+
+# === Datapoint Polling List 
+# Datapoints defined here will be polled
+poll_items = [                  
     # ([PollCycle,] Name, DpAddr, Length [, Scale/Type [, Signed]]),
-       # PollCycle:   Optional entry to allow the item to be polled only every x-th cycle
-       # Name:        Datapoint name, published to MQTT as {dpname}; Best practices recommendation: Always use lowercase Names for consistency and compatibility.
-       # DpAddr:      Address used to read the datapoint value (hex with '0x' or decimal)
-       # Length:      Number of bytes to read
-       # Scale/Type:  Optional; if omitted, value returns as a hex byte string without '0x'. See Wiki for details
-       # Signed:      Numerical data will interpreted as signed (True) or unsigned (False, default is False if not explicitly set)
+        # PollCycle:    Optional entry to allow the item to be polled only every x-th cycle
+                        may be ommitted, an integer value or a poll_groups key 
+        # Name:         Datapoint name, published to MQTT as {dpname}; Best practices recommendation: Always use lowercase Names for consistency and compatibility.
+        # DpAddr:       Address used to read the datapoint value (hex with '0x' or decimal)
+        # Length:       Number of bytes to read
+        # Scale/Type:   Optional; if omitted, value returns as a hex byte string without '0x'. See Wiki for details
+        # Signed:       Numerical data will interpreted as signed (True) or unsigned (False, default is False if not explicitly set)
    
     # Example for Vitocalxxx-G with Vitotronic 200 (Typ WO1C) (from 04/2012)
-    ("error", 0x0491, 1, 1, False),
-    ("outside_temperature", 0x0101, 2, 0.1, True),
-    ("hk1_mode", 0xB000, 1, 1, False),			# betriebsart bit 4,5,6,7 comfort  bit 1 spar bit 0
+    ("ALWAYS", "error", 0x0491, 1, 1, False),
+    ("OFTEN", "outside_temperature", 0x0101, 2, 0.1, True),
+    ("SOMETIMES", "hk1_mode", 0xB000, 1, 1, False),			# betriebsart bit 4,5,6,7; comfort bit 1; spar bit 0
     ("hk1_requested_temperature", 0xA406, 2, 0.01, False),
-    ("hk1_normal_temperature", 0x2000, 2, 0.1, False),
-    ("hk1_reduced_temperature", 0x2001, 2, 0.1, False),
-    ("hk1_party_temperature", 0x2022, 2, 0.1, False),
+    ("RARELY", "hk1_normal_temperature", 0x2000, 2, 0.1, False),
+    ("RARELY", "hk1_reduced_temperature", 0x2001, 2, 0.1, False),
+    ("RARELY", "hk1_party_temperature", 0x2022, 2, 0.1, False),
     ("hk1_temperature", 0x0116, 2, 0.1, False),
     ("hk1_pump", 0x048D, 1, 1, False),
     ("hk1_supply_temperature", 0x010A, 2, 0.1, False),

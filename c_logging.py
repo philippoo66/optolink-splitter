@@ -14,6 +14,12 @@
    limitations under the License.
 '''
 
+# ---------------------------------------------------------------
+# This module is used for logging the Vitoconnect data traffic
+# to viconnlog.txt
+# settings: log_vitoconnect
+# ---------------------------------------------------------------
+
 import time
 import utils
 

@@ -21,8 +21,9 @@
 ###########################################
 
 import importlib
-from logger_util import logger
+#from logger_util import logger
 
+SETTINGS_MODULE = "settings_ini"
 
 class SettingsAdapter:
     def __init__(self):
@@ -70,6 +71,7 @@ class SettingsAdapter:
 
         # Optolink Logging ++++++++++++++
         self.show_opto_rx = True                # Console output of received Optolink data (default: True, no output when run as service)
+        self.log_optolink = False               # Enable logging of Optolink rx+tx communication (default: False)
         self.log_vitoconnect = False            # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
         self.viconn_to_mqtt = True              # Vitoconnect traffic published on MQTT
 
@@ -85,9 +87,15 @@ class SettingsAdapter:
         self.buffer_to_write =  60              # Buffer size before writing CSV (default: 60)
         self.dec_separator =  ","               # Decimal separator for CSV output (default: ",")
 
-
         # General Settings +++++++++++
         self.no_logger_file =  False            # if True the optolinksvs2_switch.log will not get written
+        self.log_level = 20                     # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
+        self.max_restarts = 5                   # re-start limit. counter gets reset after sucessful {retry_counters_reset} minutes successful operation 
+        self.restart_delay = 10                 # seconds delay before re-starting 
+        self.max_vicon_tries = 3                # limit for vicon tries. if exceeded, continuing without vitoconnect. should be less than max_restarts
+        self.max_comm_errors = 10               # optolink comm error threshold to init restart
+        self.retry_counters_reset = 30          # minutes of sucessful operation to reset the retry counters 
+        self.readback_delay_set = 1             # seconds delay between wirte via /set and reading back 
 
         # special for wo1c: read daily/weekly energy statistics +++++++++++
         self.wo1c_energy = 0                    # 0:disabled, €N: every n-th cycle
@@ -99,39 +107,44 @@ class SettingsAdapter:
         self.poll_interval = 30                 # Polling interval (seconds), 0 for continuous, -1 to disable (default: 30)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #  now we apply given settings from settings_ini.py
-        self.set_settings("settings_ini")
+        #  now we apply given settings from settings_ini.py or any other parser
+        self.set_settings(SETTINGS_MODULE)
 
 
     def set_settings(self, settings_module:str = '', reload:bool = False):
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #  Here we take the settings from a module if exist there, 
         #  otherwise keep value unchanged 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if settings_module:
-            try:
+            # try:
                 self._settings_obj = importlib.import_module(settings_module)
-            except Exception as e:
-                logger.error(f"importing settings module: {e}")
-                return
+            # except Exception as e:
+            #     logger.error(f"importing settings module: {e}")
+            #     return
         
-        if not self._settings_obj:
-            logger.error("set_settings: no settings object set")
-            return
+        # if not self._settings_obj:
+        #     logger.error("set_settings: no settings object set")
+        #     return
         
         if reload:
-            try:
+            # try:
                 self._settings_obj = importlib.reload(self._settings_obj)
-            except Exception as e:
-                logger.error(f"reload settings module: {e}")
-                return
+            # except Exception as e:
+            #     logger.error(f"reload settings module: {e}")
+            #     return
 
 
         # General Settings +++++++++++
         # a later change of no_logger_file will not be effective since logger is already up then 
         self.no_logger_file = getattr(self._settings_obj, 'no_logger_file', self.no_logger_file)
+        self.log_level = getattr(self._settings_obj, 'log_level', self.log_level)
+        self.max_restarts = getattr(self._settings_obj, 'max_restarts', self.max_restarts)
+        self.restart_delay = getattr(self._settings_obj, 'restart_delay', self.restart_delay)
+        self.max_vicon_tries = getattr(self._settings_obj, 'max_vicon_tries', self.max_vicon_tries)
+        self.max_comm_errors = getattr(self._settings_obj, 'max_comm_errors', self.max_comm_errors)               
+        self.retry_counters_reset = getattr(self._settings_obj, 'retry_counters_reset', self.retry_counters_reset)               
 
         # Serial Ports +++++++++++++++++++
         self.port_optolink = getattr(self._settings_obj, 'port_optolink', self.port_optolink)
@@ -168,6 +181,7 @@ class SettingsAdapter:
 
         # Optolink Logging ++++++++++++++
         self.show_opto_rx = getattr(self._settings_obj, 'show_opto_rx', self.show_opto_rx)
+        self.log_optolink = getattr(self._settings_obj, 'log_optolink', self.log_optolink)
         self.log_vitoconnect = getattr(self._settings_obj, 'log_vitoconnect', self.log_vitoconnect)
         self.viconn_to_mqtt = getattr(self._settings_obj, 'viconn_to_mqtt', self.viconn_to_mqtt)
 
@@ -193,6 +207,5 @@ class SettingsAdapter:
         self.poll_interval = getattr(self._settings_obj, 'poll_interval', self.poll_interval)
 
 
-
-# for global use
+# === for global use ==================
 settings = SettingsAdapter()

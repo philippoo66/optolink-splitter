@@ -64,9 +64,12 @@ viessdata_csv_path = ""         # File path for Viessdata CSV output (default: "
 buffer_to_write = 60            # Buffer size before writing to CSV (default: 60)
 dec_separator = ","             # Decimal separator for CSV output (default: ",")
 
-
 # General Settings +++++++++++
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
+max_restarts = 5                # re-start limit. gets reset after 100 succesful poll cycles 
+restart_delay = 10              # seconds delay before re-starting 
+max_vicon_tries = 3             # limit for vicon tries. if exceeded, continuing without vitoconnect
+
 
 # special for wo1c: read daily/weekly energy statistics +++++++++++
 wo1c_energy = 0                 # 0:disabled, €N: every n-th cycle
