@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.0.3"
+VERSION = "1.11.0.4"
 
 import serial
 import time
@@ -43,7 +43,7 @@ progr_exit_flag = False
 mod_mqtt = None
 tcp_server = None
 
-
+splitter_started = time.time()
 last_vs1_comm = 0
 
 force_poll_flag = False
@@ -262,7 +262,7 @@ def publish_stat():
     if(mod_mqtt is not None) and mod_mqtt.mqtt_client.is_connected:
         topic = settings.mqtt_topic + "/stats"
         jdata = {"Splitter Version" : VERSION,
-                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
+                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(splitter_started))),
                 "Poll List Make" : str(poll_list.module_date),
                 "Poll List Items" : str(poll_list.num_items)}
         mod_mqtt.publish_smart(topic, json.dumps(jdata))
