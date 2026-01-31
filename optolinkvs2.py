@@ -139,8 +139,6 @@ def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'
         outbuff[7 + i] = data[i]
     outbuff[-1] = calc_crc(outbuff)
 
-    print(utils.bbbstr(outbuff))
-
     ser.reset_input_buffer()
     ser.write(outbuff)
     #print("W tx", utils.bbbstr(outbuff))
@@ -151,17 +149,17 @@ def do_request(ser:serial.Serial, fctcode:int, addr:int, rlen:int, data:bytes=b'
 
 def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Serial=None, mqtt_publ_callback=None) -> tuple[int, int, bytearray]:       # type: ignore
     """
-    Empfaengt ein VS2-Telegramm als Antwort auf eine Virtual_READ oder Virtual_WRITE-Anfrage.
+    Empfaengt ein VS2-Telegramm.
 
     Parameter:
     ----------
     resptelegr : bool
         Wenn True, wird das empfangene Telegramm als Antworttelegramm interpretiert.
-        Wenn False, wird ein Master Request Telegramm erwartet.
+        Wenn False, wird ein Master Request Telegramm ohne fuehrendes 0x06 erwartet.
     raw : bool
         Gibt an, ob der Empfangsmodus roh (unverarbeitet) ist.
         True = Rohdatenmodus (keine Protokollauswertung),
-        False = dekodierte Protokolldaten.
+        False = dekodiert Protokolldaten.
     ser : serial.Serial
         Geoeffnete serielle Schnittstelle (z. B. COM-Port), ueber die das Telegramm empfangen wird.
     ser2 : serial.Serial, optional
@@ -185,7 +183,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
            - 0xAA = Handle verloren  
            - 0xFD = Paketlaengenfehler  
            - 0xFE = CRC-Fehler  
-           - 0xFF = Timeout  
+           - 0xFF = Timeout
 
         2. **Addr (int)**  
            Adresse des Datenpunktes.

@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.0.2"
+VERSION = "1.11.0.3"
 
 import serial
 import time
@@ -106,7 +106,8 @@ def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # r
                     while((list_index + 1) < poll_list.num_items):
                         list_index += 1
                         next_item = poll_list.items[list_index]
-                        # remove PollCycle in case
+                        #next_item_cycle = poll_list.cycle_groups[next_item[0]]
+                        # remove PollCycleGroupKey
                         next_item = next_item[1:]
                         
                         # if next address same AND next len same AND next type starts with 'b:'
@@ -117,6 +118,7 @@ def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # r
                             poll_data[list_index] = next_val
 
                             if(mod_mqtt is not None): 
+                                #if not ((next_item_cycle < 0) or ((next_item_cycle > 0) and (poll_cycle % next_item_cycle != 0)) or ((next_item_cycle == 0) and (poll_cycle != 0))):
                                 # publish to MQTT broker
                                 mod_mqtt.publish_read(next_item[0], next_item[1], next_val)
 
@@ -215,8 +217,8 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         #print("do_special_command",cmnd)
         if parts[0] in ('reset', 'resetrecent'):
             if(mod_mqtt is not None):
-                mod_mqtt.reset_recent = True        # type: ignore
-                resp = f"{parts[0]} triggered"
+                mod_mqtt.reset_recent_list()
+                resp = f"recent list cleared"
         elif parts[0] in ('forcepoll',):
             force_poll_flag = True
             resp = f"{parts[0]} triggered"
@@ -261,19 +263,20 @@ def publish_stat():
         topic = settings.mqtt_topic + "/stats"
         jdata = {"Splitter Version" : VERSION,
                 "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))),
-                "Poll List Make" : str(poll_list.module_date)}
+                "Poll List Make" : str(poll_list.module_date),
+                "Poll List Items" : str(poll_list.num_items)}
         mod_mqtt.publish_smart(topic, json.dumps(jdata))
 
 
 def reset_retry_counters_in(delay_minutes=30):
     global num_restarts, num_vicon_tries
     
-    def reset():
+    def reset_counters():
         global num_restarts, num_vicon_tries
         num_restarts = 0
         num_vicon_tries = 0
 
-    timer = threading.Timer(delay_minutes * 60, reset)
+    timer = threading.Timer(delay_minutes * 60, reset_counters)
     timer.start()
 
 
