@@ -35,6 +35,7 @@
     ...}
    
 '''
+from c_settings_adapter import settings
 
 shared_config = {
     "device": {
@@ -325,7 +326,7 @@ shared_config = {
 			"command_topic": settings.mqtt_listen,
 			"payload_press": "w;%address%;%bytelength%;2",
 			"nopoll": [
-				(0, "ww_einmalig_aufladen", 0xB020, 1, 1, False),
+				(0, "ww_einmalig_aufladen", 0xB020, 1, 2, False),
 			]
 		},
     ],
@@ -343,20 +344,20 @@ shared_config = {
 poll_interval = 30
 
 
-#####################################################
-#   ATTENTION! Do NOT modify this section!          #
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        #
-def extract_poll_items(shared_config):              #
-    poll_items = []                                 #
-    if "domains" in shared_config:                  #
-		for config in shared_config["domains"]:     #
-			if "poll" in config:                    #
-				poll_items.extend(config["poll"])   #
-    return poll_items                               #
-                                                    #
-poll_items = extract_poll_items(shared_config)      #
-#####################################################
+#############################################################
+#   ATTENTION! Do NOT modify this section!                  #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                #
+def extract_poll_items(shared_config):
+    poll_items = []
+    if "domains" in shared_config:
+        for domain in shared_config["domains"]:
+            if "poll" in domain:
+                poll_items.extend(domain["poll"])
+            if "units" in domain:
+                for unit in domain["units"]:
+                    if "poll" in unit:
+                        poll_items.extend(unit["poll"])
+    return poll_items
 
-
-
-
+poll_items = extract_poll_items(shared_config)
+#############################################################

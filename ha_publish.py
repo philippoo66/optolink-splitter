@@ -140,24 +140,24 @@ def verify_mqtt_optolink_lwt(mqtt_client, mqtt_base, timeout=10):
         return False
 
 
-def expand_domain_groups(domains: dict) -> dict:
+def expand_domain_units(domains: dict) -> dict:
     """
-      eliminate group inside domains and create a separate domain per group
+      eliminate unit inside domains and create a separate domain per unit
       The generated domain contains all attributes of the original domain, 
-      supplemented with the attributes of the group. If the group contains 
+      supplemented with the attributes of the unit. If the unit contains 
       an attribute of the domain, the domain attribute will be overridden.
     """
 
     new_domains = []
     for dom in shared_config.get("domains", []):
-        groups = dom.get("groups")
-        if not groups:
+        units = dom.get("units")
+        if not units:
             new_domains.append(deepcopy(dom))
             continue
-        base = {k: v for k, v in dom.items() if k != "groups"}
-        for group in groups:
+        base = {k: v for k, v in dom.items() if k != "units"}
+        for unit in units:
             merged = deepcopy(base)
-            merged.update(group)
+            merged.update(unit)
             new_domains.append(merged)
     return new_domains
 
@@ -270,7 +270,7 @@ def publish_ha_discovery():
 
     total_published = 0
 
-    for domain_config in expand_domain_groups(shared_config.get("domains", [])):
+    for domain_config in expand_domain_units(shared_config.get("domains", [])):
         domain = domain_config["domain"]
 
         domain_config_clean = domain_config.copy()
