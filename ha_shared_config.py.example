@@ -321,12 +321,25 @@ shared_config = {
                 ( 15,"warmwasser_hysterese", 0x6007, 2, 0.1),                              #WPR_WW_Hysterese_Warmwasser~0x6007", 0x6007,
             ]
         },
+        {
+            "domain" : "water_heater",
+            "domainname" : "warmwasser",    # <------------------------------------------ explizit domains name prevents publish loop over poll items!               
+            "current_temperature_topic": "warmwassertemperatur",
+            "temperature_state_topic": "warmwasser_temperatur_soll",
+            "temperature_command_topic": settings.mqtt_listen,
+            "temperature_command_template": "{{ \"w;%warmwasser_temperatur_soll:address%;%warmwasser_temperatur_soll:bytelength%;\"~value*10 }}",
+            "min_temp": 30, "max_temp": 50, #        ^^^^^^ must be prefixed by a poll item name defined in ANY domain "poll" list.
+            "poll": [
+                (  5,"warmwassertemperatur", 0x01cd, 3, "b:0:1", 0.1),                     #WPR3_WW_Temperatur_Oben~0x01CD
+                ( 15,"warmwasser_temperatur_soll", 0x6000, 2, 0.1),                        #WPR_WW_Temp_soll~0x6000", 0x6000, 2, 0.1),
+           ]
+        },
 		{
 			"domain": "button",
 			"command_topic": settings.mqtt_listen,
 			"payload_press": "w;%address%;%bytelength%;2",
 			"nopoll": [
-				(0, "ww_einmalig_aufladen", 0xB020, 1, 2, False),
+				(0, "ww_einmalig_aufladen", 0xB020, 1, 2, False),							
 			]
 		},
     ],
