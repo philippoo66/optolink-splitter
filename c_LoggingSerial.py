@@ -89,6 +89,7 @@ class LoggingSerial:
             self._serial.close()  # echte Serial schließen
         # except Exception:
         #     self.logger.exception("Fehler beim Schließen der seriellen Schnittstelle")
+
     # -----------------------------------------------------------------
     # Delegation: alles andere wie bei serial.Serial
     # -----------------------------------------------------------------

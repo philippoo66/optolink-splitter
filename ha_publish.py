@@ -46,11 +46,10 @@ from copy import deepcopy
 from c_settings_adapter import settings
 from ha_shared_config import shared_config
 
-
 def connect_mqtt(retries=3, delay=5):
     mqtt_client = paho.Client(
         paho.CallbackAPIVersion.VERSION2,
-        "ha_publish" + str(int(time.time() * 1000)),
+        "datapoints_" + str(int(time.time() * 1000)),
     )
 
     try:
@@ -142,6 +141,13 @@ def verify_mqtt_optolink_lwt(mqtt_client, mqtt_base, timeout=10):
 
 
 def expand_domain_groups(domains: dict) -> dict:
+    """
+      eliminate group inside domains and create a separate domain per group
+      The generated domain contains all attributes of the original domain, 
+      supplemented with the attributes of the group. If the group contains 
+      an attribute of the domain, the domain attribute will be overridden.
+    """
+
     new_domains = []
     for dom in shared_config.get("domains", []):
         groups = dom.get("groups")
@@ -245,9 +251,7 @@ def publish_ha_discovery():
         if mqtt_client is None:
             print(" ERROR: MQTT connection failed. Exiting.")
             return
-    else:
-        mqtt_client = None
-
+        
     mqtt_base = settings.mqtt_topic
     ha_prefix = shared_config.get("mqtt_ha_discovery_prefix") or "homeassistant"
 
@@ -347,10 +351,12 @@ def publish_ha_discovery():
             mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
         print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
         total_published += 1
-        time.sleep(0.1)
+        if not args.console:
+            time.sleep(0.1)  # Rate limiting
 
     print(f"\n✓ {total_published} entities published successfully!")
 
+    # Graceful shutdown
     if not args.console:
         mqtt_client.loop_stop()
         mqtt_client.disconnect()

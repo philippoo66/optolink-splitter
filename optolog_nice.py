@@ -1,7 +1,5 @@
-#!/usr/bin/python
-
 '''
-   Copyright 2024 philippoo66
+   Copyright 2026 philippoo66
    
    Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,11 +24,12 @@ import re
 INPUT_FILE = "optolink.log"
 OUTPUT_FILE = "optolink_nice.log"
 
-# Alles vor dem ersten ':' wird ignoriert, RX/TX case-insensitive, danach die Hex-Daten
+# Alles vor dem ersten ':' egal, RX/TX case-insensitive
 line_re = re.compile(r"^([^:]*):\s*(rx|tx)\s+([0-9a-fA-F]+)$", re.IGNORECASE)
 
 rx_buffer = []
 rx_timestamp = None
+last_timestamp = None  # für Delta-Berechnung
 
 def format_bytes(hex_string: str) -> str:
     return " ".join(
@@ -38,11 +37,20 @@ def format_bytes(hex_string: str) -> str:
         for i in range(0, len(hex_string), 2)
     )
 
+def write_line(out, timestamp, direction, data):
+    global last_timestamp
+
+    ts = int(timestamp)
+    delta = 0 if last_timestamp is None else ts - last_timestamp
+    last_timestamp = ts
+
+    out.write(f"{ts}\t{delta}\t{direction}\t{data}\n")
+
 def flush_rx(out):
     global rx_buffer, rx_timestamp
     if rx_buffer:
         joined = "".join(rx_buffer)
-        out.write(f"{rx_timestamp}: rx: {format_bytes(joined)}\n")
+        write_line(out, rx_timestamp, "rx", format_bytes(joined))
         rx_buffer = []
         rx_timestamp = None
 
@@ -53,20 +61,21 @@ with open(INPUT_FILE, "r", encoding="utf-8") as fin, \
         stripped = line.strip()
         m = line_re.match(stripped)
 
-        # Nicht rx/tx → rx flushen, Zeile unverändert übernehmen
+        # Nicht rx/tx → RX flushen, Zeile unverändert übernehmen
         if not m:
             flush_rx(fout)
             fout.write(line)
             continue
 
         timestamp, direction, data = m.groups()
+        direction = direction.lower()
 
         if direction == "rx":
             rx_buffer.append(data)
             rx_timestamp = timestamp
         else:  # tx
             flush_rx(fout)
-            fout.write(f"{timestamp}: tx: {format_bytes(data)}\n")
+            write_line(fout, timestamp, "tx", format_bytes(data))
 
     flush_rx(fout)
 
