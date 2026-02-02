@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.0.4"
+VERSION = "1.11.1.0"
 
 import serial
 import time
@@ -57,7 +57,7 @@ num_restarts = 0
 poll_pointer = 0
 poll_cycle = 0
 
-def do_poll_item(poll_data, ser:serial.Serial, item_index:int=None) -> int:  # retcode      # type: ignore
+def do_poll_item(poll_data, ser:serial.serial_for_url, item_index:int=None) -> int:  # retcode      # type: ignore
     # set item_index to force poll
     global poll_pointer
     val = "?"
@@ -269,6 +269,7 @@ def publish_stat():
 
 
 def reset_retry_counters_in(delay_minutes=30):
+    # Achtung! blockiert Ctrl+C etc
     global num_restarts, num_vicon_tries
     
     def reset_counters():
@@ -410,6 +411,7 @@ def handle_exit(sig, frame):
     logger.info(f"received signal {sig}")
     utils.shutdown_event.set()
     raise(SystemExit)
+    #os._exit(0)
 
 
 # ------------------------
@@ -432,6 +434,7 @@ def main():
 
     excptn = None
     first_time = True
+    reset_retry_counters_time = -1
 
 
     # === the method for a clean exit =============================
@@ -497,7 +500,8 @@ def main():
                 progr_exit_flag = False
                 utils.restart_event.clear()
                 excptn = None
-                reset_retry_counters_in(settings.retry_counters_reset)
+                #reset_retry_counters_in(settings.retry_counters_reset)
+                reset_retry_counters_time = time.monotonic() + (60 * settings.retry_counters_reset)
                 logger.warning(f"re-start #{num_restarts}")
 
             # ---------------------
@@ -507,7 +511,7 @@ def main():
             # serielle Verbindungen mit dem Optolink Kopf oeffnen ++++++++++++++
             if(settings.port_optolink is not None):
                 serial_args = dict(
-                    port=settings.port_optolink,
+                    url=settings.port_optolink,
                     baudrate=4800,
                     parity=serial.PARITY_EVEN,
                     stopbits=serial.STOPBITS_TWO,
@@ -526,7 +530,7 @@ def main():
                             logger_max_bytes = 25 * 1024 * 1024  # 25 MB
                         )
                 else:
-                    serOptolink = serial.Serial(**serial_args)      # type: ignore
+                    serOptolink = serial.serial_for_url(**serial_args)      # type: ignore
 
                 # open went fine
                 logger.info("Optolink serial port opened")
@@ -536,7 +540,8 @@ def main():
 
             # serielle Verbindungen mit dem Vitoconnect oeffnen ++++++++++++++
             if(settings.port_vitoconnect is not None):
-                serVitoConnnect = serial.Serial(settings.port_vitoconnect,
+                serVitoConnnect = serial.serial_for_url(
+                            url=settings.port_vitoconnect,
                             baudrate=4800,
                             parity=serial.PARITY_EVEN,
                             stopbits=serial.STOPBITS_TWO,
@@ -766,6 +771,11 @@ def main():
                 if not (did_vicon_request or did_secodary_request):
                     time.sleep(0.005) 
                 
+                if(reset_retry_counters_time > 0) and (time.monotonic() >= reset_retry_counters_time):
+                    num_restarts = 0 
+                    num_vicon_tries = 0
+                    reset_retry_counters_time = -1
+                
         except Exception as e:
             excptn = e
             logger.error(excptn)
@@ -777,7 +787,9 @@ def main():
                 logger.error("too many restarts - exit script")
                 return
             else:
+                logger.info(f"waiting {settings.restart_delay}s before re-start...")
                 time.sleep(settings.restart_delay)
+                #utils.shutdown_event.wait(settings.restart_delay)
 
 
 if __name__ == "__main__":
