@@ -287,7 +287,8 @@ def publish_ha_discovery():
     dp_suffix_address = bool(shared_config.get("dp_suffix_address", True))
 
     poll_map = extract_poll_params()
-    print(f"{json.dumps(poll_map, indent=2)}")    
+    if args.console:
+        print(f"{json.dumps(poll_map, indent=2)}")    
     
     total_published = 0
 
@@ -300,7 +301,8 @@ def publish_ha_discovery():
         domain_config_clean.pop("domain", None)
 
         if "domainname" in domain_config:
-            all_items = [{"name": domain_config["domainname"]}] 
+            all_items = [{"name": domain_config["domainname"]}]
+            domain_config_clean.pop("domainname", None)
         else:
             poll_items = domain_config.get("poll", [])
             nopoll_items = domain_config.get("nopoll", [])
