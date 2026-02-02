@@ -41,10 +41,12 @@ import json
 import paho.mqtt.client as paho
 import time
 import ssl
+import re
 from copy import deepcopy
 
 from c_settings_adapter import settings
 from ha_shared_config import shared_config
+from ha_shared_config import poll_items
 
 def connect_mqtt(retries=3, delay=5):
     mqtt_client = paho.Client(
@@ -140,24 +142,24 @@ def verify_mqtt_optolink_lwt(mqtt_client, mqtt_base, timeout=10):
         return False
 
 
-def expand_domain_groups(domains: dict) -> dict:
+def expand_domain_units(domains: dict) -> dict:
     """
-      eliminate group inside domains and create a separate domain per group
+      eliminate unit inside domains and create a separate domain per unit
       The generated domain contains all attributes of the original domain, 
-      supplemented with the attributes of the group. If the group contains 
+      supplemented with the attributes of the unit. If the unit contains 
       an attribute of the domain, the domain attribute will be overridden.
     """
 
     new_domains = []
     for dom in shared_config.get("domains", []):
-        groups = dom.get("groups")
-        if not groups:
+        units = dom.get("units")
+        if not units:
             new_domains.append(deepcopy(dom))
             continue
-        base = {k: v for k, v in dom.items() if k != "groups"}
-        for group in groups:
+        base = {k: v for k, v in dom.items() if k != "units"}
+        for unit in units:
             merged = deepcopy(base)
-            merged.update(group)
+            merged.update(unit)
             new_domains.append(merged)
     return new_domains
 
@@ -175,6 +177,22 @@ def beautify(text):
                 i = i + 1
     return result
 
+def extract_poll_params():
+    poll_map = {}
+    for item in poll_items:
+        if isinstance(item, (tuple, list)):
+            name = item[1] if len(item) > 1 else ""
+            address = item[2] if len(item) > 2 else None
+            byte_length = item[3] if len(item) > 4 else 1 
+        else:
+            name = item.get("name", "")
+            address = item.get("address")
+            byte_length = item.get("byte_length", 1)
+        
+        if name and address is not None:
+            addr_hex = f"0x{address:04x}" if isinstance(address, int) else str(address)
+            poll_map[name] = {"address": addr_hex, "bytelength": str(byte_length)}
+    return poll_map
 
 def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_address, device_config):
     META_FIELDS = {"poll", "domain", "address", "factor", "signed", "byte_length"}
@@ -268,20 +286,25 @@ def publish_ha_discovery():
     dp_prefix = shared_config.get("dp_prefix", "")
     dp_suffix_address = bool(shared_config.get("dp_suffix_address", True))
 
+    poll_map = extract_poll_params()
+    print(f"{json.dumps(poll_map, indent=2)}")    
+    
     total_published = 0
 
-    for domain_config in expand_domain_groups(shared_config.get("domains", [])):
+    for domain_config in expand_domain_units(shared_config.get("domains", [])):
         domain = domain_config["domain"]
 
         domain_config_clean = domain_config.copy()
         domain_config_clean.pop("poll", None)
         domain_config_clean.pop("nopoll", None)
         domain_config_clean.pop("domain", None)
-        domain_config_clean.pop("groups", None)
 
-        poll_items = domain_config.get("poll", [])
-        nopoll_items = domain_config.get("nopoll", [])
-        all_items = poll_items + nopoll_items
+        if "domainname" in domain_config:
+            all_items = [{"name": domain_config["domainname"]}] 
+        else:
+            poll_items = domain_config.get("poll", [])
+            nopoll_items = domain_config.get("nopoll", [])
+            all_items = poll_items + nopoll_items
 
         for item in all_items:
             discovery_config, name_id, address_hex = build_discovery_config(
@@ -295,6 +318,16 @@ def publish_ha_discovery():
 
             for k, v in domain_config_clean.items():
                 if k not in discovery_config:
+                    if k.endswith("_topic") and not k.endswith("_command_topic"):
+                        e = poll_map.get(v)
+                        if e is not None:
+                            suffix = f"_{e[address_hex]}" if (dp_suffix_address) else ""
+                            v = f"{mqtt_base}/{v}{suffix}"
+                    if k.endswith("_template"):
+                        if re.search(r'%[^%]+:[^%]+%', v):
+                            for name, params in poll_map.items():
+                                v = v.replace(f"%{name}:address%", params["address"])
+                                v = v.replace(f"%{name}:bytelength%", params["bytelength"])
                     discovery_config[k] = v
                  
             if isinstance(item, (tuple, list)):
@@ -364,3 +397,4 @@ def publish_ha_discovery():
 
 if __name__ == "__main__":
     publish_ha_discovery()
+
