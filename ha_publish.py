@@ -229,7 +229,7 @@ def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_
         item_dict = None
     else:
         Name = item_config.get("name", "unknown")
-        DpAddr = item_config.get("address")
+        DpAddr = item_config.get("address", None)
         item_dict = item_config
 
     name_id = to_name_id(Name)
@@ -317,7 +317,7 @@ def publish_ha_discovery():
                 dp_suffix_address=dp_suffix_address,
                 device_config=device,
             )
-
+ 
             for k, v in domain_config_clean.items():
                 if k not in discovery_config:
                     if k.endswith("_topic") and not k.endswith("_command_topic"):
