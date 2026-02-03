@@ -158,6 +158,20 @@ def unixtime2str(data) -> str:
     else:
         dval = int.from_bytes(data, byteorder="little", signed=False)
         return f"{datetime.fromtimestamp(dval//1000)}.{dval%1000}"
+    
+def scheddule_vdens(data:bytes) -> str:
+    ret = ""
+    for i in range(len(data)):
+        if data[i] == 0xff:
+            ret += "na"
+        else:
+            mn = int(data[i] & 7) * 10
+            hr = int(data[i] >> 3)
+            ret += f"{hr:02d}:{mn:02d}"
+        if i < len(data) - 1:
+            ret += "," if i % 2 else "-"
+    return ret
+
 
 
 def get_module_modified_datetime(module) -> datetime:

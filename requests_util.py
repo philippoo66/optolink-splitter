@@ -53,6 +53,8 @@ def get_value(data, frmat, signd:bool):
             return utils.vdatetime2str(data, 0)
         elif(frmat == 'unixtime'):
             return utils.unixtime2str(data)
+        elif(frmat == 'schedvdens'):
+            return utils.scheddule_vdens(data)
         elif(frmat == 'utf8'):
             return utils.utf82str(data)
         elif(frmat == 'utf16'):
