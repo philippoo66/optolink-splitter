@@ -24,7 +24,7 @@
    --------------------------------------------------
    Home Assistance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
    Topic:
-   {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
+   {discovery_prefix}/[component (e.g. sensor)]/{node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
    Value:
    {"default_entity_id": "[domain].{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
     "unique_id": "{dp_prefix}[name][_{address_hex} if dp_suffix_address]",
@@ -165,16 +165,18 @@ def expand_domain_units(domains: dict) -> dict:
 
 
 def beautify(text):
+    beautifier = shared_config.get("beautifier", {})
     result = text
-    if "beautifier" in shared_config:
-        beautifier = shared_config["beautifier"]
-        if "search" in beautifier and "replace" in beautifier:
-            sea = shared_config["beautifier"]["search"]
-            rep = shared_config["beautifier"]["replace"]
-            i = 0
-            while i < len(sea):
-                result = result.replace(sea[i], rep[i])
-                i = i + 1
+    if "search" in beautifier and "replace" in beautifier:
+        sea, rep = beautifier["search"], beautifier["replace"]
+        for old, new in zip(sea, rep):
+            result = result.replace(old, new)
+    result = result.title()
+    if "fixed" in beautifier:
+        fixed = beautifier["fixed"]
+        for fix in fixed:
+            pattern = re.compile(re.escape(fix), re.IGNORECASE)
+            result = pattern.sub(fix, result)
     return result
 
 def extract_poll_params():
@@ -194,7 +196,7 @@ def extract_poll_params():
             poll_map[name] = {"address": addr_hex, "bytelength": str(byte_length)}
     return poll_map
 
-def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_address, device_config):
+def build_discovery_config(domain, item_config, mqtt_base, dp_suffix_address, device_config):
     META_FIELDS = {"poll", "domain", "address", "factor", "signed", "byte_length"}
 
     def set_if_missing(cfg: dict, key: str, value) -> None:
@@ -221,7 +223,7 @@ def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_
         return f"_{address_hex}" if (dp_suffix_address and address_hex is not None) else ""
 
     def make_unique_id(name_id, address_hex):
-        return f"{dp_prefix}{name_id}{address_suffix(address_hex)}"
+        return f"{name_id}{address_suffix(address_hex)}"
 
     if isinstance(item_config, (tuple, list)):
         Name = item_config[1] if len(item_config) > 1 else "unknown"
@@ -237,7 +239,7 @@ def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_
     unique_id = make_unique_id(name_id, address_hex)
 
     discovery_config = {
-        "name": beautify(str(Name).replace("_", " ")).title(),
+        "name": beautify(str(Name).replace("_", " ")),
         "unique_id": unique_id,
         "default_entity_id": f"{domain}.{unique_id}",
         "device": device_config,
@@ -271,7 +273,7 @@ def publish_ha_discovery():
             return
         
     mqtt_base = settings.mqtt_topic
-    ha_prefix = shared_config.get("mqtt_ha_discovery_prefix") or "homeassistant"
+    ha_prefix = shared_config.get("discovery_prefix") or "homeassistant"
 
     if not args.console:
         if not verify_mqtt_optolink_lwt(mqtt_client, mqtt_base):
@@ -313,7 +315,6 @@ def publish_ha_discovery():
                 domain=domain,
                 item_config=item,
                 mqtt_base=mqtt_base,
-                dp_prefix=dp_prefix,
                 dp_suffix_address=dp_suffix_address,
                 device_config=device,
             )
@@ -328,8 +329,8 @@ def publish_ha_discovery():
                     if k.endswith("_template"):
                         if re.search(r'%[^%]+:[^%]+%', v):
                             for name, params in poll_map.items():
-                                v = v.replace(f"%{name}:address%", params["address"])
-                                v = v.replace(f"%{name}:bytelength%", params["bytelength"])
+                                v = v.replace(f"%{name}:DpAddr%", params["address"])
+                                v = v.replace(f"%{name}:Length%", params["bytelength"])
                     discovery_config[k] = v
                  
             if isinstance(item, (tuple, list)):
@@ -340,10 +341,10 @@ def publish_ha_discovery():
             if address_hex is not None:
                 for key, value in list(discovery_config.items()):
                     if isinstance(value, str):
-                        if "%address%" in value or "%bytelength%" in value:
+                        if "%DpAddr%" in value or "%Length%" in value:
                             discovery_config[key] = (
-                                value.replace("%address%", address_hex)
-                                     .replace("%bytelength%", str(byte_length))
+                                value.replace("%DpAddr%", address_hex)
+                                     .replace("%Length%", str(byte_length))
                             )
 
             if domain != "button":
