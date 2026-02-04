@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.2.1"
+VERSION = "1.11.2.2"
 
 import serial
 import time
@@ -68,7 +68,7 @@ def do_poll_item(poll_data, ser:serial.serial_for_url, item_index:int=None) -> i
         # handle PollCycle option +++++++++++++++++++++++
         # loop though poll items until find one to be done this cycle
         while(True):
-            list_index = item_index if item_index else poll_pointer
+            list_index = item_index if item_index is not None else poll_pointer
             item = poll_list.items[list_index]  # (PollCycleGroupKey, Name, DpAddr, Len, Scale/Type, Signed)
             item_cycle = poll_list.cycle_groups[item[0]]
 
