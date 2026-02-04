@@ -159,19 +159,37 @@ def unixtime2str(data) -> str:
         dval = int.from_bytes(data, byteorder="little", signed=False)
         return f"{datetime.fromtimestamp(dval//1000)}.{dval%1000}"
     
-def scheddule_vdens(data:bytes) -> str:
+
+def byte_to_hhmm(data) -> str:
+    if data == 0xff:
+        return "na"
+    hh = int(data >> 3)
+    mm = int(data & 7) * 10
+    return f"{hh:02d}:{mm:02d}"
+
+def schedule_vdens_2str(data:bytes) -> str:
     ret = ""
-    for i in range(len(data)):
-        if data[i] == 0xff:
-            ret += "na"
-        else:
-            mn = int(data[i] & 7) * 10
-            hr = int(data[i] >> 3)
-            ret += f"{hr:02d}:{mn:02d}"
-        if i < len(data) - 1:
+    dlen = len(data)
+    for i in range(dlen):
+        ret += byte_to_hhmm(data[i])
+        if i + 1 < dlen:
             ret += "," if i % 2 else "-"
     return ret
 
+def schedule_vcal_2str(data:bytes) -> str:
+    ret = ""
+    dlen = len(data)
+    for i in range(0, dlen, 3):
+        sto = cod = "na"
+        sta = byte_to_hhmm(data[i])
+        if i + 1 < dlen:
+            sto = byte_to_hhmm(data[i+1])
+        if i + 2 < dlen:
+            cod = data[i+2]
+        ret += f"{sta}-{sto}*{cod}"
+        if i + 3 < dlen:
+            ret += ","
+    return ret
 
 
 def get_module_modified_datetime(module) -> datetime:

@@ -45,32 +45,35 @@ def get_value(data, frmat, signd:bool):
     if(scale is not None):
         return utils.bytesval(data, scale, signd)
     else:
+        
         #TODO hier evtl weitere Formate umsetzen
-        frmat = str(frmat)
-        if(frmat == 'vdatetime'):
+        frmatl = str(frmat).lower()
+        if(frmatl == 'vdatetime'):
             return utils.vdatetime2str(data)
-        elif(frmat == 'vcaldatetime'):
+        elif(frmatl == 'vcaldatetime'):
             return utils.vdatetime2str(data, 0)
-        elif(frmat == 'unixtime'):
+        elif(frmatl == 'unixtime'):
             return utils.unixtime2str(data)
-        elif(frmat == 'schedvdens'):
-            return utils.scheddule_vdens(data)
-        elif(frmat == 'utf8'):
+        elif(frmatl == 'schedvdens'):
+            return utils.schedule_vdens_2str(data)
+        elif(frmatl == 'schedvcal'):
+            return utils.schedule_vcal_2str(data)
+        elif(frmatl == 'utf8'):
             return utils.utf82str(data)
-        elif(frmat == 'utf16'):
+        elif(frmatl == 'utf16'):
             return utils.utf162str(data)
-        elif(frmat == 'bool'):
+        elif(frmatl == 'bool'):
             return str(utils.bytesval(data) != 0)
-        elif(frmat == 'boolinv'):
+        elif(frmatl == 'boolinv'):
             return str(utils.bytesval(data) == 0)
-        elif(frmat == 'onoff'):
+        elif(frmatl == 'onoff'):
             return 'ON' if(utils.bytesval(data) != 0) else 'OFF'
-        elif(frmat == 'offon'):
+        elif(frmatl == 'offon'):
             return 'ON' if(utils.bytesval(data) == 0) else 'OFF'
-        elif(frmat == 'bin'):
+        elif(frmatl == 'bin'):
             ffrmt = f"0{len(data)*8}b"
             return f"{utils.bytesval(data):{ffrmt}}"
-        elif(frmat.startswith('f:')):
+        elif(frmatl.startswith('f:')):
             ffrmt = frmat[2:]
             return f"{utils.bytesval(data):{ffrmt}}"
         else:
@@ -78,7 +81,7 @@ def get_value(data, frmat, signd:bool):
             return utils.arr2hexstr(data)
 
 def perform_bytebit_filter(data, item):
-    # item is poll list entry:  (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed)
+    # item is poll list entry:  (Name, DpAddr, Len, 'b:startbyte:lastbyte:bitmask:endian', Scale, Signed) # PollCycleGroupKey removed!
     # may also be read request: "read; DpAddr; Len; 'b:startbyte:lastbyte:bitmask:endian'; Scale; Signed"
 
     bparts = item[3].split(':')
