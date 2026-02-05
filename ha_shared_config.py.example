@@ -20,6 +20,7 @@
    The documentation can be found here:
       https://github.com/philippoo66/optolink-splitter/wiki/211-Alternative-Home-Assistant-Integration
 '''
+
 from c_settings_adapter import settings
 
 shared_config = {
@@ -359,4 +360,3 @@ def extract_poll_items(shared_config):
 
 poll_items = extract_poll_items(shared_config)
 #############################################################
-

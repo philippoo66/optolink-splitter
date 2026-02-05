@@ -295,7 +295,6 @@ def publish_ha_discovery():
                 domain=domain,
                 item_config=item,
                 mqtt_base=mqtt_base,
-                dp_prefix=dp_prefix,
                 dp_suffix_address=dp_suffix_address,
                 device_config=device,
             )
