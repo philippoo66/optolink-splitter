@@ -187,7 +187,7 @@ def extract_poll_params():
             poll_map[dp_name] = {"DpAddr": dpaddr_str, "Length": str(length)}
     return poll_map
 
-def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_address, device_config):
+def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, device_config):
     def set_if_missing(cfg: dict, key: str, value) -> None:
         if key not in cfg:
             cfg[key] = value
@@ -199,11 +199,8 @@ def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_
     def to_name_id(name) -> str:
         return str(name).lower().replace(" ", "_")
 
-    def address_suffix(dpaddr_str):
-        return f"_{dpaddr_str}" if (dp_suffix_address and dpaddr_str is not None) else ""
-
     def make_unique_id(name_id, dpaddr_str):
-        return f"{dp_prefix}{name_id}{address_suffix(dpaddr_str)}"
+        return f"{dp_prefix}{name_id}"
 
     if isinstance(item_config, (tuple, list)):
         dp_name = item_config[1] if len(item_config) > 1 else "unknown"
@@ -265,7 +262,6 @@ def publish_ha_discovery():
     device = shared_config["device"]
 
     dp_prefix = shared_config.get("dp_prefix", "")
-    dp_suffix_address = bool(shared_config.get("dp_suffix_address", True))
 
     poll_map = extract_poll_params()
     if args.console:
@@ -289,13 +285,12 @@ def publish_ha_discovery():
             nopoll_list = domain_config.get("nopoll", [])
             all_items = poll_list + nopoll_list
 
-
         for item in all_items:
             discovery_config, name_id, dpaddr_str = build_discovery_config(
                 domain=domain,
                 item_config=item,
                 mqtt_base=mqtt_base,
-                dp_suffix_address=dp_suffix_address,
+                dp_prefix=dp_prefix,
                 device_config=device,
             )
  
@@ -304,8 +299,7 @@ def publish_ha_discovery():
                     if k.endswith("_topic") and not k.endswith("_command_topic"):
                         e = poll_map.get(v)
                         if e is not None:
-                            suffix = f"_{e['DpAddr']}" if (dp_suffix_address) else ""
-                            v = f"{mqtt_base}/{v}{suffix}"
+                            v = f"{mqtt_base}/{v}"
                     if k.endswith("_template"):
                         if re.search(r'%[^%]+:[^%]+%', v):
                             for name, params in poll_map.items():
@@ -330,10 +324,9 @@ def publish_ha_discovery():
             if domain != "button":
                 has_state_topics = any(k.endswith("_state_topic") for k in discovery_config.keys())
                 if "state_topic" not in discovery_config and not has_state_topics:
-                    suffix = f"_{dpaddr_str}" if (dp_suffix_address and dpaddr_str is not None) else ""
-                    discovery_config["state_topic"] = f"{mqtt_base}/{name_id}{suffix}"
+                    discovery_config["state_topic"] = f"{mqtt_base}/{name_id}"
 
-            topic_id = f"{name_id}{(f'_{dpaddr_str}' if (dp_suffix_address and dpaddr_str is not None) else '')}"
+            topic_id = f"{name_id}"
             topic = f"{ha_prefix}/{domain}/{node_id}/{topic_id}/config"
             if args.console:
                 print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
@@ -342,34 +335,6 @@ def publish_ha_discovery():
             print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
             total_published += 1
             time.sleep(0.1)
-
-    for command_config in shared_config.get("commands", []):
-        domain = "button"
-
-        command_config_clean = command_config.copy()
-        command_name = command_config_clean.pop("name")
-
-        cmd_id = f"{dp_prefix}command_{command_name}"
-
-        discovery_config = {
-            "name": beautify(command_name.replace("_", " ")).title(),
-            "unique_id": cmd_id,
-            "default_entity_id": f"{domain}.{cmd_id}",
-            "command_topic": settings.mqtt_listen,
-            "device": device,
-        }
-
-        discovery_config.update(command_config_clean)
-
-        topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-        if args.console:
-            print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
-        else:
-            mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
-        print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
-        total_published += 1
-        if not args.console:
-            time.sleep(0.1)  # Rate limiting
 
     print(f"\n✓ {total_published} entities published successfully!")
 
