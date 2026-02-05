@@ -1,5 +1,6 @@
 '''
    Copyright 2026 matthias-oe
+   Contributions by: EarlSneedSinclair
    
    Licensed under the GNU GENERAL PUBLIC LICENSE, Version 3 (the "License");
    you may not use this file except in compliance with the License.
@@ -18,23 +19,8 @@
 
    The documentation can be found here:
       https://github.com/philippoo66/optolink-splitter/wiki/211-Alternative-Home-Assistant-Integration
-      
-   
-   MQTT publishing in Home Assistant:
-   --------------------------------------------------
-   Home Assistance MQTT discovery description: https://www.home-assistant.io/integrations/mqtt#mqtt-discovery
-   Topic: 
-   {mqtt_ha_discovery_prefix}/[component (e.g. sensor)]/{mqtt_ha_node_id} (OPTIONAL}/{mqtt_optolink_base_topic}/config
-   Value:
-   {"default_entity_id": "[domain].{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "unique_id": "{dp_prefix}[name(converted)][_{address_hex} if dp_suffix_address]",
-    "device": [...],
-    "availability_topic": "{mqtt_optolink_base_topic}/LWT",
-    "state_topic": "{mqtt_base}/[name(converted)][_{address_hex} if dp_suffix_address]",
-    "name": "[name]",
-    ...}
-   
 '''
+
 from c_settings_adapter import settings
 
 shared_config = {
