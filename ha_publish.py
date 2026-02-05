@@ -183,63 +183,59 @@ def extract_poll_params():
     poll_map = {}
     for item in poll_items:
         if isinstance(item, (tuple, list)):
-            name = item[1] if len(item) > 1 else ""
-            address = item[2] if len(item) > 2 else None
-            byte_length = item[3] if len(item) > 4 else 1 
+            dp_name = item[1] if len(item) > 1 else ""
+            dp_addr = item[2] if len(item) > 2 else None
+            length = item[3] if len(item) > 3 else 1
         else:
-            name = item.get("name", "")
-            address = item.get("address")
-            byte_length = item.get("byte_length", 1)
+            dp_name = item.get("name", "")
+            dp_addr = item.get("address")
+            length = item.get("byte_length", 1)
         
-        if name and address is not None:
-            addr_hex = f"0x{address:04x}" if isinstance(address, int) else str(address)
-            poll_map[name] = {"address": addr_hex, "bytelength": str(byte_length)}
+        if dp_name and dp_addr is not None:
+            addr_hex = f"0x{dp_addr:04x}" if isinstance(dp_addr, int) else str(dp_addr)
+            poll_map[dp_name] = {"DpAddr": addr_hex, "Length": str(length)}
     return poll_map
 
 def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_address, device_config):
-    META_FIELDS = {"poll", "domain", "address", "factor", "signed", "byte_length"}
-
     def set_if_missing(cfg: dict, key: str, value) -> None:
         if key not in cfg:
             cfg[key] = value
 
     def merge_item_dict_set_if_missing(dst: dict, src: dict) -> None:
         for key, value in src.items():
-            if key == "name" or key in META_FIELDS:
-                continue
             set_if_missing(dst, key, value)
 
     def to_name_id(name) -> str:
         return str(name).lower().replace(" ", "_")
 
-    def to_address_hex(address):
-        if address is None:
+    def to_address_hex(dp_addr):
+        if dp_addr is None:
             return None
-        if isinstance(address, int):
-            return f"0x{address:04x}"
-        return str(address)
+        if isinstance(dp_addr, int):
+            return f"0x{dp_addr:04x}"
+        return str(dp_addr)
 
-    def address_suffix(address_hex):
-        return f"_{address_hex}" if (dp_suffix_address and address_hex is not None) else ""
+    def address_suffix(dp_addr_hex):
+        return f"_{dp_addr_hex}" if (dp_suffix_address and dp_addr_hex is not None) else ""
 
-    def make_unique_id(name_id, address_hex):
-        return f"{dp_prefix}{name_id}{address_suffix(address_hex)}"
+    def make_unique_id(name_id, dp_addr_hex):
+        return f"{dp_prefix}{name_id}{address_suffix(dp_addr_hex)}"
 
     if isinstance(item_config, (tuple, list)):
-        Name = item_config[1] if len(item_config) > 1 else "unknown"
-        DpAddr = item_config[2] if len(item_config) > 2 else None
+        dp_name = item_config[1] if len(item_config) > 1 else "unknown"
+        dp_addr = item_config[2] if len(item_config) > 2 else None
         item_dict = None
     else:
-        Name = item_config.get("name", "unknown")
-        DpAddr = item_config.get("address", None)
+        dp_name = item_config.get("name", "unknown")
+        dp_addr = item_config.get("address", None)
         item_dict = item_config
 
-    name_id = to_name_id(Name)
-    address_hex = to_address_hex(DpAddr)
-    unique_id = make_unique_id(name_id, address_hex)
+    name_id = to_name_id(dp_name)
+    dp_addr_hex = to_address_hex(dp_addr)
+    unique_id = make_unique_id(name_id, dp_addr_hex)
 
     discovery_config = {
-        "name": beautify(str(Name).replace("_", " ")),
+        "name": beautify(str(dp_name).replace("_", " ")),
         "unique_id": unique_id,
         "default_entity_id": f"{domain}.{unique_id}",
         "device": device_config,
@@ -254,7 +250,7 @@ def build_discovery_config(domain, item_config, mqtt_base, dp_prefix, dp_suffix_
             normalized[key] = value
         merge_item_dict_set_if_missing(discovery_config, normalized)
 
-    return discovery_config, name_id, address_hex
+    return discovery_config, name_id, dp_addr_hex
 
 
 def publish_ha_discovery():
@@ -311,7 +307,7 @@ def publish_ha_discovery():
             all_items = poll_items + nopoll_items
 
         for item in all_items:
-            discovery_config, name_id, address_hex = build_discovery_config(
+            discovery_config, name_id, dp_addr_hex = build_discovery_config(
                 domain=domain,
                 item_config=item,
                 mqtt_base=mqtt_base,
@@ -325,37 +321,37 @@ def publish_ha_discovery():
                     if k.endswith("_topic") and not k.endswith("_command_topic"):
                         e = poll_map.get(v)
                         if e is not None:
-                            suffix = f"_{e[address_hex]}" if (dp_suffix_address) else ""
+                            suffix = f"_{e['DpAddr']}" if (dp_suffix_address) else ""
                             v = f"{mqtt_base}/{v}{suffix}"
                     if k.endswith("_template"):
                         if re.search(r'%[^%]+:[^%]+%', v):
                             for name, params in poll_map.items():
-                                v = v.replace(f"%{name}:DpAddr%", params["address"])
-                                v = v.replace(f"%{name}:Length%", params["bytelength"])
+                                v = v.replace(f"%{name}:DpAddr%", params["DpAddr"])
+                                v = v.replace(f"%{name}:Length%", params["Length"])
                     discovery_config[k] = v
                  
             if isinstance(item, (tuple, list)):
-                byte_length = item[3] if len(item) > 3 else 1
+                length = item[3] if len(item) > 3 else 1
             else:
-                byte_length = item.get("byte_length", 1)
+                length = item.get("byte_length", 1)
 
-            if address_hex is not None:
+            if dp_addr_hex is not None:
                 for key, value in list(discovery_config.items()):
                     if isinstance(value, str):
                         if "%DpAddr%" in value or "%Length%" in value:
                             discovery_config[key] = (
-                                value.replace("%DpAddr%", address_hex)
-                                     .replace("%Length%", str(byte_length))
+                                value.replace("%DpAddr%", dp_addr_hex)
+                                     .replace("%Length%", str(length))
                             )
 
             if domain != "button":
                 has_state_topics = any(k.endswith("_state_topic") for k in discovery_config.keys())
                 if "state_topic" not in discovery_config and not has_state_topics:
-                    suffix = f"_{address_hex}" if (dp_suffix_address and address_hex is not None) else ""
+                    suffix = f"_{dp_addr_hex}" if (dp_suffix_address and dp_addr_hex is not None) else ""
                     discovery_config["state_topic"] = f"{mqtt_base}/{name_id}{suffix}"
 
             topic = f"{ha_prefix}/{domain}/{node_id}/{discovery_config['unique_id']}/config"
-            topic_id = f"{name_id}{(f'_{address_hex}' if (dp_suffix_address and address_hex is not None) else '')}"
+            topic_id = f"{name_id}{(f'_{dp_addr_hex}' if (dp_suffix_address and dp_addr_hex is not None) else '')}"
             topic = f"{ha_prefix}/{domain}/{node_id}/{topic_id}/config"
             if args.console:
                 print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
