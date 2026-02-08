@@ -39,7 +39,8 @@ poll_list = {
                     "fixed" : ["COP", "HK", "CPU", " WP", " VV", " EVV", "JAZ", "EHeiz" ]
                     },
     "poll_interval" :4, # Optolink Splitter poll interval
-        "domains": [
+    "mqtt_delay" : 0.2, # Short delay to allow Home Assistant to process each discovery message
+    "domains": [
         {
             "domain" : "sensor",
             "unit_of_measurement": "°C",

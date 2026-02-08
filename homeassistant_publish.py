@@ -264,6 +264,7 @@ def publish_ha_discovery():
 
     node_id = ha_device["node_id"]
     device = ha_device["device"]
+    mqtt_delay =ha_device.get("mqtt_delay", 0.1)
 
     dp_prefix = ha_device.get("dp_prefix", "")
 
@@ -340,7 +341,7 @@ def publish_ha_discovery():
                 mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
             print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
             total_published += 1
-            time.sleep(0.1)
+            time.sleep(mqtt_delay)
 
     print(f"\n✓ {total_published} entities published successfully!")
 
