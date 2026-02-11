@@ -273,7 +273,9 @@ def publish_ha_discovery():
         print(f"{json.dumps(poll_map, indent=2)}")    
     
     total_published = 0
-
+    total_skipped = 0
+    namedReference = re.compile(r'%([^%:]+):[^%]+%')
+    
     for domain_config in expand_domain_units(ha_device.get("domains", [])):
         domain = domain_config["domain"]
 
@@ -282,8 +284,8 @@ def publish_ha_discovery():
         domain_config_clean.pop("nopoll", None)
         domain_config_clean.pop("domain", None)
 
-        if "%name%" in domain_config:
-            all_items = [{"name": domain_config["%name%"]}]
+        if "entity_name" in domain_config:
+            all_items = [{"name": domain_config["entity_name"]}]
             domain_config_clean.pop("%name%", None)
         else:
             poll_list = domain_config.get("poll", [])
@@ -291,6 +293,7 @@ def publish_ha_discovery():
             all_items = poll_list + nopoll_list
 
         for item in all_items:
+            skip_item = False
             discovery_config, name_id, dpaddr_str = build_discovery_config(
                 domain=domain,
                 item_config=item,
@@ -308,42 +311,54 @@ def publish_ha_discovery():
                         if e is not None:
                             v = f"{mqtt_base}/{v}"
                     if k.endswith("_template"):
-                        if re.search(r'%[^%]+:[^%]+%', v):
-                            for name, params in poll_map.items():
+                        while (match := namedReference.search(v)):
+                            name = match.group(1)
+                            if (params := poll_map.get(name)) is None:
+                                print(f" ERROR: {discovery_config['name']}\n --> {v}\n --> unknown poll_item '{name}'")
+                                skip_item = True
+                                break
+                            else:
                                 v = v.replace(f"%{name}:DpAddr%", params["DpAddr"])
                                 v = v.replace(f"%{name}:Length%", params["Length"])
                     discovery_config[k] = v
-                 
-            if isinstance(item, (tuple, list)):
-                length = item[3] if len(item) > 3 else 1
+                if skip_item:
+                    break
+                    
+            if not skip_item:
+                if isinstance(item, (tuple, list)):
+                    length = item[3] if len(item) > 3 else 1
+                else:
+                    length = item.get("length", 1)
+
+                if dpaddr_str is not None:
+                    for key, value in list(discovery_config.items()):
+                        if isinstance(value, str):
+                            if "%DpAddr%" in value or "%Length%" in value:
+                                discovery_config[key] = (
+                                    value.replace("%DpAddr%", dpaddr_str)
+                                         .replace("%Length%", str(length))
+                                )
+
+                if domain != "button":
+                    has_state_topics = any(k.endswith("_state_topic") for k in discovery_config.keys())
+                    if "state_topic" not in discovery_config and not has_state_topics:
+                        discovery_config["state_topic"] = f"{mqtt_base}/{name_id}"
+
+                topic_id = f"{name_id}"
+                topic = f"{ha_prefix}/{domain}/{node_id}/{topic_id}/config"
+                if args.console:
+                    print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
+                else:
+                    mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
+                print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
+                total_published += 1
+                time.sleep(mqtt_delay)
             else:
-                length = item.get("length", 1)
-
-            if dpaddr_str is not None:
-                for key, value in list(discovery_config.items()):
-                    if isinstance(value, str):
-                        if "%DpAddr%" in value or "%Length%" in value:
-                            discovery_config[key] = (
-                                value.replace("%DpAddr%", dpaddr_str)
-                                     .replace("%Length%", str(length))
-                            )
-
-            if domain != "button":
-                has_state_topics = any(k.endswith("_state_topic") for k in discovery_config.keys())
-                if "state_topic" not in discovery_config and not has_state_topics:
-                    discovery_config["state_topic"] = f"{mqtt_base}/{name_id}"
-
-            topic_id = f"{name_id}"
-            topic = f"{ha_prefix}/{domain}/{node_id}/{topic_id}/config"
-            if args.console:
-                print(f"{'-'*80}\n{topic}\n{json.dumps(discovery_config, indent=2)}")
-            else:
-                mqtt_client.publish(topic, json.dumps(discovery_config), retain=True)
-            print(f"Published {domain}: {discovery_config['name']} -> {discovery_config['unique_id']}")
-            total_published += 1
-            time.sleep(mqtt_delay)
-
+                total_skipped += 1
+            
     print(f"\n✓ {total_published} entities published successfully!")
+    if total_skipped > 0:
+        print(f"\n! {total_skipped} entities skipped (see ERRORs above)!")
 
     # Graceful shutdown
     if not args.console:
