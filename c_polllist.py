@@ -44,8 +44,8 @@ class cPollList:
             # import module where poll list is taken from
             if(os.path.exists("poll_list.py")):
                 listmodule = importlib.import_module('poll_list')
-            elif(os.path.exists("ha_shared_config.py")):
-                listmodule = importlib.import_module('ha_shared_config')
+            elif(os.path.exists("homeassistant_poll_list.py")):
+                listmodule = importlib.import_module('homeassistant_adapter')
             else:
                 listmodule = importlib.import_module('settings_ini')
             
@@ -90,7 +90,9 @@ class cPollList:
             self.datapoint_metadata = {}
 
             # apply poll interval if given
-            settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
+            poll_interval = getattr(listmodule, 'poll_interval', None)
+            if poll_interval is not None:
+                settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
 
             # info
             logger.info(f"poll_list made, {self.num_items} items")
