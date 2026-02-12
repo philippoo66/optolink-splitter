@@ -771,6 +771,7 @@ def main():
                 if not (did_vicon_request or did_secodary_request):
                     time.sleep(0.005) 
                 
+                # reset retry couters in case
                 if(reset_retry_counters_time > 0) and (time.monotonic() >= reset_retry_counters_time):
                     num_restarts = 0 
                     num_vicon_tries = 0
