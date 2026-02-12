@@ -32,7 +32,6 @@ cmnd_queue = []   # command queue to serialize bus traffic
 publ_queue = []   # stuff to get published
 
 recent_posts = {}
-reset_recent = False
 _sentinel = object()  # eindeutiger Wert fuer "nicht vorhanden"
 
 # callback for 'special' commands
@@ -158,32 +157,23 @@ def get_mqtt_request() -> str:
 
 
 def publish_read(name, addr, value):
-    if mqtt_client is not None:
-        # Round float values to 1 decimal to stabilize sensor jitter (esp. w1 sensors)
-        if isinstance(value, float):
-            value = round(value, 1)
-        publishStr = settings.mqtt_fstr.format(dpaddr=addr, dpname=name)
+    if mqtt_client:
+        publishStr = settings.mqtt_fstr.format(dpaddr = addr, dpname = name)
         # send
-        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)
-        if verbose:
-            print(ret)
+        ret = publish_smart(settings.mqtt_topic + "/" + publishStr, value, retain=settings.mqtt_retain)    
+        if(verbose): print(ret)
 
 
 def publish_response(resp:str):
-    if(mqtt_client != None):
+    if mqtt_client:
         # always publish responses
         ret = mqtt_client.publish(settings.mqtt_respond, resp)    
         if(verbose): print(ret)
 
 
 def publish_smart(topic, value, qos=0, retain=False):
-    global reset_recent
-    if(mqtt_client != None):
+    if mqtt_client:
         if(settings.mqtt_no_redundant):
-            if(reset_recent):
-                recent_posts.clear()
-                reset_recent = False
-                publish_response("previous values cleared")
             # Publish only if the value changed
             last = recent_posts.get(topic, _sentinel)
             if last == value:
@@ -193,8 +183,13 @@ def publish_smart(topic, value, qos=0, retain=False):
         if(verbose): print(ret)
 
 
+def reset_recent_list():
+    recent_posts.clear()
+
+
+
 def exit_mqtt():
-    if(mqtt_client != None):
+    if mqtt_client:
         logger.info("disconnect MQTT client")
         if(mqtt_client.is_connected()):
             mqtt_client.publish(settings.mqtt_topic + "/LWT" , "offline", qos=0,  retain=True)
@@ -282,7 +277,7 @@ def handle_set_topic(topic, payload):
         cmnd_queue.append(write_cmd)
 
         # Ensure the affected datapoint will be refreshed quite soon
-        force_delayed(list_index)
+        force_delayed(list_index, settings.readback_delay_set)
 
     except Exception as e:
         logger.error(f"Error handling /set topic '{topic}': {e}")
