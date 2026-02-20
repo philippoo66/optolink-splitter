@@ -274,7 +274,7 @@ def publish_ha_discovery():
     
     total_published = 0
     total_skipped = 0
-    namedReference = re.compile(r'%([^%:]+):[^%]+%')
+    namedReference = re.compile(r'%([a-zA-Z0-9\-_ /]+):[^%]+%')
     
     for domain_config in expand_domain_units(ha_device.get("domains", [])):
         domain = domain_config["domain"]
