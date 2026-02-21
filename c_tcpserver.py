@@ -144,7 +144,7 @@ class TcpServer:
         try:
             self.client_socket.send(data)
             if self.verbose:
-                print(f"TCP sent: {utils.bbbstr(data)}")
+                logger.info(f"TCP sent: {utils.bbbstr(data)}")
         except Exception as e:
             logger.warning(f"TCP send failed: {e}, data: {repr(str(data))}")
 
