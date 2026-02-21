@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.3.1"
+VERSION = "1.11.3.2"
 
 import serial
 import time
@@ -195,7 +195,7 @@ def vicon_thread_func(serViCon, serViDev):
 def tcp_connection_loop():
     global tcp_server
     while(not progr_exit_flag):
-        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port) #, verbose=True)
+        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port, settings.tcp_verbose)
         tcp_server.command_callback = do_special_command        # type: ignore
         tcp_server.run()
         tcp_server = None

@@ -63,6 +63,7 @@ class SettingsAdapter:
 
         # TCP/IP ++++++++++++++++++++++++++
         self.tcpip_port =  65234                # TCP/IP port for communication (default: 65234, used by Viessdata; set None to disable TCP/IP)
+        self.tcp_verbose = False                # TCP verbose logging if True
 
         # Optolink Communication Timing ++++
         self.fullraw_eot_time =  0.05           # Timeout (seconds) to determine end of telegram (default: 0.05)
@@ -173,6 +174,7 @@ class SettingsAdapter:
 
         # TCP/IP ++++++++++++++++++++++++++
         self.tcpip_port = getattr(self._settings_obj, 'tcpip_port', self.tcpip_port)
+        self.tcp_verbose = getattr(self._settings_obj, 'tcp_verbose', self.tcp_verbose)
 
         # Optolink Communication Timing ++++
         self.fullraw_eot_time = getattr(self._settings_obj, 'fullraw_eot_time', self.fullraw_eot_time)

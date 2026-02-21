@@ -1,6 +1,7 @@
 import socket
 
 from logger_util import logger
+import utils
 
 #logger = logging.getLogger(__name__)
 #logger = logging.getLogger("tcptest.txt")
@@ -94,7 +95,7 @@ class TcpServer:
                     break
 
                 if self.verbose:
-                    print("TCP recd:", data)
+                    logger.info(f"TCP recd: {utils.bbbstr(data)}")
 
                 msg = (
                     data.decode("utf-8")
@@ -107,14 +108,14 @@ class TcpServer:
                 )
 
                 if msg:
+                    if self.verbose:
+                        logger.info(f"TCP recd: {msg}")
+
                     m = msg.lower()
-                    # if m == "exit":
-                    #     logger.info("TCP exit command received")
-                    #     break
-                    # elif m == "flushcsv":
-                    #     import viessdata_util
-                    #     viessdata_util.buffer_csv_line([], True)
+
                     if(self.command_callback) and self.command_callback(m,2):
+                        if self.verbose:
+                            logger.info("command_callback performed")
                         pass
                     else:
                         self.received_data = msg
@@ -136,14 +137,16 @@ class TcpServer:
     # ---------------------------------------------------------
     def send(self, data):
         if isinstance(data, str):
+            if self.verbose:
+                logger.info(f"TCP send: {data}")
             data = data.encode("utf-8") + b"\n"
 
         try:
             self.client_socket.send(data)
             if self.verbose:
-                print("TCP sent:", data)
+                print(f"TCP sent: {utils.bbbstr(data)}")
         except Exception as e:
-            logger.warning(f"TCP send failed: {e}, data: {data}")
+            logger.warning(f"TCP send failed: {e}, data: {repr(str(data))}")
 
     # ---------------------------------------------------------
     # Holt gespeicherte Nachricht
