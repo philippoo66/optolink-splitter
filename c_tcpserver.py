@@ -127,8 +127,8 @@ class TcpServer:
                 logger.warning("TCP Connection lost")
                 break
 
-            except Exception as e:
-                logger.error(e)
+            except Exception:
+                logger.exception("_listen")
                 break
 
     # ---------------------------------------------------------

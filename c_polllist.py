@@ -94,8 +94,8 @@ class cPollList:
 
             # info
             logger.info(f"poll_list made, {self.num_items} items")
-        except Exception as e:
-            logger.error(f"make_list: {e}")
+        except Exception:
+            logger.exception(f"make_list")
 
 
     def set_pollcycle(self, group_key:str, value) -> bool:

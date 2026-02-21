@@ -733,7 +733,7 @@ def main():
                                     mod_mqtt.publish_response(resp)
                                 except Exception as e:
                                     mod_mqtt.publish_response(f"Error: {e}")
-                                    logger.warning(f"Error handling MQTT request: {e}")
+                                    logger.warning(f"Error handling MQTT request {msg}: {e}")
                                 did_secodary_request = True
 
                     # TCP/IP request --------
@@ -747,7 +747,7 @@ def main():
                                     #print(f"retcode {retcode}, try to send tcp: {resp}")  #temp
                                     tcp_server.send(resp)
                                 except Exception as e:
-                                    logger.warning(f"Error handling TCP request: {e}")
+                                    logger.warning(f"Error handling TCP request {msg}: {e}")
                                 did_secodary_request = True
         
                     #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_secodary_request}"); tprev = tnow

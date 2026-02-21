@@ -112,8 +112,8 @@ def buffer_csv_line(data, force_write=False):
                 f.flush()
             wrbuffer = []
             recent_filename = get_filename()
-        except Exception as e:
-            logger.error(f"ERROR write csv: {e}")
+        except Exception:
+            logger.exception("write csv")
 
     if(sline is not None):
         wrbuffer.append(sline)
