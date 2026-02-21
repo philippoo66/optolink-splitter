@@ -85,7 +85,7 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
     if reason_code_list[0].is_failure:
         logger.error(f"MQTT Broker rejected you subscription: {reason_code_list[0]}")
     else:
-        logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value}")
+        logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value} on {settings.mqtt_broker}")
 
 def on_log(client, userdata, level, buf):
     logger.info(f"MQTT [{level}]:", buf)

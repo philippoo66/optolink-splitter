@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.3.2"
+VERSION = "1.11.3.3"
 
 import serial
 import time
@@ -225,6 +225,8 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         elif parts[0] in ('reloadpoll',):   
             reload_poll_flag = True
             resp = f"{parts[0]} triggered"
+        elif parts[0] in ('stats', 'getstats'):   
+            resp = get_stats()
         elif parts[0] in ("exit", "resettcp"):
             if tcp_server:
                 tcp_server.stop()
@@ -258,14 +260,19 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
     return True
 
 
-def publish_stat():
+def publish_stats():
     if(mod_mqtt is not None) and mod_mqtt.mqtt_client.is_connected:
         topic = settings.mqtt_topic + "/stats"
-        jdata = {"Splitter Version" : VERSION,
-                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(splitter_started))),
-                "Poll List Make" : str(poll_list.module_date),
-                "Poll List Items" : str(poll_list.num_items)}
-        mod_mqtt.publish_smart(topic, json.dumps(jdata))
+        msg = get_stats()
+        mod_mqtt.publish_smart(topic, msg)
+
+def get_stats() -> str:
+    jdata = {"Splitter Version" : VERSION,
+            "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(splitter_started))),
+            "Settings Make" : str(utils.get_module_modified_datetime(settings._settings_obj)) if settings._settings_obj else "0", 
+            "Poll List Make" : str(poll_list.module_date),
+            "Poll List Items" : str(poll_list.num_items)}
+    return json.dumps(jdata)
 
 
 def reset_retry_counters_in(delay_minutes=30):
@@ -533,7 +540,7 @@ def main():
                     serOptolink = serial.serial_for_url(**serial_args)      # type: ignore
 
                 # open went fine
-                logger.info("Optolink serial port opened")
+                logger.info(f"Optolink serial port opened on {settings.port_optolink}")
             else:
                 utils.shutdown_event.set()
                 raise Exception("ERROR: Optolink device is mandatory!")
@@ -549,7 +556,7 @@ def main():
                             exclusive=True,
                             timeout=0)
                 # open went fine
-                logger.info("Vitoconnect serial port opened")
+                logger.info(f"Vitoconnect serial port opened on {settings.port_vitoconnect}")
 
             # -------------------------------------------------------------
             # run the receive tasks of 'secondary masters' (MQTT, TcpIp) 
@@ -579,7 +586,7 @@ def main():
             vicon_publ_callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
 
             # show what we have
-            publish_stat()
+            publish_stats()
 
             # ----------------------
             # run VS2 connection 
@@ -675,7 +682,7 @@ def main():
                                 poll_list.make_list(reload=True)
                                 if(len(poll_data) != poll_list.num_items):          # type: ignore
                                     poll_data = [None] * poll_list.num_items
-                                publish_stat()
+                                publish_stats()
                                 poll_pointer = 0
                                 poll_cycle = 0
                                 reload_poll_flag = False
