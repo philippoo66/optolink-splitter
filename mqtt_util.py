@@ -263,9 +263,7 @@ def handle_set_topic(topic, payload):
         list_index = datapoint_info['list_index']
         
         # Convert value to bytes
-        print(value_str, length, scale_type, signed)
         bytes_value, write_raw = convert_value_to_bytes(value_str, length, scale_type, signed)
-        print(utils.bbbstr(bytes_value), write_raw)
         if bytes_value is None:
             logger.error(f"Failed to convert value '{value_str}' for datapoint '{dpname}'")
             return
