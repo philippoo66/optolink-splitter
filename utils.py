@@ -98,6 +98,9 @@ def bstr2str(bytestring) -> str:
     # b'68656C6C6F' -> 68656C6C6F <class 'str'>
     return bytestring.decode('utf-8')
 
+def bytes2str(data:bytes) -> str:
+    return data.hex()
+
 def str2bstr(normal_str:str) -> bytes:
     # '68656C6C6F' -> b'68656C6C6F' <class 'bytes'>
     return bytes(normal_str, 'utf-8')
@@ -167,7 +170,7 @@ def byte_to_hhmm(data) -> str:
     mm = int(data & 7) * 10
     return f"{hh:02d}:{mm:02d}"
 
-def schedule_vdens_2str(data:bytes) -> str:
+def schedvdens2str(data:bytes) -> str:
     ret = ""
     dlen = len(data)
     for i in range(dlen):
@@ -176,20 +179,61 @@ def schedule_vdens_2str(data:bytes) -> str:
             ret += "," if i % 2 else "-"
     return ret
 
-def schedule_vcal_2str(data:bytes) -> str:
+def schedvdens2bytes(shedstr:str, dlen:int) -> bytes:
+    data = bytearray()
+    shedstr = shedstr.replace(' ', '')
+    scheds = shedstr.split(',')
+    try:
+        if shedstr:
+            for sched in scheds:
+                tms = sched.split('-')
+                for tm in tms:
+                    hm = tm.split(':')
+                    byt = (int(hm[0]) << 3) + (int(round(int(hm[1])/10)))
+                    data.append(byt)
+        # extend/shrink to dlen
+        data = (data + b'\xff' * dlen)[:dlen]
+        return bytes(data)
+    except Exception as e:
+        logger.error(f"schedvdens2bytes({shedstr}): {e}")
+        return bytes()
+
+
+def schedulevcal2str(data:bytes) -> str:
     ret = ""
     dlen = len(data)
     for i in range(0, dlen, 3):
-        sto = cod = "na"
+        sto = fc = "na"
         sta = byte_to_hhmm(data[i])
         if i + 1 < dlen:
             sto = byte_to_hhmm(data[i+1])
         if i + 2 < dlen:
-            cod = data[i+2]
-        ret += f"{sta}-{sto}*{cod}"
+            fc = data[i+2]
+        ret += f"{sta}-{sto}*{fc}"
         if i + 3 < dlen:
             ret += ","
     return ret
+
+def schedvcal2bytes(shedstr:str, dlen:int) -> bytes:
+    data = bytearray()
+    shedstr = shedstr.replace(' ', '')
+    scheds = shedstr.split(',')
+    try:
+        if shedstr:
+            for sched in scheds:
+                tmfc = sched.split('*')
+                tms = tmfc[0].split('-')
+                for tm in tms:
+                    hm = tm.split(':')
+                    byt = (int(hm[0]) << 3) + (int(round(int(hm[1])/10)))
+                    data.append(byt)
+                data.append(int(tmfc[1]))
+        # extend/shrink to dlen
+        data = (data + b'\x00' * dlen)[:dlen]
+        return bytes(data)
+    except Exception as e:
+        logger.error(f"schedvcal2bytes({shedstr}): {e}")
+        return bytes()
 
 
 def get_module_modified_datetime(module) -> datetime:

@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.3.3"
+VERSION = "1.11.4.0"
 
 import serial
 import time
@@ -392,9 +392,6 @@ dicFunctionCodes = {
 def mqtt_publ_viconnVS1(data, request:bool):
     global rb_pointer 
     if(mod_mqtt is not None) and mod_mqtt.mqtt_client.is_connected:
-        if(request):
-            pass
-            
         topic = settings.mqtt_topic + f"/viconn/{'Vicon' if request else 'Opto'}"
         mod_mqtt.publish_smart(topic, utils.bbbstr(data))
 

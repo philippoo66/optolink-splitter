@@ -121,22 +121,22 @@ class SettingsAdapter:
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if settings_module:
-            # try:
+            try:
                 self._settings_obj = importlib.import_module(settings_module)
-            # except Exception as e:
-            #     logger.error(f"importing settings module: {e}")
-            #     return
+            except Exception as e:
+                print(f"ERROR importing settings module: {e}")
+                return
         
         # if not self._settings_obj:
         #     logger.error("set_settings: no settings object set")
         #     return
         
         if reload:
-            # try:
+            try:
                 self._settings_obj = importlib.reload(self._settings_obj)
-            # except Exception as e:
-            #     logger.error(f"reload settings module: {e}")
-            #     return
+            except Exception as e:
+                print(f"ERROR reload settings module: {e}")
+                return
 
 
         # General Settings +++++++++++

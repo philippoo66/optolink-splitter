@@ -216,13 +216,13 @@ def is_forced():
     return None
 
 
-def force_delayed(value, delay=1):
+def force_delayed(listidx, delay=1):
     # im Zweifesfalle koennen 4-5 Comm cycles dazwischen liegen
     def worker():
         time.sleep(delay)
-        lst_force_refresh.append(value)
+        lst_force_refresh.append(listidx)
 
-    t = threading.Thread(target=worker)
+    t = threading.Thread(target=worker, daemon=True)
     t.start()
     return t  # optional
 
@@ -263,15 +263,20 @@ def handle_set_topic(topic, payload):
         list_index = datapoint_info['list_index']
         
         # Convert value to bytes
-        byte_value = convert_value_to_bytes(value_str, length, scale_type, signed)
-        if byte_value is None:
+        print(value_str, length, scale_type, signed)
+        bytes_value, write_raw = convert_value_to_bytes(value_str, length, scale_type, signed)
+        print(utils.bbbstr(bytes_value), write_raw)
+        if bytes_value is None:
             logger.error(f"Failed to convert value '{value_str}' for datapoint '{dpname}'")
             return
         
-        # Create write command in the format: write;addr;len;value
-        # For multi-byte values, we need to convert to integer
-        int_value = int.from_bytes(byte_value, byteorder='little', signed=signed)
-        write_cmd = f"write;{addr:#x};{length};{int_value}"
+        if write_raw:
+            write_cmd = f"writeraw;{addr:#x};{bytes_value.hex()}"
+        else:
+            # Create write command in the format: write;addr;len;value
+            # For multi-byte values, we need to convert to integer
+            int_value = int.from_bytes(bytes_value, byteorder='little', signed=signed)
+            write_cmd = f"write;{addr:#x};{length};{int_value}"
         
         logger.debug(f"Generated write command: {write_cmd}")
         cmnd_queue.append(write_cmd)
@@ -279,11 +284,12 @@ def handle_set_topic(topic, payload):
         # Ensure the affected datapoint will be refreshed quite soon
         force_delayed(list_index, settings.readback_delay_set)
 
-    except Exception as e:
-        logger.error(f"Error handling /set topic '{topic}': {e}")
+    except: #Exception as e:
+        logger.exception("handle_set_topic")
+        #logger.error(f"Error handling /set topic '{topic}': {e}")
 
 
-def convert_value_to_bytes(value_str, length, scale_type, signed):
+def convert_value_to_bytes(value_str, length, scale_type, signed):  # tuple of bytes, bool <- writeraw if True
     """
     Convert human-readable value string to bytes for writing.
     Reverse operation of requests_util.get_value()
@@ -301,7 +307,7 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):
             
             if not (is_true or is_false):
                 logger.warning(f"Invalid boolean value: {value_str}")         #TODO make other nummerical values possibble
-                return None
+                return None, False
             
             # Apply inverse logic
             if scale_type_str in ('boolinv', 'offon'): 
@@ -310,7 +316,7 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):
                 bool_val = is_true
             
             int_val = 1 if bool_val else 0                                     # ATTENTION! True may be anything except 0!!
-            return int_val.to_bytes(length, byteorder='little', signed=False)
+            return int_val.to_bytes(length, byteorder='little', signed=False), False
         
         # Numeric types with scaling
         scale = utils.to_number(scale_type)
@@ -318,20 +324,30 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):
             # Parse numeric value and reverse scaling
             float_val = float(value_str)
             int_val = int(round(float_val / scale))
-            return int_val.to_bytes(length, byteorder='little', signed=signed)
+            return int_val.to_bytes(length, byteorder='little', signed=signed), False
+
+
+        # schedules... write_raw
+        if scale_type_str == 'schedvcal':
+            return utils.schedvcal2bytes(value_str, length), True
+
+        if scale_type_str == 'schedvdens':
+            return utils.schedvdens2bytes(value_str, length), True
+
         
-        # String types - not typically writable, but handle anyway
+        # String types - not typically writable, but handle anyway #TEMP
         if scale_type_str in ('utf8', 'utf16'):
             logger.warning(f"String types not typically writable: {scale_type_str}")
-            return None
+            return None, False
         
         # Default: treat as raw integer
         int_val = utils.get_int(value_str)
-        return int_val.to_bytes(length, byteorder='little', signed=signed)
+        return int_val.to_bytes(length, byteorder='little', signed=signed), True
         
-    except Exception as e:
-        logger.error(f"Error converting value '{value_str}' with scale_type '{scale_type}': {e}")
-        return None
+    except: # Exception as e:
+        logger.exception("convert_value_to_bytes")
+        #logger.error(f"Error converting value '{value_str}' with scale_type '{scale_type}': {e}")
+        return None, False
 
 
 # ------------------------
