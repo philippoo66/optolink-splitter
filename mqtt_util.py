@@ -285,7 +285,7 @@ def handle_set_topic(topic, payload):
         force_delayed(list_index, settings.readback_delay_set)
 
     except: #Exception as e:
-        logger.exception("handle_set_topic")
+        logger.exception(f"handle_set_topic {topic}, {payload}")
         #logger.error(f"Error handling /set topic '{topic}': {e}")
 
 
@@ -345,7 +345,7 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):  # tuple of b
         return int_val.to_bytes(length, byteorder='little', signed=signed), True
         
     except: # Exception as e:
-        logger.exception("convert_value_to_bytes")
+        logger.exception("convert_value_to_bytes {value_str}, {scale_type}")
         #logger.error(f"Error converting value '{value_str}' with scale_type '{scale_type}': {e}")
         return None, False
 
