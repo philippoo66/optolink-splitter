@@ -16,3 +16,4 @@ allupdate.sh
 .vscode/
 old_test/
 *venv/
+*.code-workspace
