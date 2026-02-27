@@ -21,7 +21,7 @@
 ###########################################
 
 import importlib
-#from logger_util import logger
+#from logger_util import logger  # circular import
 
 
 SETTINGS_MODULE = "settings_ini"
@@ -29,7 +29,6 @@ SETTINGS_MODULE = "settings_ini"
 class SettingsAdapter:
     def __init__(self):
         self._settings_obj = None
-        self.module_date = "0"
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #  Here we define all the settings and their default values 

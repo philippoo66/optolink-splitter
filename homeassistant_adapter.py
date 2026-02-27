@@ -37,5 +37,7 @@ def extract_poll_items(poll_list):
 
 poll_items = extract_poll_items(homeassistant_poll_list.poll_list)
 poll_interval = homeassistant_poll_list.poll_list.get("poll_interval", None)
+poll_groups = homeassistant_poll_list.poll_list.get("poll_groups", None)
 
 ha_device = homeassistant_poll_list.poll_list
+

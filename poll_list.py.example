@@ -18,7 +18,7 @@
 # === base polling interval [seconds], 0 for continuous, -1 to disable (default: 30)
 poll_interval = 30              
 
-# === define your groups here. you may extend the dict!
+# === define your groups here. you may extend or alter the dict! use command setpollcycle to change cycles at runtime
 poll_groups = {
     "ONCEONLY"  :  0,           # polled only once on start-up and on reception of forcepoll command
     "ALWAYS"    :  1,           # on each polling, same as ommitted
