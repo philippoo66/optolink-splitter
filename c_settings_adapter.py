@@ -208,7 +208,9 @@ class SettingsAdapter:
         self.w1sensors = getattr(self._settings_obj, 'w1sensors', self.w1sensors)
 
         # Datapoint Polling Interval +++++++++
-        self.poll_interval = getattr(self._settings_obj, 'poll_interval', self.poll_interval)
+        foreign_interval = getattr(self._settings_obj, 'poll_interval', None)
+        if foreign_interval is not None:
+            self.poll_interval = foreign_interval
 
 
 # === for global use ==================

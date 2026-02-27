@@ -42,9 +42,9 @@ class cPollList:
         self.module_date = "0"
         try:
             # import module where poll list is taken from
-            if(os.path.exists("poll_list.py")):
+            if(os.path.isfile("poll_list.py")):
                 listmodule = importlib.import_module('poll_list')
-            elif(os.path.exists("homeassistant_poll_list.py")):
+            elif(os.path.isfile("homeassistant_poll_list.py")):
                 listmodule = importlib.import_module('homeassistant_adapter')
             else:
                 listmodule = importlib.import_module('settings_ini')
@@ -54,9 +54,10 @@ class cPollList:
                 listmodule = importlib.reload(listmodule)
             
             # apply poll groups (if exists)
-            if getattr(listmodule, "poll_groups", False):
-                self.cycle_groups = listmodule.poll_groups
-            # make 1-cycle
+            foreign_groups = getattr(listmodule, "poll_groups", None)
+            if foreign_groups is not None:
+                self.cycle_groups = foreign_groups
+            # make 1-cycle group
             self.cycle_groups["*#1"] = 1
 
             # apply poll list
@@ -90,11 +91,11 @@ class cPollList:
             self.datapoint_metadata = {}
 
             # apply poll interval if given
-            poll_interval = getattr(listmodule, 'poll_interval', None)
-            if poll_interval is not None:
-                settings.poll_interval = getattr(listmodule, 'poll_interval', settings.poll_interval)
+            foreign_interval = getattr(listmodule, 'poll_interval', None)
+            if foreign_interval is not None:
+                settings.poll_interval = foreign_interval
 
-            # info
+            # infos
             logger.info(f"poll_list made, {self.num_items} items")
         except Exception:
             logger.exception(f"make_list")
