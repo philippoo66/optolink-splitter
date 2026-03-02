@@ -8,7 +8,7 @@ __pycache__/
 *.history
 # user specific files
 settings_ini.py
-ha_shared_config.py
+homeassistant_poll_list.py
 poll_list.py
 entities,json
 test.py
