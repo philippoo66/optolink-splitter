@@ -286,7 +286,7 @@ def publish_ha_discovery():
 
         if "entity_name" in domain_config:
             all_items = [{"name": domain_config["entity_name"]}]
-            domain_config_clean.pop("%name%", None)
+            domain_config_clean.pop("entity_name", None)
         else:
             poll_list = domain_config.get("poll", [])
             nopoll_list = domain_config.get("nopoll", [])
@@ -310,7 +310,7 @@ def publish_ha_discovery():
                         e = poll_map.get(v)
                         if e is not None:
                             v = f"{mqtt_base}/{v}"
-                    if k.endswith("_template"):
+                    if k.endswith("_template") or k == "payload_press":
                         while (match := namedReference.search(v)):
                             name = match.group(1)
                             if (params := poll_map.get(name)) is None:
