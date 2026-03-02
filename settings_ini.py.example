@@ -36,7 +36,7 @@ mqtt_topic = "Vito"             # MQTT topic for publishing data (default: "Vito
 mqtt_listen = "Vito/cmnd"       # MQTT topic for incoming commands (default: "Vito/cmnd", set None to disable)
 mqtt_respond = "Vito/resp"      # MQTT topic for responses (default: "Vito/resp", set None to disable)
 mqtt_fstr = "{dpname}"          # Format string for MQTT messages (default: "{dpname}", alternative e.g.: "{dpaddr:04X}_{dpname}")
-mqtt_retain = False             # Publish retained messages. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
+mqtt_retain = False             # Publish messages retained. Last message per topic is stored on broker and sent to new/reconnecting subscribers. (default: False)
 mqtt_no_redundant = False       # if True, no previously published unchanged messages 
 
 # TCP/IP ++++++++++++++++++++++++++
@@ -49,6 +49,7 @@ olbreath = 0.05                 # Pause (seconds) after a request-response cycle
 
 # Optolink Logging ++++++++++++++
 show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
+log_optolink = False            # Enable logging of Optolink rx+tx communication (default: False)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
 
@@ -66,9 +67,14 @@ dec_separator = ","             # Decimal separator for CSV output (default: ","
 
 # General Settings +++++++++++
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
+log_level = 20                  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
 max_restarts = 5                # re-start limit. gets reset after 100 succesful poll cycles 
 restart_delay = 10              # seconds delay before re-starting 
 max_vicon_tries = 3             # limit for vicon tries. if exceeded, continuing without vitoconnect
+max_comm_errors = 10            # optolink comm error threshold to init restart
+retry_counters_reset = 30       # minutes of sucessful operation to reset the retry counters 
+readback_delay_set = 1          # seconds delay between wirte via /set and reading back 
+
 
 
 # special for wo1c: read daily/weekly energy statistics +++++++++++

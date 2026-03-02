@@ -36,6 +36,10 @@ class cPollList:
 
 
     def make_list(self, reload = False):
+        self.items = []
+        self.cycle_groups = {}
+        self.num_items = 0
+        self.module_date = "0"
         try:
             # import module where poll list is taken from
             if(os.path.exists("poll_list.py")):

@@ -47,7 +47,7 @@ class LoggingSerial:
         self.logger = loggerutil.logger
 
         # --- echtes Serial-Objekt -------------------------------------
-        self._serial = serial.Serial(*args, **kwargs)
+        self._serial = serial.serial_for_url(*args, **kwargs)
 
         # info
         ts = time.strftime("%d.%m.%Y %H:%M:%S", time.localtime())
