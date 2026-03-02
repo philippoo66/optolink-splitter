@@ -355,13 +355,13 @@ poll_list = {
 			"domain": "button",
             "entity_name" : "warmwasser_1x_laden",
 			"command_topic": "%mqtt_listen%",
-			"payload_press": "w;%DpAddr%;%Length%;2",
+			"payload_press": "w;%warmwasser_1x_laden:DpAddr%;%warmwasser_1x_laden:Length%;2",
 		},
         {
 			"domain": "button",
             "entity_name" : "warmwasser_1x_reset",
 			"command_topic": "%mqtt_listen%",
-			"payload_press": "w;%DpAddr%;%Length%;0",
+			"payload_press": "w;%warmwasser_1x_laden:DpAddr%;%warmwasser_1x_laden:Length%;0",
 		},
         {
 			"domain": "button",
