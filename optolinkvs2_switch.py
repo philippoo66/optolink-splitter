@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.3.0"
+VERSION = "1.11.5.0"
 
 import serial
 import time
@@ -195,7 +195,7 @@ def vicon_thread_func(serViCon, serViDev):
 def tcp_connection_loop():
     global tcp_server
     while(not progr_exit_flag):
-        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port) #, verbose=True)
+        tcp_server = c_tcpserver.TcpServer("0.0.0.0", settings.tcpip_port, settings.tcp_verbose)
         tcp_server.command_callback = do_special_command        # type: ignore
         tcp_server.run()
         tcp_server = None
@@ -225,6 +225,8 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
         elif parts[0] in ('reloadpoll',):   
             reload_poll_flag = True
             resp = f"{parts[0]} triggered"
+        elif parts[0] in ('stats', 'getstats'):   
+            resp = get_stats()
         elif parts[0] in ("exit", "resettcp"):
             if tcp_server:
                 tcp_server.stop()
@@ -258,14 +260,19 @@ def do_special_command(cmnd:str, source:int=1) -> bool:  # source: 1:MQTT, 2:TCP
     return True
 
 
-def publish_stat():
+def publish_stats():
     if(mod_mqtt is not None) and mod_mqtt.mqtt_client.is_connected:
         topic = settings.mqtt_topic + "/stats"
-        jdata = {"Splitter Version" : VERSION,
-                "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(splitter_started))),
-                "Poll List Make" : str(poll_list.module_date),
-                "Poll List Items" : str(poll_list.num_items)}
-        mod_mqtt.publish_smart(topic, json.dumps(jdata))
+        msg = get_stats()
+        mod_mqtt.publish_smart(topic, msg)
+
+def get_stats() -> str:
+    jdata = {"Splitter Version" : VERSION,
+            "Splitter started" : str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(splitter_started))),
+            "Settings Make" : str(utils.get_module_modified_datetime(settings._settings_obj)) if settings._settings_obj else "0", 
+            "Poll List Make" : str(poll_list.module_date),
+            "Poll List Items" : str(poll_list.num_items)}
+    return json.dumps(jdata)
 
 
 def reset_retry_counters_in(delay_minutes=30):
@@ -385,9 +392,6 @@ dicFunctionCodes = {
 def mqtt_publ_viconnVS1(data, request:bool):
     global rb_pointer 
     if(mod_mqtt is not None) and mod_mqtt.mqtt_client.is_connected:
-        if(request):
-            pass
-            
         topic = settings.mqtt_topic + f"/viconn/{'Vicon' if request else 'Opto'}"
         mod_mqtt.publish_smart(topic, utils.bbbstr(data))
 
@@ -470,7 +474,7 @@ def main():
             viconnlog.close_log()
 
 
-    logger.info(f"Version {VERSION}")
+    logger.info(f"Version {VERSION} starting...")
 
     # ++++++++++++++++++++
     # the re-start loop
@@ -533,7 +537,7 @@ def main():
                     serOptolink = serial.serial_for_url(**serial_args)      # type: ignore
 
                 # open went fine
-                logger.info("Optolink serial port opened")
+                logger.info(f"Optolink serial port opened on {settings.port_optolink}")
             else:
                 utils.shutdown_event.set()
                 raise Exception("ERROR: Optolink device is mandatory!")
@@ -549,7 +553,7 @@ def main():
                             exclusive=True,
                             timeout=0)
                 # open went fine
-                logger.info("Vitoconnect serial port opened")
+                logger.info(f"Vitoconnect serial port opened on {settings.port_vitoconnect}")
 
             # -------------------------------------------------------------
             # run the receive tasks of 'secondary masters' (MQTT, TcpIp) 
@@ -579,7 +583,7 @@ def main():
             vicon_publ_callback = mqtt_publ_viconn if settings.viconn_to_mqtt else None
 
             # show what we have
-            publish_stat()
+            publish_stats()
 
             # ----------------------
             # run VS2 connection 
@@ -675,7 +679,7 @@ def main():
                                 poll_list.make_list(reload=True)
                                 if(len(poll_data) != poll_list.num_items):          # type: ignore
                                     poll_data = [None] * poll_list.num_items
-                                publish_stat()
+                                publish_stats()
                                 poll_pointer = 0
                                 poll_cycle = 0
                                 reload_poll_flag = False
@@ -733,7 +737,7 @@ def main():
                                     mod_mqtt.publish_response(resp)
                                 except Exception as e:
                                     mod_mqtt.publish_response(f"Error: {e}")
-                                    logger.warning(f"Error handling MQTT request: {e}")
+                                    logger.warning(f"Error handling MQTT request {msg}: {e}")
                                 did_secodary_request = True
 
                     # TCP/IP request --------
@@ -747,7 +751,7 @@ def main():
                                     #print(f"retcode {retcode}, try to send tcp: {resp}")  #temp
                                     tcp_server.send(resp)
                                 except Exception as e:
-                                    logger.warning(f"Error handling TCP request: {e}")
+                                    logger.warning(f"Error handling TCP request {msg}: {e}")
                                 did_secodary_request = True
         
                     #print(f"{((tnow := int(time.time()*10000)) - tprev)} ds {did_secodary_request}"); tprev = tnow
@@ -778,8 +782,8 @@ def main():
                     reset_retry_counters_time = -1
                 
         except Exception as e:
+            logger.exception("main")
             excptn = e
-            logger.error(excptn)
         finally:
             close_everything()
             if utils.shutdown_event.is_set():

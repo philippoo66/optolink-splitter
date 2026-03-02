@@ -45,7 +45,6 @@ def get_value(data, frmat, signd:bool):
     if(scale is not None):
         return utils.bytesval(data, scale, signd)
     else:
-        
         #TODO hier evtl weitere Formate umsetzen
         frmatl = str(frmat).lower()
         if(frmatl == 'vdatetime'):
@@ -55,9 +54,9 @@ def get_value(data, frmat, signd:bool):
         elif(frmatl == 'unixtime'):
             return utils.unixtime2str(data)
         elif(frmatl == 'schedvdens'):
-            return utils.schedule_vdens_2str(data)
+            return utils.schedvdens2str(data)
         elif(frmatl == 'schedvcal'):
-            return utils.schedule_vcal_2str(data)
+            return utils.schedulevcal2str(data)
         elif(frmatl == 'utf8'):
             return utils.utf82str(data)
         elif(frmatl == 'utf16'):
@@ -77,6 +76,8 @@ def get_value(data, frmat, signd:bool):
             ffrmt = frmat[2:]
             return f"{utils.bytesval(data):{ffrmt}}"
         else:
+            if(frmatl != 'raw'):
+                logger.error(f"unknown format specifier: {frmat}")
             #return raw
             return utils.arr2hexstr(data)
 

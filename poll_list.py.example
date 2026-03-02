@@ -18,7 +18,7 @@
 # === base polling interval [seconds], 0 for continuous, -1 to disable (default: 30)
 poll_interval = 30              
 
-# === define your groups here. you may extend the dict!
+# === define your groups here. you may extend or alter the dict! use command setpollcycle to change cycles at runtime
 poll_groups = {
     "ONCEONLY"  :  0,           # polled only once on start-up and on reception of forcepoll command
     "ALWAYS"    :  1,           # on each polling, same as ommitted
@@ -30,10 +30,9 @@ poll_groups = {
 
 # === Datapoint Polling List 
 # Datapoints defined here will be polled
-poll_items = [                  
+poll_items = [
     # ([PollCycle,] Name, DpAddr, Length [, Scale/Type [, Signed]]),
-        # PollCycle:    Optional entry to allow the item to be polled only every x-th cycle
-                        may be ommitted, an integer value or a poll_groups key 
+        # PollCycle:    Optional entry to allow the item to be polled only every x-th cycle, may be ommitted, an integer value or a poll_groups key 
         # Name:         Datapoint name, published to MQTT as {dpname}; Best practices recommendation: Always use lowercase Names for consistency and compatibility.
         # DpAddr:       Address used to read the datapoint value (hex with '0x' or decimal)
         # Length:       Number of bytes to read
