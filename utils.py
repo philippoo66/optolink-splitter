@@ -197,7 +197,7 @@ def schedvdens2bytes(shedstr:str, dlen:int) -> bytes:
         return bytes(data)
     except Exception as e:
         logger.error(f"schedvdens2bytes({shedstr}): {e}")
-        return bytes()
+        return None  #type: ignore
 
 
 def schedulevcal2str(data:bytes) -> str:
@@ -235,7 +235,7 @@ def schedvcal2bytes(shedstr:str, dlen:int) -> bytes:
         return bytes(data)
     except Exception as e:
         logger.error(f"schedvcal2bytes({shedstr}): {e}")
-        return bytes()
+        return None  #type: ignore
 
 
 def get_module_modified_datetime(module) -> datetime:

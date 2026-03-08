@@ -14,7 +14,7 @@
    limitations under the License.
 '''
 
-VERSION = "1.11.4.1"
+VERSION = "1.11.5.0"
 
 import serial
 import time
@@ -474,7 +474,7 @@ def main():
             viconnlog.close_log()
 
 
-    logger.info(f"Version {VERSION}")
+    logger.info(f"Version {VERSION} starting...")
 
     # ++++++++++++++++++++
     # the re-start loop
@@ -782,8 +782,8 @@ def main():
                     reset_retry_counters_time = -1
                 
         except Exception as e:
+            logger.exception("main")
             excptn = e
-            logger.error(excptn)
         finally:
             close_everything()
             if utils.shutdown_event.is_set():

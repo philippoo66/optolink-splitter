@@ -21,7 +21,7 @@
 ###########################################
 
 import importlib
-#from logger_util import logger
+#from logger_util import logger  # circular import
 
 
 SETTINGS_MODULE = "settings_ini"
@@ -29,7 +29,6 @@ SETTINGS_MODULE = "settings_ini"
 class SettingsAdapter:
     def __init__(self):
         self._settings_obj = None
-        self.module_date = "0"
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #  Here we define all the settings and their default values 
@@ -208,7 +207,9 @@ class SettingsAdapter:
         self.w1sensors = getattr(self._settings_obj, 'w1sensors', self.w1sensors)
 
         # Datapoint Polling Interval +++++++++
-        self.poll_interval = getattr(self._settings_obj, 'poll_interval', self.poll_interval)
+        foreign_interval = getattr(self._settings_obj, 'poll_interval', None)
+        if foreign_interval is not None:
+            self.poll_interval = foreign_interval
 
 
 # === for global use ==================
