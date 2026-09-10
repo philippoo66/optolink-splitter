@@ -208,14 +208,25 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
     fctcd = 0x100  # function code, low 5 bis of byte 3 (https://github.com/sarnau/InsideViessmannVitosoft/blob/main/VitosoftCommunication.md#defined-commandsfunction-codes)
     dlen = -1
 
-    # for up 30x100ms serial data is read. (we do 600x5ms)
-    for _ in range(600):
-        time.sleep(0.005)
+    # Nonblocking ports: allow 3s idle, then a separate 3s frame budget.
+    # Read only this frame; leave subsequent frames in the serial input buffer.
+    deadline = time.monotonic() + 3.0
+    while time.monotonic() < deadline:
+        if state == 0 and resptelegr:
+            needed = 1  # response ACK
+        elif len(inbuff) < 2:
+            needed = 2 - len(inbuff)  # STX and payload length
+        else:
+            needed = inbuff[1] + 3 - len(inbuff)
         try:
-            inbytes = ser.read_all()
+            inbytes = ser.read(needed)
             if(inbytes):
+                if not alldata:
+                    deadline = time.monotonic() + 3.0
                 inbuff += inbytes
                 alldata += inbytes
+            else:
+                time.sleep(0.005)
         except:
             utils.comm_error(True)
             return 0xAA, 0, retdata
@@ -281,7 +292,7 @@ def receive_telegr(resptelegr:bool, raw:bool, ser:serial.Serial, ser2:serial.Ser
                     # receive complete
                     if(settings.show_opto_rx):
                         print("rx", utils.bbbstr(inbuff))
-                    inbuff = inbuff[:pllen+4]  # make sure no tailing trash 
+                    inbuff = inbuff[:pllen+3]  # STX + length + payload + checksum
                     msgid = inbuff[2]
                     msqn = (inbuff[3] & 0xE0) >> 5
                     fctcd = inbuff[3] & 0x1F

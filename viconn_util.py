@@ -16,6 +16,7 @@
 
 import serial
 import time
+import threading
 
 import utils
 import vs12_adapter
@@ -121,15 +122,26 @@ def detect_vs1(serVicon:serial.Serial, serOpto:serial.Serial, timeout:float) -> 
 
 # viconn request mechanism -------------
 vicon_request = bytearray()
+vicon_request_lock = threading.Lock()
 
 def listen_to_Vitoconnect(servicon:serial.Serial, pubcallback = None):
     global vicon_request
     timeout = 0
     while(not exit_flag):
+        # Do not overwrite an unconsumed request when frames arrive together.
+        while not exit_flag:
+            with vicon_request_lock:
+                pending = bool(vicon_request)
+            if not pending:
+                break
+            time.sleep(0.005)
+        if exit_flag:
+            return
         #retcode, _, data = optolinkvs2.receive_telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
         retcode, _, data = vs12_adapter.receive_telegr(False, True, servicon, mqtt_publ_callback=pubcallback)  # contains sleep(0.005)
         if(retcode == 0x01):
-            vicon_request = data
+            with vicon_request_lock:
+                vicon_request = data
             timeout = 0
         elif(retcode == 0xff) and (timeout < 1):
             timeout += 1
@@ -137,13 +149,15 @@ def listen_to_Vitoconnect(servicon:serial.Serial, pubcallback = None):
         else:
             viconnlog.do_log(data, f"X {retcode:02x}")
             # protocol reset request as preparation for the new VS2 detection (kommt wahscheinlich nicht durch, aber ...)
-            vicon_request = bytearray([0x04])
+            with vicon_request_lock:
+                vicon_request = bytearray([0x04])
             raise Exception(f"Error {retcode:02x} in receive_vs2telegr, data: {utils.bbbstr(data)}")
 
 
 def get_vicon_request() -> bytearray:
     global vicon_request
-    ret = vicon_request
-    vicon_request = bytearray()
-    return ret
+    with vicon_request_lock:
+        ret = vicon_request
+        vicon_request = bytearray()
+        return ret
 

@@ -219,6 +219,12 @@ Below are examples of how this integration looks in different smart home environ
 ### Another Heating System Overview in Home Assistant & Command Buttons
 ![0b87f133-3285-4cb5-871c-87c66598d42d](https://github.com/user-attachments/assets/596c2f3d-24c3-406a-854b-4679ce0643d7)
 
+## Development tests
+
+See [VS2 receive regression tests](tests/README.md) for deterministic parser tests
+and optional Linux pseudo-terminal checks. They do not require a heating device
+or MQTT broker.
+
 ## :interrobang: Questions & Issues
 - Discussions & contact: [GitHub Discussions](https://github.com/philippoo66/optolink-splitter/discussions)
 - Bug reports: [GitHub Issues](https://github.com/philippoo66/optolink-splitter/issues)
