@@ -15,7 +15,7 @@ payload `8:00-9:00 *3, 12:00-13:00 *1, 19:30-22:00 *2`
 - [**Version 1.11.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11100) **Poll cycle groups** implemented and the possibility to alter the cycles at run-time using action command `setpollcycle;<groupkey>;<value>`<br>
 Since V1.10.1 the entire Optolink communikation with the heating device can get logged. Up from V1.10.5 a 'global re-start loop' got implemented to restart the splitter in case of problems.
 
-- [**Version 1.10.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11000) **New Feature: User-Friendly MQTT /set Topics!** Write values using the same format they're published in! Example: Publish `vito/c1_temp_room_setpoint/set` with payload `21.5` instead of complex command syntax. Supports ON/OFF, boolean, and numeric values with automatic scaling. See [MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md) for details. Thank you @manuboek!
+- [**Version 1.10.0.0**](https://github.com/philippoo66/optolink-splitter/wiki/990-Version-Log#version-11000) **New Feature: User-Friendly MQTT /set Topics!** Write values using the same format they're published in! Example: Publish `vito/c1_temp_room_setpoint/set` with payload `21.5` instead of complex command syntax. Supports ON/OFF, boolean, and numeric values with automatic scaling. Thank you @manuboek!!
 
 
 - Need **VS1 / KW protocol support**? It got implemented in the main tree since V1.8.0.0. Just set `vs1protocol = True`<br>
@@ -82,6 +82,8 @@ git clone https://github.com/philippoo66/optolink-splitter.git
 cd optolink-splitter
 ```
 
+Instead of using the clone command (requiring git) you may download the files (usually as zip) and copy them into your self-created optolink-splitter folder.
+
 ### 2. Create Virtual Environment & Install Dependencies
 
 Using a virtual environment is recommended to keep dependencies isolated and avoid conflicts with system-wide packages. More details can be found in [this guide](https://github.com/philippoo66/optolink-splitter/wiki/510-error:-externally%E2%80%90managed%E2%80%90environment-%E2%80%90%E2%80%90-venv).
@@ -120,7 +122,7 @@ For automatic startup, set up a service. See the [Wiki Guide](https://github.com
 ## Updating to a new Version
 If you want to update your installation to a new version, the recommended way is to
 - make a backup copy of your current installation (folder)
-- from the new version repo, clone **all files** into your original folder (replace existing files)
+- from the new version repo, clone **all files** into your original folder (replace existing files). If you clone-d the files initially, you may use `git pull` to get the new version.
 
 It is not necessary anymore to add new settings to your settings_ini since there are default values used for every setting. Also your settings_ini.py, poll_list.py and homeassistant_poll_list.py will not get overwritten anymore since all those files got the extension .example in the repo since V1.9. 
 

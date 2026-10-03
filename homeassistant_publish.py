@@ -164,7 +164,7 @@ def beautify(text):
             result = pattern.sub(fix, result)
     return result
 
-def to_dpaddr_str(dp_addr) -> str | None:
+def to_dpaddr_str(dp_addr):
     if dp_addr is None:
         return None
     if isinstance(dp_addr, int):
