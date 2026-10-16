@@ -27,7 +27,7 @@ mqtt_tls_enable = False             # True = connect via TLS (MQTT over TLS) (de
 mqtt_tls_skip_verify = False        # Disables TLS cert + hostname verification (INSECURE; self-signed / lab only; Default = False)
 mqtt_tls_ca_certs = None            # MQTT TLS CA bundle path (default: None to use OS CA store)
 mqtt_tls_certfile = None            # MQTT TLS client cert (mTLS) path (default: None for no client cert)
-mqtt_tls_keyfile  = None            # MQTT TLS client key (mTLS) path (default: None for)
+mqtt_tls_keyfile  = None            # MQTT TLS client key (mTLS) path (default: None for no client key)
 mqtt_logging = False                # Enable/Disables logging of paho.mqtt (default: False)
 
 # MQTT Topics ++++++++++++++++++++
@@ -48,7 +48,7 @@ fullraw_timeout = 2             # Overall timeout (seconds) for receiving data (
 olbreath = 0.05                 # Pause (seconds) after a request-response cycle (default: 0.05)
 
 # Optolink Logging ++++++++++++++
-show_opto_rx = True             # Console output of received Optolink data (default: True, no output when run as service)
+show_opto_rx = True             # Console output of received Optolink data (default: True). Set False when run as a service, otherwise every telegram ends up in the journal
 log_optolink = False            # Enable logging of Optolink rx+tx communication (default: False)
 log_vitoconnect = False         # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
 viconn_to_mqtt = True           # Vitoconnect traffic published on MQTT
@@ -68,7 +68,7 @@ dec_separator = ","             # Decimal separator for CSV output (default: ","
 # General Settings +++++++++++
 no_logger_file = False          # if True the optolinksvs2_switch.log will not get written
 log_level = 20                  # DEBUG=10, INFO=20, WARNING=30, ERROR=40, CRITICAL=50,
-max_restarts = 5                # re-start limit. gets reset after 100 succesful poll cycles 
+max_restarts = 5                # re-start limit. counter gets reset after retry_counters_reset minutes of successful operation 
 restart_delay = 10              # seconds delay before re-starting 
 max_vicon_tries = 3             # limit for vicon tries. if exceeded, continuing without vitoconnect
 max_comm_errors = 10            # optolink comm error threshold to init restart

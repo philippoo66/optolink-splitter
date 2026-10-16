@@ -204,7 +204,7 @@ MQTT Explorer example:
 
 ![grafik](https://private-user-images.githubusercontent.com/122479122/553739544-540e3710-d11b-4fe5-95b4-2bd234fac0f3.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzUyMDI1NjMsIm5iZiI6MTc3NTIwMjI2MywicGF0aCI6Ii8xMjI0NzkxMjIvNTUzNzM5NTQ0LTU0MGUzNzEwLWQxMWItNGZlNS05NWI0LTJiZDIzNGZhYzBmMy5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjYwNDAzJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI2MDQwM1QwNzQ0MjNaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0wMWM1MDZjMTQ3ZTEzZjM4N2Q3NzJmZTI1Y2UxZGZmYjhiNWMyZjY5Y2M2Mzg2NjA3MDJlYzE5ZmZkZTRmNWVlJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.U6X2Ct3OeDpWx38iLpsqv1PbUDC_RTM-ys-nvS5QJRM)
 
-For complete documentation with more examples, see **[MQTT_SET_TOPICS.md](MQTT_SET_TOPICS.md)**.
+For complete documentation with more examples, see **[the wiki page on /set topics](https://github.com/philippoo66/optolink-splitter/wiki/012-MQTT--set-Topics-%E2%80%90-User%E2%80%90Friendly-Write-Feature)**.
 
 ## :house: Smart Home Integration (e.g. Home Assistant)
 Optolink Splitter seamlessly integrates into your smart home setup via **MQTT**, allowing you to monitor and control your Viessmann heating system using platforms like **Home Assistant**, **ioBroker**, or **Node-RED**. All available heating system data can be visualized in dashboards, automated with custom rules, and integrated into broader smart home routines. With Optolink Splitter’s command-sending capability, you can locally adjust heating modes, temperature setpoints, or pump states directly from your favorite smart home system.
