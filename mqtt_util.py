@@ -88,7 +88,7 @@ def on_subscribe(client, userdata, mid, reason_code_list, properties):
         logger.info(f"MQTT Broker granted the following QoS: {reason_code_list[0].value} on {settings.mqtt_broker}")
 
 def on_log(client, userdata, level, buf):
-    logger.info(f"MQTT [{level}]:", buf)
+    logger.info(f"MQTT [{level}]: {buf}")
 
 
 def connect_mqtt(): 
@@ -165,8 +165,8 @@ def publish_read(name, addr, value):
 
 
 def publish_response(resp:str):
-    if mqtt_client:
-        # always publish responses
+    if mqtt_client and settings.mqtt_respond:
+        # always publish responses (unless mqtt_respond is set to None)
         ret = mqtt_client.publish(settings.mqtt_respond, resp)    
         if(verbose): print(ret)
 
@@ -343,7 +343,7 @@ def convert_value_to_bytes(value_str, length, scale_type, signed):  # tuple of b
         return int_val.to_bytes(length, byteorder='little', signed=signed), True
         
     except: # Exception as e:
-        logger.exception("convert_value_to_bytes {value_str}, {scale_type}")
+        logger.exception(f"convert_value_to_bytes {value_str}, {scale_type}")
         #logger.error(f"Error converting value '{value_str}' with scale_type '{scale_type}': {e}")
         return None, False
 
