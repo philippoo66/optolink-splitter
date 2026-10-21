@@ -72,7 +72,7 @@ class SettingsAdapter:
         self.olbreath =  0.05                   # Pause (seconds) after a request-response cycle (default: 0.05)
 
         # Optolink Logging ++++++++++++++
-        self.show_opto_rx = True                # Console output of received Optolink data (default: True, no output when run as service)
+        self.show_opto_rx = True                # Console output of received Optolink data (default: True). Set False when run as a service, otherwise every telegram ends up in the journal
         self.log_optolink = False               # Enable logging of Optolink rx+tx communication (default: False)
         self.log_vitoconnect = False            # Enable logging of Vitoconnect Optolink rx+tx telegram communication (default: False)
         self.viconn_to_mqtt = True              # Vitoconnect traffic published on MQTT
