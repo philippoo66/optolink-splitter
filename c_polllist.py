@@ -15,6 +15,7 @@
 '''
 
 import os
+import sys
 import importlib
 
 from c_settings_adapter import settings
@@ -51,6 +52,11 @@ class cPollList:
             
             # if reload is requested
             if reload:
+                if(listmodule.__name__ == 'homeassistant_adapter'):
+                    # the adapter imports homeassistant_poll_list, which stays cached and would ignore changes
+                    ha_list = sys.modules.get('homeassistant_poll_list')
+                    if ha_list is not None:
+                        importlib.reload(ha_list)
                 listmodule = importlib.reload(listmodule)
             
             # apply poll groups (if exists)
