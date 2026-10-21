@@ -191,7 +191,7 @@ class SettingsAdapter:
         # Data Formatting +++++++++++++++
         self.max_decimals = getattr(self._settings_obj, 'max_decimals', self.max_decimals)
         self.data_hex_format = getattr(self._settings_obj, 'data_hex_format', self.data_hex_format)
-        self.resp_addr_format = getattr(self._settings_obj, 'data_hex_format', self.resp_addr_format)
+        self.resp_addr_format = getattr(self._settings_obj, 'resp_addr_format', self.resp_addr_format)
         self.retcode_format = getattr(self._settings_obj, 'retcode_format', self.retcode_format)
 
         # Viessdata Utilities +++++++++++
